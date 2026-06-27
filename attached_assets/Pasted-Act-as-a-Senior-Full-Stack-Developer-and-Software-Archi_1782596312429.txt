@@ -1,0 +1,62 @@
+Act as a Senior Full-Stack Developer and Software Architect. I want to build a comprehensive Educational & Career Development Platform. Write the complete architecture, database schema, and clean, modular code (Next.js/React for Frontend, Tailwind CSS, and a robust Backend with Python/Node.js or Supabase) for a platform with the following exact specifications and advanced features:
+
+---
+
+### [1] Core Pages & Features Required:
+
+1. **Homepage (Landing Page):**
+   - Modern, high-converting UI showcasing the platform's vision, statistics, and major achievements.
+   - Dynamic counter for students trained, certificates issued, and jobs filled.
+   - Interactive timeline of the project's roadmap.
+
+2. **Job Board & Pre-Employment Testing System:**
+   - Career page displaying active job openings with advanced filtering (Remote, Hybrid, Full-time, Experience level).
+   - **Interactive Screening Feature:** When a user clicks "Apply", they must pass a built-in, timed mini-quiz (multiple-choice or short coding/technical questions) related to the job.
+   - Application submission is only unlocked if the applicant passes the minimum score threshold.
+
+3. **Admin Dashboard (Control Panel):**
+   - Comprehensive CRUD functionality to post, update, track, and delete job openings.
+   - Applicant tracking system (ATS) showing applicant details, their resume, and their screening test scores.
+   - Management panel for workshops, courses, and generating certificates.
+
+4. **Workshops, Automated Testing & PDF Certificate Generation:**
+   - Schedule page displaying upcoming workshops, dates, and enrollment status.
+   - **Automated Certification Engine:** An exam page for workshop participants. If a student passes the exam (reaches the success threshold), the system automatically injects their full name, date, and course title into a pre-designed Certificate Template.
+   - The user can instantly view and download their dynamic PDF certificate.
+
+---
+
+### [2] Advanced Choice Features (To Make the Platform Outstanding):
+
+5. **Dynamic Learning Paths & LMS (مسارات تعليمية متكاملة):**
+   - Interactive Roadmaps UI (similar to roadmap.sh) for various fields:
+     * **TOT (Training of Trainers) Track:** Complete curriculum featuring presentation skills, body language modules, interactive quizzes, training challenges, and multi-tier evaluation.
+     * **Tech Tracks:** Full roadmaps for Computer Basics, Networking (CCNA level), Cyber Security (SOC/Detection Engineering concepts), and Programming (Full-stack web & Mobile).
+   - Progress tracking bar for users as they complete modules, exercises, and challenges.
+
+6. **In-Platform Live Virtual Classroom (Google Meet Clone):**
+   - A fully integrated web-RTC live streaming page for webinars and remote classes.
+   - **Host Controls:** Admin/Instructor has full authority (Mute/Unmute participants, Screen sharing, Whiteboard integration, Chat management, and Kick/Ban options).
+   - Native text chat and Q&A section during the live session.
+
+---
+
+### [3] AI-Enhanced & Proactive Features (Unmentioned Upgrades):
+
+7. **AI Resume Parser & Matcher:**
+   - Automatically extracts skills from uploaded applicant PDFs and gives the Admin a "Match Percentage" against the job description.
+
+8. **AI-Driven Mock Interviews:**
+   - A text/voice-based chat interface inside the learning paths where students can practice for interviews based on their chosen track (e.g., TOT or Programming), receiving constructive feedback.
+
+9. **Gamification & Leaderboards:**
+   - Point system for completing exercises, passing workshop exams, and maintaining daily streaks, featuring a public leaderboard to boost student engagement.
+
+---
+
+### [4] Technical Guidelines:
+- Ensure the UI/UX is clean, professional, fully responsive (Mobile-friendly), and supports Dark/Light mode.
+- Provide secure Role-Based Access Control (RBAC): Student, Instructor, Admin.
+- Write the database schema relations clearly (Users, Jobs, Applications, Workshops, Quizzes, Certificates).
+
+Please start by giving me the system architecture layout, database design, and then proceed to generate the step-by-step code structure for implementation.
