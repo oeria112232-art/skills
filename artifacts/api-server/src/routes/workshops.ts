@@ -568,7 +568,7 @@ router.post("/workshops/:id/template", requireAuth, requireRole(["admin", "instr
     }
     
     // Create templates directory
-    const uploadsDir = path.join(process.cwd(), "uploads", "templates");
+    const uploadsDir = path.resolve(import.meta.dirname, "../../../uploads/templates");
     if (!fs.existsSync(uploadsDir)) {
       fs.mkdirSync(uploadsDir, { recursive: true });
     }
@@ -640,7 +640,7 @@ router.post("/workshops/:id/image", requireAuth, requireRole(["admin", "instruct
       return;
     }
     
-    const uploadsDir = path.join(process.cwd(), "uploads", "covers");
+    const uploadsDir = path.resolve(import.meta.dirname, "../../../uploads/covers");
     if (!fs.existsSync(uploadsDir)) {
       fs.mkdirSync(uploadsDir, { recursive: true });
     }

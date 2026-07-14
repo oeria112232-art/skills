@@ -80173,7 +80173,7 @@ router5.post("/workshops/:id/template", requireAuth, requireRole(["admin", "inst
       res.status(400).json({ error: "Template file too large. Maximum 10MB allowed" });
       return;
     }
-    const uploadsDir = path2.join(process.cwd(), "uploads", "templates");
+    const uploadsDir = path2.resolve(import.meta.dirname, "../../../uploads/templates");
     if (!fs.existsSync(uploadsDir)) {
       fs.mkdirSync(uploadsDir, { recursive: true });
     }
@@ -80227,7 +80227,7 @@ router5.post("/workshops/:id/image", requireAuth, requireRole(["admin", "instruc
       res.status(400).json({ error: "Image file too large. Maximum 5MB allowed" });
       return;
     }
-    const uploadsDir = path2.join(process.cwd(), "uploads", "covers");
+    const uploadsDir = path2.resolve(import.meta.dirname, "../../../uploads/covers");
     if (!fs.existsSync(uploadsDir)) {
       fs.mkdirSync(uploadsDir, { recursive: true });
     }
@@ -82975,13 +82975,13 @@ app.use(validateInputLimits);
 app.use(validateBase64Payload(5));
 app.use("/api", generalRateLimit);
 app.use("/api/auth", authRateLimit);
-app.use("/api/uploads", import_express17.default.static(path4.join(process.cwd(), "uploads")));
+app.use("/api/uploads", import_express17.default.static(path4.resolve(import.meta.dirname, "../../../uploads")));
 app.use("/api", routes_default);
 if (process.env.NODE_ENV === "production") {
-  const publicPath = path4.join(process.cwd(), "artifacts/eduplat/dist/public");
+  const publicPath = path4.resolve(import.meta.dirname, "../../eduplat/dist/public");
   app.use(import_express17.default.static(publicPath));
   app.get(/^(?!\/api\/).*/, (_req, res) => {
-    res.sendFile(path4.join(publicPath, "index.html"));
+    res.sendFile(path4.resolve(publicPath, "index.html"));
   });
 }
 app.use((err, _req, res, _next) => {

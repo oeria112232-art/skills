@@ -82,16 +82,16 @@ app.use("/api", generalRateLimit);
 // Auth-specific rate limiting
 app.use("/api/auth", authRateLimit);
 
-app.use("/api/uploads", express.static(path.join(process.cwd(), "uploads")));
+app.use("/api/uploads", express.static(path.resolve(import.meta.dirname, "../../../uploads")));
 app.use("/api", router);
 
 if (process.env.NODE_ENV === "production") {
-  const publicPath = path.join(process.cwd(), "artifacts/eduplat/dist/public");
+  const publicPath = path.resolve(import.meta.dirname, "../../eduplat/dist/public");
   app.use(express.static(publicPath));
   
   // SPA routing fallback
   app.get(/^(?!\/api\/).*/, (_req, res) => {
-    res.sendFile(path.join(publicPath, "index.html"));
+    res.sendFile(path.resolve(publicPath, "index.html"));
   });
 }
 
