@@ -67573,6 +67573,10 @@ function toArray(obj) {
 }
 async function fbGet(node) {
   validateFirebasePath(node);
+  if (!database) {
+    console.warn(`Firebase Database is not initialized. Skipping GET for node: ${node}`);
+    return [];
+  }
   const now = Date.now();
   const cached2 = fbCache.get(node);
   if (cached2 && now < cached2.expiresAt) {
@@ -67593,6 +67597,10 @@ function fbInvalidate(node) {
 }
 async function fbPut(path5, data) {
   validateFirebasePath(path5);
+  if (!database) {
+    console.warn(`Firebase Database is not initialized. Skipping PUT for path: ${path5}`);
+    return;
+  }
   try {
     const serialized = serializeDates(data);
     await set(ref(database, path5), serialized);
@@ -67603,6 +67611,10 @@ async function fbPut(path5, data) {
 }
 async function fbDelete(path5) {
   validateFirebasePath(path5);
+  if (!database) {
+    console.warn(`Firebase Database is not initialized. Skipping DELETE for path: ${path5}`);
+    return;
+  }
   try {
     await remove(ref(database, path5));
   } catch (err) {
@@ -67844,11 +67856,19 @@ var init_src = __esm({
       measurementId: process.env.FIREBASE_MEASUREMENT_ID || "",
       databaseURL: process.env.FIREBASE_DATABASE_URL || ""
     };
-    if (!firebaseConfig.apiKey || !firebaseConfig.databaseURL) {
-      console.error("FIREBASE_API_KEY and FIREBASE_DATABASE_URL must be set in environment variables.");
+    firebaseApp = null;
+    database = null;
+    if (firebaseConfig.apiKey && firebaseConfig.databaseURL && firebaseConfig.databaseURL.startsWith("https://")) {
+      try {
+        firebaseApp = initializeApp(firebaseConfig);
+        database = getDatabase(firebaseApp);
+        console.log("Firebase Database initialized successfully.");
+      } catch (err) {
+        console.error("Failed to initialize Firebase SDK:", err);
+      }
+    } else {
+      console.error("FIREBASE_API_KEY and FIREBASE_DATABASE_URL must be set in environment variables. Firebase operations will be disabled.");
     }
-    firebaseApp = initializeApp(firebaseConfig);
-    database = getDatabase(firebaseApp);
     fbCache = /* @__PURE__ */ new Map();
     FB_CACHE_TTL_MS = 3e3;
     SAFE_PATH_REGEX = /^[a-zA-Z0-9_-]+$/;

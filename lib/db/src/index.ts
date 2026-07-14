@@ -16,13 +16,22 @@ const firebaseConfig = {
   databaseURL: process.env.FIREBASE_DATABASE_URL || ""
 };
 
-if (!firebaseConfig.apiKey || !firebaseConfig.databaseURL) {
-  console.error("FIREBASE_API_KEY and FIREBASE_DATABASE_URL must be set in environment variables.");
+// Initialize official Firebase App and Database client conditionally to prevent startup crash when environment variables are not set
+let firebaseApp: any = null;
+let database: any = null;
+
+if (firebaseConfig.apiKey && firebaseConfig.databaseURL && firebaseConfig.databaseURL.startsWith("https://")) {
+  try {
+    firebaseApp = initializeApp(firebaseConfig);
+    database = getDatabase(firebaseApp);
+    console.log("Firebase Database initialized successfully.");
+  } catch (err) {
+    console.error("Failed to initialize Firebase SDK:", err);
+  }
+} else {
+  console.error("FIREBASE_API_KEY and FIREBASE_DATABASE_URL must be set in environment variables. Firebase operations will be disabled.");
 }
 
-// Initialize official Firebase App and Database client
-const firebaseApp = initializeApp(firebaseConfig);
-const database = getDatabase(firebaseApp);
 
 // Helper to recursively parse ISO date strings back into Javascript Date objects
 function parseDates(obj: any): any {
@@ -90,6 +99,10 @@ const FB_CACHE_TTL_MS = 3000; // 3 seconds — balances freshness vs perf on bur
 
 async function fbGet(node: string): Promise<any[]> {
   validateFirebasePath(node);
+  if (!database) {
+    console.warn(`Firebase Database is not initialized. Skipping GET for node: ${node}`);
+    return [];
+  }
   const now = Date.now();
   const cached = fbCache.get(node);
   if (cached && now < cached.expiresAt) {
@@ -113,6 +126,10 @@ function fbInvalidate(node: string) {
 // Write record to Firebase Realtime Database
 async function fbPut(path: string, data: any): Promise<void> {
   validateFirebasePath(path);
+  if (!database) {
+    console.warn(`Firebase Database is not initialized. Skipping PUT for path: ${path}`);
+    return;
+  }
   try {
     const serialized = serializeDates(data);
     await set(ref(database, path), serialized);
@@ -125,6 +142,10 @@ async function fbPut(path: string, data: any): Promise<void> {
 // Delete record from Firebase Realtime Database
 async function fbDelete(path: string): Promise<void> {
   validateFirebasePath(path);
+  if (!database) {
+    console.warn(`Firebase Database is not initialized. Skipping DELETE for path: ${path}`);
+    return;
+  }
   try {
     await remove(ref(database, path));
   } catch (err) {
