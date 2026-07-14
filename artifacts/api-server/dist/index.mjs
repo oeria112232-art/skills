@@ -83046,13 +83046,11 @@ if (process.env.NODE_ENV === "production") {
 }
 app.use((err, _req, res, _next) => {
   const statusCode = err.statusCode || err.status || 500;
-  const message = statusCode === 500 ? "Internal server error" : err.message;
-  if (statusCode === 500) {
-    logger4.error({ err, url: _req.url, method: _req.method }, "Unhandled server error");
-  }
+  const message = err.message || "Internal server error";
+  logger4.error({ err, url: _req.url, method: _req.method }, "Unhandled server error");
   res.status(statusCode).json({
     error: message,
-    ...process.env.NODE_ENV !== "production" && statusCode === 500 && { stack: err.stack }
+    stack: err.stack
   });
 });
 var app_default = app;
