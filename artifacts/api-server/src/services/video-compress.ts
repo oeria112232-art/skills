@@ -6,13 +6,22 @@ import os from "node:os";
 
 const execFileAsync = promisify(execFile);
 
-const FFMPEG_PATH =
-  process.env.FFMPEG_PATH ||
-  path.resolve(import.meta.dirname, "../../../ffmpeg/ffmpeg.exe");
+let FFMPEG_PATH = process.env.FFMPEG_PATH || "";
+
+if (!FFMPEG_PATH) {
+  if (process.platform === "win32") {
+    FFMPEG_PATH = path.resolve(import.meta.dirname, "../../../ffmpeg/ffmpeg.exe");
+  } else {
+    FFMPEG_PATH = "ffmpeg";
+  }
+}
 
 function isFfmpegAvailable(): boolean {
   try {
-    return fs.existsSync(FFMPEG_PATH);
+    if (path.isAbsolute(FFMPEG_PATH) || FFMPEG_PATH.includes("/") || FFMPEG_PATH.includes("\\")) {
+      return fs.existsSync(FFMPEG_PATH);
+    }
+    return true; // Assume global system command
   } catch {
     return false;
   }

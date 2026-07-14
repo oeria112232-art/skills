@@ -82457,10 +82457,20 @@ import fs2 from "node:fs";
 import path3 from "node:path";
 import os from "node:os";
 var execFileAsync = promisify(execFile);
-var FFMPEG_PATH = process.env.FFMPEG_PATH || path3.resolve(import.meta.dirname, "../../../ffmpeg/ffmpeg.exe");
+var FFMPEG_PATH = process.env.FFMPEG_PATH || "";
+if (!FFMPEG_PATH) {
+  if (process.platform === "win32") {
+    FFMPEG_PATH = path3.resolve(import.meta.dirname, "../../../ffmpeg/ffmpeg.exe");
+  } else {
+    FFMPEG_PATH = "ffmpeg";
+  }
+}
 function isFfmpegAvailable() {
   try {
-    return fs2.existsSync(FFMPEG_PATH);
+    if (path3.isAbsolute(FFMPEG_PATH) || FFMPEG_PATH.includes("/") || FFMPEG_PATH.includes("\\")) {
+      return fs2.existsSync(FFMPEG_PATH);
+    }
+    return true;
   } catch {
     return false;
   }
