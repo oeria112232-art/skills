@@ -1,31 +1,11 @@
 import app from "./app";
 import { logger } from "./lib/logger";
 
-// Validate required environment variables at startup
-const REQUIRED_ENV_VARS = ["PORT", "JWT_SECRET"];
-const missingVars: string[] = [];
-for (const varName of REQUIRED_ENV_VARS) {
-  if (!process.env[varName]) {
-    missingVars.push(varName);
-  }
-}
-if (missingVars.length > 0) {
-  logger.fatal({ missing: missingVars }, "Missing required environment variables");
-  process.exit(1);
-}
+const rawPort = process.env.PORT || "8080";
+const port = /^\d+$/.test(rawPort) ? Number(rawPort) : rawPort;
 
-const rawPort = process.env["PORT"];
-
-if (!rawPort) {
-  throw new Error(
-    "PORT environment variable is required but was not provided.",
-  );
-}
-
-const port = Number(rawPort);
-
-if (Number.isNaN(port) || port <= 0) {
-  throw new Error(`Invalid PORT value: "${rawPort}"`);
+if (!process.env.JWT_SECRET && !process.env.SESSION_SECRET) {
+  console.warn("WARNING: JWT_SECRET (or SESSION_SECRET) is not set in environment variables. Using a fallback secret key. This is insecure for production.");
 }
 
 const server = app.listen(port, (err) => {
