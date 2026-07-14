@@ -82935,13 +82935,14 @@ var allowedOrigins = (process.env.CORS_ORIGINS || "").split(",").map((s) => s.tr
 app.use((0, import_cors.default)({
   origin: (origin, callback) => {
     if (!origin) return callback(null, true);
-    if (process.env.NODE_ENV === "production" && allowedOrigins.length === 0) {
-      logger4.warn("CORS_ORIGINS is empty in production \u2014 all origins will be blocked");
-      return callback(new Error("CORS not configured for production"));
+    if (allowedOrigins.length > 0) {
+      if (allowedOrigins.includes(origin)) return callback(null, true);
+      return callback(new Error("Not allowed by CORS"));
     }
-    if (allowedOrigins.length === 0) return callback(null, true);
-    if (allowedOrigins.includes(origin)) return callback(null, true);
-    return callback(new Error("Not allowed by CORS"));
+    if (process.env.NODE_ENV === "production") {
+      logger4.warn(`CORS_ORIGINS is empty in production. Allowing request from origin: ${origin}`);
+    }
+    return callback(null, true);
   },
   credentials: true,
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],

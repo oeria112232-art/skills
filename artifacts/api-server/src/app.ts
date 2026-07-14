@@ -29,16 +29,15 @@ app.use((_req: Request, res: Response, next: NextFunction) => {
 const allowedOrigins = (process.env.CORS_ORIGINS || "").split(",").map(s => s.trim()).filter(Boolean);
 app.use(cors({
   origin: (origin, callback) => {
-    // Allow requests with no origin (mobile apps, curl, server-to-server)
     if (!origin) return callback(null, true);
-    // In production, CORS_ORIGINS must be configured — never allow all
-    if (process.env.NODE_ENV === "production" && allowedOrigins.length === 0) {
-      logger.warn("CORS_ORIGINS is empty in production — all origins will be blocked");
-      return callback(new Error("CORS not configured for production"));
+    if (allowedOrigins.length > 0) {
+      if (allowedOrigins.includes(origin)) return callback(null, true);
+      return callback(new Error("Not allowed by CORS"));
     }
-    if (allowedOrigins.length === 0) return callback(null, true); // dev mode: allow all
-    if (allowedOrigins.includes(origin)) return callback(null, true);
-    return callback(new Error("Not allowed by CORS"));
+    if (process.env.NODE_ENV === "production") {
+      logger.warn(`CORS_ORIGINS is empty in production. Allowing request from origin: ${origin}`);
+    }
+    return callback(null, true);
   },
   credentials: true,
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
