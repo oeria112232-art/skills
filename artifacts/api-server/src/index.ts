@@ -2,7 +2,7 @@ import app from "./app";
 import { logger } from "./lib/logger";
 
 // Validate required environment variables at startup
-const REQUIRED_ENV_VARS = ["PORT", "JWT_SECRET", "FIREBASE_API_KEY", "FIREBASE_DATABASE_URL"];
+const REQUIRED_ENV_VARS = ["PORT", "JWT_SECRET"];
 const missingVars: string[] = [];
 for (const varName of REQUIRED_ENV_VARS) {
   if (!process.env[varName]) {

@@ -83004,7 +83004,7 @@ app.use((err, _req, res, _next) => {
 var app_default = app;
 
 // artifacts/api-server/src/index.ts
-var REQUIRED_ENV_VARS = ["PORT", "JWT_SECRET", "FIREBASE_API_KEY", "FIREBASE_DATABASE_URL"];
+var REQUIRED_ENV_VARS = ["PORT", "JWT_SECRET"];
 var missingVars = [];
 for (const varName of REQUIRED_ENV_VARS) {
   if (!process.env[varName]) {
