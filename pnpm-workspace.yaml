@@ -8,11 +8,15 @@ allowBuilds:
   '@firebase/util': true
   esbuild: true
   protobufjs: true
+  ffmpeg-static: true
+
 
 onlyBuiltDependencies:
   - '@firebase/util'
   - esbuild
   - protobufjs
+  - ffmpeg-static
+
 
 autoInstallPeers: false
 
