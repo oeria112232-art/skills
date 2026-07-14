@@ -1,148 +1,196 @@
 import { useState } from "react";
 import { Link } from "wouter";
 import { useListJobs } from "@workspace/api-client-react";
-import { Briefcase, MapPin, Clock, DollarSign, Search, Filter, ChevronRight, Wifi } from "lucide-react";
+import { Briefcase, MapPin, Coins, Clock, Wifi, Search, Star, Filter, ArrowRight } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AppLayout } from "@/components/layout/AppLayout";
-
-const typeColors: Record<string, string> = {
-  "full-time": "bg-green-500/10 text-green-600 dark:text-green-400",
-  "part-time": "bg-blue-500/10 text-blue-600 dark:text-blue-400",
-  "contract": "bg-orange-500/10 text-orange-600 dark:text-orange-400",
-  "internship": "bg-purple-500/10 text-purple-600 dark:text-purple-400",
-};
+import { useLanguage } from "@/components/layout/LanguageContext";
+import { motion } from "framer-motion";
 
 export default function JobsPage() {
+  const { language } = useLanguage();
+  const isAr = language === "ar";
+
   const [search, setSearch] = useState("");
   const [type, setType] = useState("all");
   const [level, setLevel] = useState("all");
   const [remote, setRemote] = useState("all");
 
-  const params = {
-    ...(type !== "all" && { type }),
-    ...(level !== "all" && { level }),
-    ...(remote === "remote" && { remote: "true" }),
-    ...(search && { search }),
-  };
+  const params: Record<string, string | boolean> = {};
+  if (search) params.search = search;
+  if (type !== "all") params.type = type;
+  if (level !== "all") params.level = level;
+  if (remote !== "all") params.isRemote = remote === "remote";
 
   const { data: jobs, isLoading } = useListJobs(Object.keys(params).length > 0 ? params : undefined);
 
   return (
     <AppLayout>
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold mb-1" data-testid="heading-jobs">Job Board</h1>
-        <p className="text-muted-foreground">Browse opportunities and take the screening test to apply</p>
+      <div className="mb-10 flex flex-col md:flex-row md:items-center md:justify-between gap-4 text-start">
+        <div>
+          <div className="flex items-center gap-2 mb-1.5">
+            <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20 font-bold px-3 py-0.5 rounded-full text-[10px]">
+              {isAr ? "بوابة التوظيف المباشر" : "Direct Hiring Portal"}
+            </Badge>
+          </div>
+          <h1 className="text-3xl font-extrabold text-foreground tracking-tight" data-testid="heading-jobs">
+            {isAr ? "لوحة الوظائف الشاغرة | Job Board" : "Job Board"}
+          </h1>
+          <p className="text-sm text-muted-foreground font-medium mt-1">
+            {isAr
+              ? "استعرض الفرص الوظيفية المنسقة خصيصاً لشركائنا في العراق، واجتز اختبارات التصفية للتقديم الفوري."
+              : "Browse career opportunities curated specifically for our partners in Iraq, and pass screening quizzes to apply."}
+          </p>
+        </div>
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-3 mb-6">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            placeholder="Search jobs or companies..."
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            className="pl-9"
-            data-testid="input-search-jobs"
-          />
+      <div className="mb-8 p-5 rounded-2xl border border-border/50 bg-card/65 backdrop-blur-sm shadow-sm space-y-4 text-start">
+        <div className="flex items-center gap-2 text-xs font-bold text-muted-foreground border-b border-border/40 pb-3 mb-2">
+          <Filter className="w-4 h-4 text-primary" />
+          <span>{isAr ? "فلاتر وتصفية الوظائف" : "Filters & Search"}</span>
         </div>
-        <Select value={type} onValueChange={setType}>
-          <SelectTrigger className="w-full sm:w-36" data-testid="select-job-type">
-            <SelectValue placeholder="Type" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Types</SelectItem>
-            <SelectItem value="full-time">Full-time</SelectItem>
-            <SelectItem value="part-time">Part-time</SelectItem>
-            <SelectItem value="contract">Contract</SelectItem>
-            <SelectItem value="internship">Internship</SelectItem>
-          </SelectContent>
-        </Select>
-        <Select value={level} onValueChange={setLevel}>
-          <SelectTrigger className="w-full sm:w-36" data-testid="select-job-level">
-            <SelectValue placeholder="Level" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Levels</SelectItem>
-            <SelectItem value="junior">Junior</SelectItem>
-            <SelectItem value="mid">Mid</SelectItem>
-            <SelectItem value="senior">Senior</SelectItem>
-          </SelectContent>
-        </Select>
-        <Select value={remote} onValueChange={setRemote}>
-          <SelectTrigger className="w-full sm:w-36" data-testid="select-remote">
-            <SelectValue placeholder="Remote" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All</SelectItem>
-            <SelectItem value="remote">Remote Only</SelectItem>
-          </SelectContent>
-        </Select>
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder={isAr ? "البحث باسم الوظيفة، المسمى أو الشركة..." : "Search by title, role or company..."}
+              className="pl-10 rounded-xl border-border/60 bg-background/50 h-10 text-xs font-semibold placeholder:text-muted-foreground/75"
+              data-testid="input-search-jobs"
+            />
+          </div>
+
+          <Select value={type} onValueChange={setType}>
+            <SelectTrigger className="w-full sm:w-40 rounded-xl border-border/60 bg-background/50 h-10 text-xs font-semibold" data-testid="select-type">
+              <SelectValue placeholder={isAr ? "كل أنواع الدوام" : "Job Type"} />
+            </SelectTrigger>
+            <SelectContent className="rounded-xl border-border/50">
+              <SelectItem value="all" className="text-xs font-medium">{isAr ? "كل أنواع الدوام" : "All Job Types"}</SelectItem>
+              <SelectItem value="full-time" className="text-xs font-medium">{isAr ? "دوام كامل" : "Full-time"}</SelectItem>
+              <SelectItem value="part-time" className="text-xs font-medium">{isAr ? "دوام جزئي" : "Part-time"}</SelectItem>
+              <SelectItem value="internship" className="text-xs font-medium">{isAr ? "تدريب" : "Internship"}</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select value={level} onValueChange={setLevel}>
+            <SelectTrigger className="w-full sm:w-40 rounded-xl border-border/60 bg-background/50 h-10 text-xs font-semibold" data-testid="select-level">
+              <SelectValue placeholder={isAr ? "كل المستويات" : "Career Level"} />
+            </SelectTrigger>
+            <SelectContent className="rounded-xl border-border/50">
+              <SelectItem value="all" className="text-xs font-medium">{isAr ? "كل المستويات" : "All Levels"}</SelectItem>
+              <SelectItem value="junior" className="text-xs font-medium">{isAr ? "مبتدئ" : "Junior"}</SelectItem>
+              <SelectItem value="mid" className="text-xs font-medium">{isAr ? "متوسط" : "Mid-level"}</SelectItem>
+              <SelectItem value="senior" className="text-xs font-medium">{isAr ? "متقدم" : "Senior"}</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select value={remote} onValueChange={setRemote}>
+            <SelectTrigger className="w-full sm:w-40 rounded-xl border-border/60 bg-background/50 h-10 text-xs font-semibold" data-testid="select-remote">
+              <SelectValue placeholder={isAr ? "موقع العمل" : "Location"} />
+            </SelectTrigger>
+            <SelectContent className="rounded-xl border-border/50">
+              <SelectItem value="all" className="text-xs font-medium">{isAr ? "كل مواقع العمل" : "All Locations"}</SelectItem>
+              <SelectItem value="remote" className="text-xs font-medium">{isAr ? "عن بعد فقط" : "Remote Only"}</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {/* Jobs list */}
       {isLoading ? (
         <div className="space-y-4">
-          {[1, 2, 3].map(i => <Skeleton key={i} className="h-36 w-full rounded-xl" />)}
+          {[1, 2, 3].map(i => <Skeleton key={i} className="h-40 w-full rounded-2xl bg-card border border-border/50" />)}
+        </div>
+      ) : !Array.isArray(jobs) || jobs.length === 0 ? (
+        <div className="text-center py-20 rounded-2xl border border-dashed border-border/60 bg-card/30 max-w-md mx-auto">
+          <Briefcase className="w-14 h-14 mx-auto mb-3 opacity-25 text-primary" />
+          <h4 className="font-extrabold text-lg">{isAr ? "لم يتم العثور على وظائف" : "No jobs found"}</h4>
+          <p className="text-xs text-muted-foreground mt-1">{isAr ? "حاول ضبط معايير البحث أو الفلاتر." : "Try adjusting your search criteria or filters."}</p>
         </div>
       ) : (
         <div className="space-y-4">
-          {!jobs || jobs.length === 0 ? (
-            <div className="text-center py-16 text-muted-foreground">
-              <Briefcase className="w-12 h-12 mx-auto mb-4 opacity-30" />
-              <p className="text-lg font-medium">No jobs found</p>
-              <p className="text-sm">Try adjusting your filters</p>
-            </div>
-          ) : (
-            jobs.map(job => (
-              <div
-                key={job.id}
-                className="p-5 rounded-xl border border-border bg-card hover:shadow-md hover:border-primary/30 transition-all"
-                data-testid={`job-card-${job.id}`}
-              >
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 flex-wrap mb-1">
-                      <h2 className="font-semibold text-lg" data-testid={`job-title-${job.id}`}>{job.title}</h2>
-                      <Badge className={typeColors[job.type] || ""}>{job.type}</Badge>
-                      {job.isRemote && (
-                        <Badge variant="outline" className="gap-1">
-                          <Wifi className="w-3 h-3" /> Remote
-                        </Badge>
-                      )}
+          {jobs.map(job => (
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              whileHover={{ scale: 1.002 }}
+              key={job.id}
+              className="p-6 rounded-2xl border border-border/55 bg-gradient-to-r from-card to-background hover:border-primary/50 hover:shadow-lg transition-all duration-300 shadow-sm relative overflow-hidden group hover-sheen text-start"
+              data-testid={`job-card-${job.id}`}
+            >
+              <div className="absolute top-0 right-0 w-32 h-32 bg-primary/3 rounded-full blur-2xl pointer-events-none" />
+
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="flex items-start gap-4">
+                  {job.companyLogo ? (
+                    <img 
+                      src={job.companyLogo} 
+                      alt={job.company} 
+                      className="w-12 h-12 rounded-xl object-cover border border-primary/20 shadow-sm flex-shrink-0"
+                    />
+                  ) : (
+                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20 flex items-center justify-center flex-shrink-0 text-primary font-bold shadow-inner">
+                      {job.company.slice(0, 2).toUpperCase()}
                     </div>
-                    <p className="text-primary font-medium text-sm mb-2" data-testid={`job-company-${job.id}`}>{job.company}</p>
-                    <p className="text-muted-foreground text-sm line-clamp-2 mb-3">{job.description}</p>
-                    <div className="flex items-center gap-4 text-xs text-muted-foreground flex-wrap">
-                      {job.location && (
-                        <span className="flex items-center gap-1">
-                          <MapPin className="w-3 h-3" /> {job.location}
-                        </span>
-                      )}
+                  )}
+                  <div>
+                    <h3 className="font-extrabold text-base text-foreground leading-snug group-hover:text-primary transition-colors duration-200">
+                      {job.title}
+                    </h3>
+                    <p className="text-xs font-bold text-muted-foreground mt-1">{job.company}</p>
+                    
+                    <div className="flex flex-wrap gap-4 mt-4 text-[10.5px] text-muted-foreground font-semibold">
                       <span className="flex items-center gap-1">
-                        <Clock className="w-3 h-3" /> {job.level} level
+                        <Clock className="w-3.5 h-3.5 text-primary/70" />
+                        <span className="capitalize">{isAr ? (job.type === "full-time" ? "دوام كامل" : job.type === "part-time" ? "دوام جزئي" : "تدريب") : job.type}</span>
                       </span>
-                      {job.salaryMin && job.salaryMax && (
-                        <span className="flex items-center gap-1">
-                          <DollarSign className="w-3 h-3" /> ${job.salaryMin.toLocaleString()} – ${job.salaryMax.toLocaleString()}
+                      <span className="flex items-center gap-1">
+                        <Briefcase className="w-3.5 h-3.5 text-primary/70" />
+                        <span className="capitalize">{isAr ? (job.level === "junior" ? "مبتدئ" : job.level === "mid" ? "متوسط" : "متقدم") : job.level}</span>
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <MapPin className="w-3.5 h-3.5 text-primary/70" />
+                        <span>{job.location || (isAr ? "العراق" : "Iraq")}</span>
+                      </span>
+                      {job.isRemote && (
+                        <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
+                          <Wifi className="w-3.5 h-3.5" />
+                          <span>{isAr ? "عن بعد" : "Remote"}</span>
                         </span>
                       )}
-                      <span className="text-muted-foreground">{job.applicationCount} applicants</span>
+                      {(job.salaryMin || job.salaryMax) && (
+                        <span className="flex items-center gap-0.5 text-amber-600 dark:text-amber-400 font-bold">
+                          <Coins className="w-3.5 h-3.5" />
+                          <span>
+                            {job.salaryMin ? `${job.salaryMin}K` : ""} - {job.salaryMax ? `${job.salaryMax}K` : ""} {isAr ? "د.ع" : "IQD"}
+                          </span>
+                        </span>
+                      )}
                     </div>
                   </div>
+                </div>
+
+                <div className="flex flex-row md:flex-col items-center md:items-end justify-between md:justify-center border-t md:border-t-0 border-border/30 pt-4 md:pt-0 gap-3">
+                  <div className="text-left md:text-right">
+                    <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20 text-[10px] font-bold py-1 px-2.5 rounded-lg">
+                      {isAr ? `علامة القبول: ${job.passScore}%` : `Pass score: ${job.passScore}%`}
+                    </Badge>
+                  </div>
                   <Link href={`/jobs/${job.id}`}>
-                    <Button size="sm" className="flex-shrink-0 gap-1" data-testid={`button-view-job-${job.id}`}>
-                      Apply <ChevronRight className="w-3 h-3" />
-                    </Button>
+                    <button className="h-9 px-5 text-xs font-bold rounded-xl bg-primary text-primary-foreground hover:bg-primary/95 shadow-md shadow-primary/10 transition-all flex items-center gap-1.5 group-hover:scale-102">
+                      <span>{isAr ? "التفاصيل والتقديم" : "View & Apply"}</span>
+                      <ArrowRight className={`w-3.5 h-3.5 ${isAr ? "rotate-180" : ""}`} />
+                    </button>
                   </Link>
                 </div>
               </div>
-            ))
-          )}
+            </motion.div>
+          ))}
         </div>
       )}
     </AppLayout>

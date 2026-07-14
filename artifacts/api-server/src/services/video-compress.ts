@@ -1,0 +1,132 @@
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
+import fs from "node:fs";
+import path from "node:path";
+import os from "node:os";
+
+const execFileAsync = promisify(execFile);
+
+const FFMPEG_PATH =
+  process.env.FFMPEG_PATH ||
+  path.resolve(import.meta.dirname, "../../../ffmpeg/ffmpeg.exe");
+
+function isFfmpegAvailable(): boolean {
+  try {
+    return fs.existsSync(FFMPEG_PATH);
+  } catch {
+    return false;
+  }
+}
+
+export interface CompressOptions {
+  maxWidth?: number;
+  maxHeight?: number;
+  crf?: number;
+  preset?: string;
+  audioBitrate?: string;
+  fps?: number;
+}
+
+const DEFAULT_OPTIONS: CompressOptions = {
+  maxWidth: 1280,
+  maxHeight: 720,
+  crf: 28,
+  preset: "fast",
+  audioBitrate: "96k",
+  fps: 30,
+};
+
+export interface CompressResult {
+  inputPath: string;
+  outputPath: string;
+  inputSize: number;
+  outputSize: number;
+  compressionRatio: string;
+  duration: string;
+}
+
+export async function compressVideo(
+  inputBuffer: Buffer,
+  inputMime: string,
+  options: CompressOptions = {}
+): Promise<{ buffer: Buffer; mime: string; stats: CompressResult }> {
+  const opts = { ...DEFAULT_OPTIONS, ...options };
+
+  if (!isFfmpegAvailable()) {
+    throw new Error("FFmpeg not available at " + FFMPEG_PATH);
+  }
+
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "video-compress-"));
+  const ext = inputMime.includes("webm") ? "webm" : "mp4";
+  const inputPath = path.join(tmpDir, `input.${ext}`);
+  const outputPath = path.join(tmpDir, `output.${ext}`);
+
+  try {
+    fs.writeFileSync(inputPath, inputBuffer);
+    const inputSize = fs.statSync(inputPath).size;
+
+    const filterComplex = [
+      `-vf`,
+      `scale='min(${opts.maxWidth},iw)':min'(${opts.maxHeight},ih)':force_original_aspect_ratio=decrease:force_divisible_by=2`,
+      `-r`,
+      String(opts.fps),
+      `-c:v`,
+      `libx264`,
+      `-preset`,
+      opts.preset!,
+      `-crf`,
+      String(opts.crf),
+      `-c:a`,
+      `aac`,
+      `-b:a`,
+      opts.audioBitrate!,
+      `-movflags`,
+      `+faststart`,
+      `-pix_fmt`,
+      `yuv420p`,
+    ];
+
+    await execFileAsync(FFMPEG_PATH, [
+      "-i",
+      inputPath,
+      ...filterComplex,
+      "-y",
+      outputPath,
+    ], { timeout: 300000 });
+
+    const outputBuffer = fs.readFileSync(outputPath);
+    const outputSize = outputBuffer.length;
+    const ratio =
+      inputSize > 0
+        ? ((1 - outputSize / inputSize) * 100).toFixed(1) + "%"
+        : "0%";
+
+    let duration = "unknown";
+    try {
+      const { stdout } = await execFileAsync(FFMPEG_PATH, [
+        "-i",
+        inputPath,
+      ], { timeout: 10000 });
+      const match = stdout.match(/Duration:\s*(\d{2}):(\d{2}):(\d{2})/);
+      if (match) duration = `${match[1]}:${match[2]}:${match[3]}`;
+    } catch {}
+
+    return {
+      buffer: outputBuffer,
+      mime: "video/mp4",
+      stats: {
+        inputPath,
+        outputPath,
+        inputSize,
+        outputSize,
+        compressionRatio: ratio,
+        duration,
+      },
+    };
+  } catch (err: any) {
+    try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch {}
+    throw new Error(`FFmpeg compression failed: ${err.message}`);
+  } finally {
+    try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch {}
+  }
+}

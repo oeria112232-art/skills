@@ -1,15 +1,83 @@
 import { Router } from "express";
-import { db, tracksTable, trackModulesTable, userProgressTable } from "@workspace/db";
-import { eq, and, sql } from "drizzle-orm";
+import { db, tracksTable, trackModulesTable, userProgressTable, usersTable, certificatesTable } from "@workspace/db";
+import { eq, and } from "drizzle-orm";
 import {
   GetTrackParams, GetTrackProgressParams, UpdateTrackProgressParams, UpdateTrackProgressBody,
 } from "@workspace/api-zod";
+import { requireAuth, requireRole, type AuthenticatedRequest } from "../middlewares/auth";
+import {
+  verifyAndHardenUserBalance,
+  updateAndSignUserBalance,
+  insertSecureTransaction,
+  acquireUserLock,
+  checkDuplicateTransaction,
+  claimNonce,
+} from "../services/wallet-security";
+import { paymentRateLimit } from "../middlewares/rateLimit";
+import { logAuditEvent } from "../services/audit-log";
 
 const router = Router();
 
+// Track CRUD
 router.get("/tracks", async (_req, res): Promise<void> => {
   const tracks = await db.select().from(tracksTable).orderBy(tracksTable.id);
-  res.json(tracks.map(t => ({ ...t, createdAt: t.createdAt?.toISOString() })));
+  const users = await db.select().from(usersTable);
+  const instructorMap = new Map(users.map(u => [u.id, u]));
+  res.json(tracks.map(t => {
+    const inst = (t as any).instructorId ? instructorMap.get((t as any).instructorId) : null;
+    return {
+      ...t,
+      price: t.price ?? 0,
+      createdAt: t.createdAt?.toISOString(),
+      instructorName: inst?.name || null,
+      instructorAvatar: inst?.avatarUrl || null,
+    };
+  }));
+});
+
+router.post("/tracks", requireAuth, requireRole(["admin"]), async (req, res): Promise<void> => {
+  const newTrack = await db.insert(tracksTable).values(req.body).returning();
+  res.status(201).json(newTrack[0]);
+});
+
+router.put("/tracks/:id", requireAuth, requireRole(["admin"]), async (req, res): Promise<void> => {
+  const updated = await db.update(tracksTable).set(req.body).where(eq(tracksTable.id, parseInt(req.params.id as string))).returning();
+  res.json(updated[0]);
+});
+
+router.delete("/tracks/:id", requireAuth, requireRole(["admin"]), async (req, res): Promise<void> => {
+  await db.delete(tracksTable).where(eq(tracksTable.id, parseInt(req.params.id as string)));
+  res.status(204).send();
+});
+
+// Module CRUD
+router.get("/tracks/:trackId/modules", async (req, res): Promise<void> => {
+  const modules = await db.select().from(trackModulesTable).where(eq(trackModulesTable.trackId, parseInt(req.params.trackId as string)));
+  res.json(modules);
+});
+
+router.post("/tracks/:trackId/modules", requireAuth, requireRole(["admin"]), async (req, res): Promise<void> => {
+  const trackId = parseInt(req.params.trackId as string);
+  const newModule = await db.insert(trackModulesTable).values({ ...req.body, trackId }).returning();
+  const allModules = await db.select().from(trackModulesTable).where(eq(trackModulesTable.trackId, trackId));
+  await db.update(tracksTable).set({ moduleCount: allModules.length }).where(eq(tracksTable.id, trackId));
+  res.status(201).json(newModule[0]);
+});
+
+router.put("/modules/:id", requireAuth, requireRole(["admin"]), async (req, res): Promise<void> => {
+  const updated = await db.update(trackModulesTable).set(req.body).where(eq(trackModulesTable.id, parseInt(req.params.id as string))).returning();
+  res.json(updated[0]);
+});
+
+router.delete("/modules/:id", requireAuth, requireRole(["admin"]), async (req, res): Promise<void> => {
+  const moduleId = parseInt(req.params.id as string);
+  const [mod] = await db.select().from(trackModulesTable).where(eq(trackModulesTable.id, moduleId));
+  if (mod) {
+    await db.delete(trackModulesTable).where(eq(trackModulesTable.id, moduleId));
+    const allModules = await db.select().from(trackModulesTable).where(eq(trackModulesTable.trackId, mod.trackId));
+    await db.update(tracksTable).set({ moduleCount: allModules.length }).where(eq(tracksTable.id, mod.trackId));
+  }
+  res.status(204).send();
 });
 
 router.get("/tracks/:slug", async (req, res): Promise<void> => {
@@ -17,20 +85,37 @@ router.get("/tracks/:slug", async (req, res): Promise<void> => {
   if (!params.success) { res.status(400).json({ error: "Invalid slug" }); return; }
   const [track] = await db.select().from(tracksTable).where(eq(tracksTable.slug, params.data.slug));
   if (!track) { res.status(404).json({ error: "Track not found" }); return; }
+  
+  let instructorName = null;
+  let instructorAvatar = null;
+  if ((track as any).instructorId) {
+    const [inst] = await db.select().from(usersTable).where(eq(usersTable.id, (track as any).instructorId));
+    if (inst) {
+      instructorName = inst.name;
+      instructorAvatar = inst.avatarUrl;
+    }
+  }
+
   const modules = await db.select().from(trackModulesTable)
     .where(eq(trackModulesTable.trackId, track.id))
     .orderBy(trackModulesTable.order);
   res.json({
     ...track,
     createdAt: track.createdAt?.toISOString(),
+    instructorName,
+    instructorAvatar,
     modules: modules.map(m => ({ ...m, createdAt: m.createdAt?.toISOString() })),
   });
 });
 
-router.get("/tracks/:slug/progress", async (req, res): Promise<void> => {
+router.get("/tracks/:slug/progress", requireAuth, async (req: AuthenticatedRequest, res): Promise<void> => {
   const params = GetTrackProgressParams.safeParse(req.params);
   if (!params.success) { res.status(400).json({ error: "Invalid slug" }); return; }
-  const userId = parseInt(req.query.userId as string || "1", 10);
+  const user = req.user!;
+  const targetUserId = (user.role === "admin" || user.role === "instructor")
+    ? parseInt(req.query.userId as string || String(user.id), 10)
+    : user.id;
+  const userId = targetUserId;
   const [track] = await db.select().from(tracksTable).where(eq(tracksTable.slug, params.data.slug));
   if (!track) { res.status(404).json({ error: "Track not found" }); return; }
 
@@ -46,14 +131,109 @@ router.get("/tracks/:slug/progress", async (req, res): Promise<void> => {
     completedModules, totalModules,
     percentComplete,
     points: completedModules.length * 10,
+    isEnrolled: progress.length > 0,
   });
 });
 
-router.post("/tracks/:slug/progress", async (req, res): Promise<void> => {
+router.post("/tracks/:slug/enroll", requireAuth, paymentRateLimit, async (req: AuthenticatedRequest, res): Promise<void> => {
+  const params = GetTrackProgressParams.safeParse(req.params);
+  if (!params.success) { res.status(400).json({ error: "Invalid slug" }); return; }
+  const user = req.user!;
+  const targetUserId = (user.role === "admin" || user.role === "instructor")
+    ? parseInt(req.body.userId as string || String(user.id), 10)
+    : user.id;
+  const userId = targetUserId;
+  
+  const [track] = await db.select().from(tracksTable).where(eq(tracksTable.slug, params.data.slug));
+  if (!track) { res.status(404).json({ error: "Track not found" }); return; }
+
+  const price = track.price ?? 0;
+
+  if (price > 0 && (user.role === "student" || user.role === "company")) {
+    const releaseLock = await acquireUserLock(userId);
+    try {
+      const [dbUser] = await db.select().from(usersTable).where(eq(usersTable.id, userId));
+      if (!dbUser) { res.status(404).json({ error: "User not found" }); return; }
+
+      const isIntegrityOk = await verifyAndHardenUserBalance(dbUser);
+      if (!isIntegrityOk) {
+        res.status(400).json({ error: "Security warning: Balance integrity check failed." });
+        return;
+      }
+
+      if ((dbUser.points || 0) < price) {
+        res.status(400).json({ error: `Insufficient points. Track requires ${price} points. You have ${dbUser.points || 0}.` });
+        return;
+      }
+
+      const idempotencyKey = req.headers["x-idempotency-key"] as string;
+      if (idempotencyKey) {
+        if (!claimNonce(idempotencyKey)) {
+          res.status(409).json({ error: "Duplicate request detected." });
+          return;
+        }
+      }
+
+      const isDuplicate = await checkDuplicateTransaction(userId, "track_enrollment", price, 60);
+      if (isDuplicate) {
+        res.status(409).json({ error: "Duplicate transaction detected. Please wait before retrying." });
+        return;
+      }
+
+      const newBalance = (dbUser.points || 0) - price;
+      await updateAndSignUserBalance(userId, newBalance);
+      await insertSecureTransaction(userId, 1, price, "track_enrollment", `Enroll: ${track.title.substring(0, 40)}`);
+      await logAuditEvent({ action: "track_enroll_paid", userId, targetType: "track", targetId: track.id, details: { price, trackTitle: track.title }, req });
+    } finally {
+      releaseLock();
+    }
+  }
+
+  // Fetch all modules of the track
+  const modules = await db.select().from(trackModulesTable).where(eq(trackModulesTable.trackId, track.id));
+  
+  // Insert enrollment records (completed = 0) for any modules that don't have them
+  const existing = await db.select().from(userProgressTable)
+    .where(and(eq(userProgressTable.userId, userId), eq(userProgressTable.trackId, track.id)));
+
+  const existingModIds = new Set(existing.map(e => e.moduleId));
+
+  for (const mod of modules) {
+    if (!existingModIds.has(mod.id)) {
+      await db.insert(userProgressTable).values({
+        userId,
+        trackId: track.id,
+        moduleId: mod.id,
+        completed: 0,
+        completedAt: null
+      });
+    }
+  }
+
+  // Also increment track enrolledCount
+  await db.update(tracksTable)
+    .set({ enrolledCount: (track.enrolledCount || 0) + 1 })
+    .where(eq(tracksTable.id, track.id));
+
+  if (price > 0) {
+    const [freshUser] = await db.select().from(usersTable).where(eq(usersTable.id, userId));
+    res.json({ success: true, isEnrolled: true, percentComplete: 0, pointsSpent: price, remainingPoints: freshUser?.points || 0 });
+  } else {
+    res.json({ success: true, isEnrolled: true, percentComplete: 0 });
+  }
+});
+
+router.post("/tracks/:slug/progress", requireAuth, async (req: AuthenticatedRequest, res): Promise<void> => {
   const params = UpdateTrackProgressParams.safeParse(req.params);
   if (!params.success) { res.status(400).json({ error: "Invalid slug" }); return; }
   const parsed = UpdateTrackProgressBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
+
+  const user = req.user!;
+  if (user.role !== "admin" && user.role !== "instructor" && parsed.data.userId !== user.id) {
+    res.status(403).json({ error: "Forbidden" });
+    return;
+  }
 
   const [track] = await db.select().from(tracksTable).where(eq(tracksTable.slug, params.data.slug));
   if (!track) { res.status(404).json({ error: "Track not found" }); return; }
@@ -79,12 +259,42 @@ router.post("/tracks/:slug/progress", async (req, res): Promise<void> => {
     });
   }
 
-  // Return updated progress
   const progress = await db.select().from(userProgressTable)
     .where(and(eq(userProgressTable.userId, parsed.data.userId), eq(userProgressTable.trackId, track.id)));
   const completedModules = progress.filter(p => p.completed === 1).map(p => p.moduleId);
   const totalModules = track.moduleCount;
   const percentComplete = totalModules > 0 ? Math.round((completedModules.length / totalModules) * 100) : 0;
+
+  if (percentComplete === 100) {
+    const [existingCert] = await db.select().from(certificatesTable)
+      .where(and(eq(certificatesTable.trackId, track.id), eq(certificatesTable.userId, parsed.data.userId)));
+    if (!existingCert) {
+      const [u] = await db.select().from(usersTable).where(eq(usersTable.id, parsed.data.userId));
+      if (u) {
+        const certNumber = `CERT-TRK-${track.id}-${u.id}-${Date.now()}`;
+        const verificationCode = `MH-VFY-${Math.random().toString(36).substring(2, 8).toUpperCase()}-${Math.floor(1000 + Math.random() * 9000)}`;
+        const trackCertLevel = (track as any).certLevel ?? 3;
+        const trackCertCost = (track as any).certCost ?? 250;
+        const trackCertType = (track as any).certType ?? "track";
+        const isFree = trackCertCost === 0;
+        await db.insert(certificatesTable).values({
+          userId: u.id,
+          userName: u.name,
+          trackId: track.id,
+          trackTitle: track.title,
+          type: trackCertType,
+          score: 100,
+          certificateNumber: certNumber,
+          verificationCode,
+          level: trackCertLevel,
+          cost: trackCertCost,
+          status: isFree ? "issued" : "locked",
+          isPaid: isFree ? 1 : 0,
+          signatureHash: "",
+        } as any);
+      }
+    }
+  }
 
   res.json({
     userId: parsed.data.userId, trackSlug: params.data.slug,

@@ -10,6 +10,10 @@ import usersRouter from "./users";
 import statsRouter from "./stats";
 import leaderboardRouter from "./leaderboard";
 import mockInterviewRouter from "./mock_interview";
+import consultationsRouter from "./consultations";
+import pointsRouter from "./points";
+import uploadRouter from "./upload";
+import videoStreamRouter from "./video-stream";
 
 const router: IRouter = Router();
 
@@ -24,5 +28,9 @@ router.use(usersRouter);
 router.use(statsRouter);
 router.use(leaderboardRouter);
 router.use(mockInterviewRouter);
+router.use(consultationsRouter);
+router.use(pointsRouter);
+router.use(uploadRouter);
+router.use(videoStreamRouter);
 
 export default router;

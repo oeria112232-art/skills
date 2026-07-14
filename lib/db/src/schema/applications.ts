@@ -1,4 +1,4 @@
-import { pgTable, text, serial, timestamp, integer, boolean } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, timestamp, integer, boolean, json } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { jobsTable } from "./jobs";
@@ -12,6 +12,8 @@ export const applicationsTable = pgTable("applications", {
   applicantEmail: text("applicant_email").notNull(),
   resumeUrl: text("resume_url"),
   coverLetter: text("cover_letter"),
+  cvSnapshot: json("cv_snapshot").$type<any>(),
+  contactInfoSnapshot: json("contact_info_snapshot").$type<any>(),
   status: text("status").notNull().default("pending"),
   screeningScore: integer("screening_score"),
   screeningPassed: boolean("screening_passed"),

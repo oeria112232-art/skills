@@ -20,7 +20,7 @@ export const RegisterBody = zod.object({
   "name": zod.string(),
   "email": zod.string(),
   "password": zod.string(),
-  "role": zod.string().optional()
+  "role": zod.enum(["student", "company"]).optional()
 })
 
 export const RegisterResponse = zod.object({
@@ -30,9 +30,12 @@ export const RegisterResponse = zod.object({
   "name": zod.string(),
   "email": zod.string(),
   "role": zod.string(),
+  "allowedPages": zod.array(zod.string()).nullish(),
   "points": zod.number(),
   "streak": zod.number().optional(),
   "avatarUrl": zod.string().nullish(),
+  "cv": zod.record(zod.string(), zod.unknown()).nullish(),
+  "contactInfo": zod.record(zod.string(), zod.unknown()).nullish(),
   "createdAt": zod.string()
 })
 })
@@ -50,9 +53,12 @@ export const LoginResponse = zod.object({
   "name": zod.string(),
   "email": zod.string(),
   "role": zod.string(),
+  "allowedPages": zod.array(zod.string()).nullish(),
   "points": zod.number(),
   "streak": zod.number().optional(),
   "avatarUrl": zod.string().nullish(),
+  "cv": zod.record(zod.string(), zod.unknown()).nullish(),
+  "contactInfo": zod.record(zod.string(), zod.unknown()).nullish(),
   "createdAt": zod.string()
 })
 })
@@ -63,9 +69,12 @@ export const GetMeResponse = zod.object({
   "name": zod.string(),
   "email": zod.string(),
   "role": zod.string(),
+  "allowedPages": zod.array(zod.string()).nullish(),
   "points": zod.number(),
   "streak": zod.number().optional(),
   "avatarUrl": zod.string().nullish(),
+  "cv": zod.record(zod.string(), zod.unknown()).nullish(),
+  "contactInfo": zod.record(zod.string(), zod.unknown()).nullish(),
   "createdAt": zod.string()
 })
 
@@ -74,6 +83,7 @@ export const ListJobsQueryParams = zod.object({
   "type": zod.coerce.string().optional(),
   "level": zod.coerce.string().optional(),
   "search": zod.coerce.string().optional(),
+  "companyId": zod.coerce.number().optional(),
   "remote": zod.coerce.string().optional()
 })
 
@@ -81,6 +91,7 @@ export const ListJobsResponseItem = zod.object({
   "id": zod.number(),
   "title": zod.string(),
   "company": zod.string(),
+  "companyId": zod.number().nullish(),
   "description": zod.string(),
   "type": zod.string(),
   "level": zod.string(),
@@ -91,6 +102,7 @@ export const ListJobsResponseItem = zod.object({
   "status": zod.string(),
   "passScore": zod.number(),
   "applicationCount": zod.number().optional(),
+  "companyLogo": zod.string().nullish(),
   "createdAt": zod.string()
 })
 export const ListJobsResponse = zod.array(ListJobsResponseItem)
@@ -99,6 +111,7 @@ export const ListJobsResponse = zod.array(ListJobsResponseItem)
 export const CreateJobBody = zod.object({
   "title": zod.string(),
   "company": zod.string(),
+  "companyId": zod.number().nullish(),
   "description": zod.string(),
   "type": zod.string(),
   "level": zod.string(),
@@ -113,6 +126,7 @@ export const CreateJobResponse = zod.object({
   "id": zod.number(),
   "title": zod.string(),
   "company": zod.string(),
+  "companyId": zod.number().nullish(),
   "description": zod.string(),
   "type": zod.string(),
   "level": zod.string(),
@@ -123,6 +137,7 @@ export const CreateJobResponse = zod.object({
   "status": zod.string(),
   "passScore": zod.number(),
   "applicationCount": zod.number().optional(),
+  "companyLogo": zod.string().nullish(),
   "createdAt": zod.string()
 })
 
@@ -143,6 +158,7 @@ export const GetJobResponse = zod.object({
   "id": zod.number(),
   "title": zod.string(),
   "company": zod.string(),
+  "companyId": zod.number().nullish(),
   "description": zod.string(),
   "type": zod.string(),
   "level": zod.string(),
@@ -153,6 +169,7 @@ export const GetJobResponse = zod.object({
   "status": zod.string(),
   "passScore": zod.number(),
   "applicationCount": zod.number().optional(),
+  "companyLogo": zod.string().nullish(),
   "createdAt": zod.string()
 })
 
@@ -164,6 +181,7 @@ export const UpdateJobParams = zod.object({
 export const UpdateJobBody = zod.object({
   "title": zod.string().optional(),
   "company": zod.string().optional(),
+  "companyId": zod.number().nullish(),
   "description": zod.string().optional(),
   "type": zod.string().optional(),
   "level": zod.string().optional(),
@@ -179,6 +197,7 @@ export const UpdateJobResponse = zod.object({
   "id": zod.number(),
   "title": zod.string(),
   "company": zod.string(),
+  "companyId": zod.number().nullish(),
   "description": zod.string(),
   "type": zod.string(),
   "level": zod.string(),
@@ -189,6 +208,7 @@ export const UpdateJobResponse = zod.object({
   "status": zod.string(),
   "passScore": zod.number(),
   "applicationCount": zod.number().optional(),
+  "companyLogo": zod.string().nullish(),
   "createdAt": zod.string()
 })
 
@@ -238,7 +258,9 @@ export const AddJobScreeningQuestionResponse = zod.object({
 
 export const ListApplicationsQueryParams = zod.object({
   "jobId": zod.coerce.number().optional(),
-  "status": zod.coerce.string().optional()
+  "status": zod.coerce.string().optional(),
+  "userId": zod.coerce.number().optional(),
+  "companyId": zod.coerce.number().optional()
 })
 
 export const ListApplicationsResponseItem = zod.object({
@@ -253,6 +275,8 @@ export const ListApplicationsResponseItem = zod.object({
   "screeningScore": zod.number().nullish(),
   "screeningPassed": zod.boolean().nullish(),
   "userId": zod.number().nullish(),
+  "cvSnapshot": zod.record(zod.string(), zod.unknown()).nullish(),
+  "contactInfoSnapshot": zod.record(zod.string(), zod.unknown()).nullish(),
   "createdAt": zod.string()
 })
 export const ListApplicationsResponse = zod.array(ListApplicationsResponseItem)
@@ -279,6 +303,8 @@ export const CreateApplicationResponse = zod.object({
   "screeningScore": zod.number().nullish(),
   "screeningPassed": zod.boolean().nullish(),
   "userId": zod.number().nullish(),
+  "cvSnapshot": zod.record(zod.string(), zod.unknown()).nullish(),
+  "contactInfoSnapshot": zod.record(zod.string(), zod.unknown()).nullish(),
   "createdAt": zod.string()
 })
 
@@ -299,6 +325,8 @@ export const GetApplicationResponse = zod.object({
   "screeningScore": zod.number().nullish(),
   "screeningPassed": zod.boolean().nullish(),
   "userId": zod.number().nullish(),
+  "cvSnapshot": zod.record(zod.string(), zod.unknown()).nullish(),
+  "contactInfoSnapshot": zod.record(zod.string(), zod.unknown()).nullish(),
   "createdAt": zod.string()
 })
 
@@ -323,6 +351,8 @@ export const UpdateApplicationStatusResponse = zod.object({
   "screeningScore": zod.number().nullish(),
   "screeningPassed": zod.boolean().nullish(),
   "userId": zod.number().nullish(),
+  "cvSnapshot": zod.record(zod.string(), zod.unknown()).nullish(),
+  "contactInfoSnapshot": zod.record(zod.string(), zod.unknown()).nullish(),
   "createdAt": zod.string()
 })
 
@@ -360,7 +390,18 @@ export const ListWorkshopsResponseItem = zod.object({
   "capacity": zod.number(),
   "enrolledCount": zod.number(),
   "passScore": zod.number(),
-  "createdAt": zod.string()
+  "timeLimitMinutes": zod.number().nullish(),
+  "certSignTitle": zod.string().optional(),
+  "certSignName": zod.string().optional(),
+  "certEkey": zod.string().optional(),
+  "antiCheatEnabled": zod.number().optional(),
+  "maxFocusWarnings": zod.number().optional(),
+  "shuffleQuestions": zod.number().optional(),
+  "hasExam": zod.number().optional(),
+  "hasCertificate": zod.number().optional(),
+  "createdAt": zod.string(),
+  "certTemplateUrl": zod.string().nullish(),
+  "certTemplateType": zod.string().optional()
 })
 export const ListWorkshopsResponse = zod.array(ListWorkshopsResponseItem)
 
@@ -374,7 +415,19 @@ export const CreateWorkshopBody = zod.object({
   "tags": zod.array(zod.string()).optional(),
   "imageUrl": zod.string().nullish(),
   "capacity": zod.number(),
-  "passScore": zod.number()
+  "passScore": zod.number(),
+  "price": zod.number().optional().default(0),
+  "timeLimitMinutes": zod.number().nullish(),
+  "certSignTitle": zod.string().optional(),
+  "certSignName": zod.string().optional(),
+  "certEkey": zod.string().optional(),
+  "antiCheatEnabled": zod.number().optional(),
+  "maxFocusWarnings": zod.number().optional(),
+  "shuffleQuestions": zod.number().optional(),
+  "hasExam": zod.number().optional(),
+  "hasCertificate": zod.number().optional(),
+  "certTemplateUrl": zod.string().nullish(),
+  "certTemplateType": zod.string().optional()
 })
 
 export const CreateWorkshopResponse = zod.object({
@@ -390,7 +443,18 @@ export const CreateWorkshopResponse = zod.object({
   "capacity": zod.number(),
   "enrolledCount": zod.number(),
   "passScore": zod.number(),
-  "createdAt": zod.string()
+  "timeLimitMinutes": zod.number().nullish(),
+  "certSignTitle": zod.string().optional(),
+  "certSignName": zod.string().optional(),
+  "certEkey": zod.string().optional(),
+  "antiCheatEnabled": zod.number().optional(),
+  "maxFocusWarnings": zod.number().optional(),
+  "shuffleQuestions": zod.number().optional(),
+  "hasExam": zod.number().optional(),
+  "hasCertificate": zod.number().optional(),
+  "createdAt": zod.string(),
+  "certTemplateUrl": zod.string().nullish(),
+  "certTemplateType": zod.string().optional()
 })
 
 
@@ -411,7 +475,18 @@ export const GetWorkshopResponse = zod.object({
   "capacity": zod.number(),
   "enrolledCount": zod.number(),
   "passScore": zod.number(),
-  "createdAt": zod.string()
+  "timeLimitMinutes": zod.number().nullish(),
+  "certSignTitle": zod.string().optional(),
+  "certSignName": zod.string().optional(),
+  "certEkey": zod.string().optional(),
+  "antiCheatEnabled": zod.number().optional(),
+  "maxFocusWarnings": zod.number().optional(),
+  "shuffleQuestions": zod.number().optional(),
+  "hasExam": zod.number().optional(),
+  "hasCertificate": zod.number().optional(),
+  "createdAt": zod.string(),
+  "certTemplateUrl": zod.string().nullish(),
+  "certTemplateType": zod.string().optional()
 })
 
 
@@ -429,7 +504,19 @@ export const UpdateWorkshopBody = zod.object({
   "imageUrl": zod.string().nullish(),
   "status": zod.string().optional(),
   "capacity": zod.number().optional(),
-  "passScore": zod.number().optional()
+  "passScore": zod.number().optional(),
+  "price": zod.number().optional(),
+  "timeLimitMinutes": zod.number().nullish(),
+  "certSignTitle": zod.string().optional(),
+  "certSignName": zod.string().optional(),
+  "certEkey": zod.string().optional(),
+  "antiCheatEnabled": zod.number().optional(),
+  "maxFocusWarnings": zod.number().optional(),
+  "shuffleQuestions": zod.number().optional(),
+  "hasExam": zod.number().optional(),
+  "hasCertificate": zod.number().optional(),
+  "certTemplateUrl": zod.string().nullish(),
+  "certTemplateType": zod.string().optional()
 })
 
 export const UpdateWorkshopResponse = zod.object({
@@ -445,7 +532,18 @@ export const UpdateWorkshopResponse = zod.object({
   "capacity": zod.number(),
   "enrolledCount": zod.number(),
   "passScore": zod.number(),
-  "createdAt": zod.string()
+  "timeLimitMinutes": zod.number().nullish(),
+  "certSignTitle": zod.string().optional(),
+  "certSignName": zod.string().optional(),
+  "certEkey": zod.string().optional(),
+  "antiCheatEnabled": zod.number().optional(),
+  "maxFocusWarnings": zod.number().optional(),
+  "shuffleQuestions": zod.number().optional(),
+  "hasExam": zod.number().optional(),
+  "hasCertificate": zod.number().optional(),
+  "createdAt": zod.string(),
+  "certTemplateUrl": zod.string().nullish(),
+  "certTemplateType": zod.string().optional()
 })
 
 
@@ -461,9 +559,9 @@ export const EnrollWorkshopParams = zod.object({
 })
 
 export const EnrollWorkshopBody = zod.object({
-  "userId": zod.number(),
-  "userName": zod.string(),
-  "userEmail": zod.string()
+  "userId": zod.number().optional(),
+  "userName": zod.string().optional(),
+  "userEmail": zod.string().optional()
 })
 
 export const EnrollWorkshopResponse = zod.object({
@@ -505,7 +603,9 @@ export const GetWorkshopExamResponse = zod.object({
   "workshopId": zod.number(),
   "question": zod.string(),
   "options": zod.array(zod.string()),
-  "order": zod.number()
+  "order": zod.number(),
+  "points": zod.number().optional(),
+  "type": zod.string().optional()
 }))
 })
 
@@ -518,7 +618,9 @@ export const AddExamQuestionBody = zod.object({
   "question": zod.string(),
   "options": zod.array(zod.string()),
   "correctIndex": zod.number(),
-  "order": zod.number().optional()
+  "order": zod.number().optional(),
+  "points": zod.number().optional(),
+  "type": zod.string().optional()
 })
 
 export const AddExamQuestionResponse = zod.object({
@@ -526,7 +628,9 @@ export const AddExamQuestionResponse = zod.object({
   "workshopId": zod.number(),
   "question": zod.string(),
   "options": zod.array(zod.string()),
-  "order": zod.number()
+  "order": zod.number(),
+  "points": zod.number().optional(),
+  "type": zod.string().optional()
 })
 
 
@@ -536,7 +640,9 @@ export const SubmitExamParams = zod.object({
 
 export const SubmitExamBody = zod.object({
   "userId": zod.number(),
-  "answers": zod.array(zod.number())
+  "answers": zod.array(zod.string()),
+  "focusWarningsCount": zod.number().optional(),
+  "antiCheatViolated": zod.boolean().optional()
 })
 
 export const SubmitExamResponse = zod.object({
@@ -549,15 +655,100 @@ export const SubmitExamResponse = zod.object({
 })
 
 
+export const UploadWorkshopTemplateParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const UploadWorkshopTemplateBody = zod.object({
+  "fileName": zod.string(),
+  "fileType": zod.string(),
+  "base64Data": zod.string()
+})
+
+export const UploadWorkshopTemplateResponse = zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "description": zod.string(),
+  "date": zod.string(),
+  "duration": zod.number(),
+  "instructor": zod.string(),
+  "tags": zod.array(zod.string()).optional(),
+  "imageUrl": zod.string().nullish(),
+  "status": zod.string(),
+  "capacity": zod.number(),
+  "enrolledCount": zod.number(),
+  "passScore": zod.number(),
+  "timeLimitMinutes": zod.number().nullish(),
+  "certSignTitle": zod.string().optional(),
+  "certSignName": zod.string().optional(),
+  "certEkey": zod.string().optional(),
+  "antiCheatEnabled": zod.number().optional(),
+  "maxFocusWarnings": zod.number().optional(),
+  "shuffleQuestions": zod.number().optional(),
+  "hasExam": zod.number().optional(),
+  "hasCertificate": zod.number().optional(),
+  "createdAt": zod.string(),
+  "certTemplateUrl": zod.string().nullish(),
+  "certTemplateType": zod.string().optional()
+})
+
+
+export const UploadWorkshopImageParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const UploadWorkshopImageBody = zod.object({
+  "fileName": zod.string(),
+  "fileType": zod.string(),
+  "base64Data": zod.string()
+})
+
+export const UploadWorkshopImageResponse = zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "description": zod.string(),
+  "date": zod.string(),
+  "duration": zod.number(),
+  "instructor": zod.string(),
+  "tags": zod.array(zod.string()).optional(),
+  "imageUrl": zod.string().nullish(),
+  "status": zod.string(),
+  "capacity": zod.number(),
+  "enrolledCount": zod.number(),
+  "passScore": zod.number(),
+  "timeLimitMinutes": zod.number().nullish(),
+  "certSignTitle": zod.string().optional(),
+  "certSignName": zod.string().optional(),
+  "certEkey": zod.string().optional(),
+  "antiCheatEnabled": zod.number().optional(),
+  "maxFocusWarnings": zod.number().optional(),
+  "shuffleQuestions": zod.number().optional(),
+  "hasExam": zod.number().optional(),
+  "hasCertificate": zod.number().optional(),
+  "createdAt": zod.string(),
+  "certTemplateUrl": zod.string().nullish(),
+  "certTemplateType": zod.string().optional()
+})
+
+
 export const ListCertificatesResponseItem = zod.object({
   "id": zod.number(),
   "userId": zod.number(),
   "userName": zod.string(),
-  "workshopId": zod.number().optional(),
-  "workshopTitle": zod.string(),
+  "workshopId": zod.number().nullish(),
+  "workshopTitle": zod.string().nullish(),
+  "trackId": zod.number().nullish(),
+  "trackTitle": zod.string().nullish(),
+  "type": zod.enum(['track', 'workshop', 'participation']),
   "issuedAt": zod.string(),
   "score": zod.number(),
-  "certificateNumber": zod.string().optional()
+  "certificateNumber": zod.string(),
+  "verificationCode": zod.string(),
+  "level": zod.number(),
+  "cost": zod.number(),
+  "status": zod.enum(['locked', 'issued']),
+  "signatureHash": zod.string().nullish(),
+  "isPaid": zod.number()
 })
 export const ListCertificatesResponse = zod.array(ListCertificatesResponseItem)
 
@@ -570,11 +761,74 @@ export const GetCertificateResponse = zod.object({
   "id": zod.number(),
   "userId": zod.number(),
   "userName": zod.string(),
-  "workshopId": zod.number().optional(),
-  "workshopTitle": zod.string(),
+  "workshopId": zod.number().nullish(),
+  "workshopTitle": zod.string().nullish(),
+  "trackId": zod.number().nullish(),
+  "trackTitle": zod.string().nullish(),
+  "type": zod.enum(['track', 'workshop', 'participation']),
   "issuedAt": zod.string(),
   "score": zod.number(),
-  "certificateNumber": zod.string().optional()
+  "certificateNumber": zod.string(),
+  "verificationCode": zod.string(),
+  "level": zod.number(),
+  "cost": zod.number(),
+  "status": zod.enum(['locked', 'issued']),
+  "signatureHash": zod.string().nullish(),
+  "isPaid": zod.number()
+})
+
+
+export const ClaimCertificateParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const ClaimCertificateResponse = zod.object({
+  "id": zod.number(),
+  "userId": zod.number(),
+  "userName": zod.string(),
+  "workshopId": zod.number().nullish(),
+  "workshopTitle": zod.string().nullish(),
+  "trackId": zod.number().nullish(),
+  "trackTitle": zod.string().nullish(),
+  "type": zod.enum(['track', 'workshop', 'participation']),
+  "issuedAt": zod.string(),
+  "score": zod.number(),
+  "certificateNumber": zod.string(),
+  "verificationCode": zod.string(),
+  "level": zod.number(),
+  "cost": zod.number(),
+  "status": zod.enum(['locked', 'issued']),
+  "signatureHash": zod.string().nullish(),
+  "isPaid": zod.number()
+})
+
+
+export const VerifyCertificateParams = zod.object({
+  "code": zod.coerce.string()
+})
+
+export const VerifyCertificateResponse = zod.object({
+  "verified": zod.boolean().optional(),
+  "error": zod.string().nullish(),
+  "certificate": zod.object({
+  "id": zod.number(),
+  "userId": zod.number(),
+  "userName": zod.string(),
+  "workshopId": zod.number().nullish(),
+  "workshopTitle": zod.string().nullish(),
+  "trackId": zod.number().nullish(),
+  "trackTitle": zod.string().nullish(),
+  "type": zod.enum(['track', 'workshop', 'participation']),
+  "issuedAt": zod.string(),
+  "score": zod.number(),
+  "certificateNumber": zod.string(),
+  "verificationCode": zod.string(),
+  "level": zod.number(),
+  "cost": zod.number(),
+  "status": zod.enum(['locked', 'issued']),
+  "signatureHash": zod.string().nullish(),
+  "isPaid": zod.number()
+}).optional()
 })
 
 
@@ -588,7 +842,10 @@ export const ListTracksResponseItem = zod.object({
   "iconUrl": zod.string().nullish(),
   "moduleCount": zod.number(),
   "estimatedHours": zod.number(),
-  "enrolledCount": zod.number().optional()
+  "enrolledCount": zod.number().optional(),
+  "instructorId": zod.number().nullish(),
+  "instructorName": zod.string().nullish(),
+  "instructorAvatar": zod.string().nullish()
 })
 export const ListTracksResponse = zod.array(ListTracksResponseItem)
 
@@ -608,6 +865,9 @@ export const GetTrackResponse = zod.object({
   "moduleCount": zod.number(),
   "estimatedHours": zod.number(),
   "enrolledCount": zod.number().optional(),
+  "instructorId": zod.number().nullish(),
+  "instructorName": zod.string().nullish(),
+  "instructorAvatar": zod.string().nullish(),
   "modules": zod.array(zod.object({
   "id": zod.number(),
   "trackId": zod.number(),
@@ -631,7 +891,8 @@ export const GetTrackProgressResponse = zod.object({
   "completedModules": zod.array(zod.number()),
   "totalModules": zod.number(),
   "percentComplete": zod.number(),
-  "points": zod.number()
+  "points": zod.number(),
+  "isEnrolled": zod.boolean()
 })
 
 
@@ -651,7 +912,8 @@ export const UpdateTrackProgressResponse = zod.object({
   "completedModules": zod.array(zod.number()),
   "totalModules": zod.number(),
   "percentComplete": zod.number(),
-  "points": zod.number()
+  "points": zod.number(),
+  "isEnrolled": zod.boolean()
 })
 
 
@@ -660,12 +922,37 @@ export const ListUsersResponseItem = zod.object({
   "name": zod.string(),
   "email": zod.string(),
   "role": zod.string(),
+  "allowedPages": zod.array(zod.string()).nullish(),
   "points": zod.number(),
   "streak": zod.number().optional(),
   "avatarUrl": zod.string().nullish(),
+  "cv": zod.record(zod.string(), zod.unknown()).nullish(),
+  "contactInfo": zod.record(zod.string(), zod.unknown()).nullish(),
   "createdAt": zod.string()
 })
 export const ListUsersResponse = zod.array(ListUsersResponseItem)
+
+
+export const CreateUserBody = zod.object({
+  "name": zod.string(),
+  "email": zod.string(),
+  "password": zod.string(),
+  "role": zod.string().optional()
+})
+
+export const CreateUserResponse = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "email": zod.string(),
+  "role": zod.string(),
+  "allowedPages": zod.array(zod.string()).nullish(),
+  "points": zod.number(),
+  "streak": zod.number().optional(),
+  "avatarUrl": zod.string().nullish(),
+  "cv": zod.record(zod.string(), zod.unknown()).nullish(),
+  "contactInfo": zod.record(zod.string(), zod.unknown()).nullish(),
+  "createdAt": zod.string()
+})
 
 
 export const GetUserParams = zod.object({
@@ -677,9 +964,12 @@ export const GetUserResponse = zod.object({
   "name": zod.string(),
   "email": zod.string(),
   "role": zod.string(),
+  "allowedPages": zod.array(zod.string()).nullish(),
   "points": zod.number(),
   "streak": zod.number().optional(),
   "avatarUrl": zod.string().nullish(),
+  "cv": zod.record(zod.string(), zod.unknown()).nullish(),
+  "contactInfo": zod.record(zod.string(), zod.unknown()).nullish(),
   "createdAt": zod.string()
 })
 
@@ -691,7 +981,10 @@ export const UpdateUserParams = zod.object({
 export const UpdateUserBody = zod.object({
   "name": zod.string().optional(),
   "role": zod.string().optional(),
-  "avatarUrl": zod.string().nullish()
+  "allowedPages": zod.array(zod.string()).nullish(),
+  "avatarUrl": zod.string().nullish(),
+  "cv": zod.record(zod.string(), zod.unknown()).nullish(),
+  "contactInfo": zod.record(zod.string(), zod.unknown()).nullish()
 })
 
 export const UpdateUserResponse = zod.object({
@@ -699,9 +992,44 @@ export const UpdateUserResponse = zod.object({
   "name": zod.string(),
   "email": zod.string(),
   "role": zod.string(),
+  "allowedPages": zod.array(zod.string()).nullish(),
   "points": zod.number(),
   "streak": zod.number().optional(),
   "avatarUrl": zod.string().nullish(),
+  "cv": zod.record(zod.string(), zod.unknown()).nullish(),
+  "contactInfo": zod.record(zod.string(), zod.unknown()).nullish(),
+  "createdAt": zod.string()
+})
+
+
+export const DeleteUserParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const DeleteUserResponse = zod.void()
+
+
+export const UploadUserAvatarParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const UploadUserAvatarBody = zod.object({
+  "fileName": zod.string(),
+  "fileType": zod.string(),
+  "base64Data": zod.string()
+})
+
+export const UploadUserAvatarResponse = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "email": zod.string(),
+  "role": zod.string(),
+  "allowedPages": zod.array(zod.string()).nullish(),
+  "points": zod.number(),
+  "streak": zod.number().optional(),
+  "avatarUrl": zod.string().nullish(),
+  "cv": zod.record(zod.string(), zod.unknown()).nullish(),
+  "contactInfo": zod.record(zod.string(), zod.unknown()).nullish(),
   "createdAt": zod.string()
 })
 
@@ -753,6 +1081,8 @@ export const GetAdminStatsResponse = zod.object({
   "screeningScore": zod.number().nullish(),
   "screeningPassed": zod.boolean().nullish(),
   "userId": zod.number().nullish(),
+  "cvSnapshot": zod.record(zod.string(), zod.unknown()).nullish(),
+  "contactInfoSnapshot": zod.record(zod.string(), zod.unknown()).nullish(),
   "createdAt": zod.string()
 }))
 })
@@ -793,6 +1123,266 @@ export const CreateMockInterviewSessionResponse = zod.object({
   "track": zod.string(),
   "title": zod.string().optional(),
   "createdAt": zod.string()
+})
+
+
+export const ListConsultationsResponseItem = zod.object({
+  "id": zod.number(),
+  "userId": zod.number(),
+  "userName": zod.string().optional(),
+  "userEmail": zod.string().optional(),
+  "category": zod.string(),
+  "title": zod.string(),
+  "message": zod.string(),
+  "status": zod.string(),
+  "assignedTo": zod.number().nullish(),
+  "assignedName": zod.string().optional(),
+  "response": zod.string().optional(),
+  "repliedBy": zod.number().nullish(),
+  "repliedName": zod.string().optional(),
+  "repliedAt": zod.string().optional(),
+  "createdAt": zod.string()
+})
+export const ListConsultationsResponse = zod.array(ListConsultationsResponseItem)
+
+
+export const CreateConsultationBody = zod.object({
+  "category": zod.string(),
+  "title": zod.string(),
+  "message": zod.string(),
+  "assignedTo": zod.number().nullish()
+})
+
+export const CreateConsultationResponse = zod.object({
+  "id": zod.number(),
+  "userId": zod.number(),
+  "userName": zod.string().optional(),
+  "userEmail": zod.string().optional(),
+  "category": zod.string(),
+  "title": zod.string(),
+  "message": zod.string(),
+  "status": zod.string(),
+  "assignedTo": zod.number().nullish(),
+  "assignedName": zod.string().optional(),
+  "response": zod.string().optional(),
+  "repliedBy": zod.number().nullish(),
+  "repliedName": zod.string().optional(),
+  "repliedAt": zod.string().optional(),
+  "createdAt": zod.string()
+})
+
+
+export const ReplyToConsultationParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const ReplyToConsultationBody = zod.object({
+  "response": zod.string()
+})
+
+export const ReplyToConsultationResponse = zod.object({
+  "id": zod.number(),
+  "userId": zod.number(),
+  "userName": zod.string().optional(),
+  "userEmail": zod.string().optional(),
+  "category": zod.string(),
+  "title": zod.string(),
+  "message": zod.string(),
+  "status": zod.string(),
+  "assignedTo": zod.number().nullish(),
+  "assignedName": zod.string().optional(),
+  "response": zod.string().optional(),
+  "repliedBy": zod.number().nullish(),
+  "repliedName": zod.string().optional(),
+  "repliedAt": zod.string().optional(),
+  "createdAt": zod.string()
+})
+
+
+export const CloseConsultationParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const CloseConsultationResponse = zod.object({
+  "id": zod.number(),
+  "userId": zod.number(),
+  "userName": zod.string().optional(),
+  "userEmail": zod.string().optional(),
+  "category": zod.string(),
+  "title": zod.string(),
+  "message": zod.string(),
+  "status": zod.string(),
+  "assignedTo": zod.number().nullish(),
+  "assignedName": zod.string().optional(),
+  "response": zod.string().optional(),
+  "repliedBy": zod.number().nullish(),
+  "repliedName": zod.string().optional(),
+  "repliedAt": zod.string().optional(),
+  "createdAt": zod.string()
+})
+
+
+/**
+ * @summary Get user wallet details and transactions
+ */
+export const GetWalletResponse = zod.object({
+  "points": zod.number(),
+  "deposits": zod.array(zod.object({
+  "id": zod.number(),
+  "userId": zod.number(),
+  "userName": zod.string(),
+  "userEmail": zod.string(),
+  "pointsAmount": zod.number(),
+  "cashAmount": zod.string(),
+  "status": zod.string(),
+  "transferScreenshot": zod.string(),
+  "notes": zod.string().optional(),
+  "adminNotes": zod.string().optional(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})),
+  "transactions": zod.array(zod.object({
+  "id": zod.number(),
+  "senderId": zod.number().nullish(),
+  "senderName": zod.string().optional(),
+  "receiverId": zod.number(),
+  "receiverName": zod.string(),
+  "amount": zod.number(),
+  "type": zod.string(),
+  "notes": zod.string().optional(),
+  "createdAt": zod.string()
+}))
+})
+
+
+/**
+ * @summary Submit a bank transfer deposit proof to admin
+ */
+export const CreateDepositRequestBody = zod.object({
+  "pointsAmount": zod.number(),
+  "cashAmount": zod.string(),
+  "transferScreenshot": zod.string(),
+  "notes": zod.string().optional()
+})
+
+export const CreateDepositRequestResponse = zod.object({
+  "id": zod.number(),
+  "userId": zod.number(),
+  "userName": zod.string(),
+  "userEmail": zod.string(),
+  "pointsAmount": zod.number(),
+  "cashAmount": zod.string(),
+  "status": zod.string(),
+  "transferScreenshot": zod.string(),
+  "notes": zod.string().optional(),
+  "adminNotes": zod.string().optional(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+
+
+/**
+ * @summary Verify recipient email and check balance before transfer
+ */
+export const VerifyTransferBody = zod.object({
+  "email": zod.string(),
+  "amount": zod.number()
+})
+
+export const VerifyTransferResponse = zod.object({
+  "verified": zod.boolean(),
+  "recipientName": zod.string(),
+  "recipientEmail": zod.string(),
+  "amount": zod.number()
+})
+
+
+/**
+ * @summary Confirm and execute the points transfer
+ */
+export const ConfirmTransferBody = zod.object({
+  "email": zod.string(),
+  "amount": zod.number()
+})
+
+export const ConfirmTransferResponse = zod.object({
+  "success": zod.boolean(),
+  "message": zod.string(),
+  "newBalance": zod.number()
+})
+
+
+/**
+ * @summary List all deposit requests for admin approval
+ */
+export const ListDepositRequestsResponseItem = zod.object({
+  "id": zod.number(),
+  "userId": zod.number(),
+  "userName": zod.string(),
+  "userEmail": zod.string(),
+  "pointsAmount": zod.number(),
+  "cashAmount": zod.string(),
+  "status": zod.string(),
+  "transferScreenshot": zod.string(),
+  "notes": zod.string().optional(),
+  "adminNotes": zod.string().optional(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+export const ListDepositRequestsResponse = zod.array(ListDepositRequestsResponseItem)
+
+
+/**
+ * @summary Approve a deposit request and credit points
+ */
+export const ApproveDepositRequestParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const ApproveDepositRequestBody = zod.object({
+  "adminNotes": zod.string().optional()
+})
+
+export const ApproveDepositRequestResponse = zod.object({
+  "id": zod.number(),
+  "userId": zod.number(),
+  "userName": zod.string(),
+  "userEmail": zod.string(),
+  "pointsAmount": zod.number(),
+  "cashAmount": zod.string(),
+  "status": zod.string(),
+  "transferScreenshot": zod.string(),
+  "notes": zod.string().optional(),
+  "adminNotes": zod.string().optional(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+
+
+/**
+ * @summary Reject a deposit request
+ */
+export const RejectDepositRequestParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const RejectDepositRequestBody = zod.object({
+  "adminNotes": zod.string().optional()
+})
+
+export const RejectDepositRequestResponse = zod.object({
+  "id": zod.number(),
+  "userId": zod.number(),
+  "userName": zod.string(),
+  "userEmail": zod.string(),
+  "pointsAmount": zod.number(),
+  "cashAmount": zod.string(),
+  "status": zod.string(),
+  "transferScreenshot": zod.string(),
+  "notes": zod.string().optional(),
+  "adminNotes": zod.string().optional(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
 })
 
 

@@ -10,5 +10,6 @@ export type ListJobsParams = {
 type?: string;
 level?: string;
 search?: string;
+companyId?: number;
 remote?: string;
 };

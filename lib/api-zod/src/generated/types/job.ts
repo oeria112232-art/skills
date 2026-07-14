@@ -10,6 +10,8 @@ export interface Job {
   id: number;
   title: string;
   company: string;
+  /** @nullable */
+  companyId?: number | null;
   description: string;
   type: string;
   level: string;
@@ -23,5 +25,7 @@ export interface Job {
   status: string;
   passScore: number;
   applicationCount?: number;
+  /** @nullable */
+  companyLogo?: string | null;
   createdAt: string;
 }

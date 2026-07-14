@@ -18,4 +18,17 @@ export interface WorkshopUpdate {
   status?: string;
   capacity?: number;
   passScore?: number;
+  /** @nullable */
+  timeLimitMinutes?: number | null;
+  certSignTitle?: string;
+  certSignName?: string;
+  certEkey?: string;
+  antiCheatEnabled?: number;
+  maxFocusWarnings?: number;
+  shuffleQuestions?: number;
+  hasExam?: number;
+  hasCertificate?: number;
+  /** @nullable */
+  certTemplateUrl?: string | null;
+  certTemplateType?: string;
 }

@@ -20,5 +20,18 @@ export interface Workshop {
   capacity: number;
   enrolledCount: number;
   passScore: number;
+  /** @nullable */
+  timeLimitMinutes?: number | null;
+  certSignTitle?: string;
+  certSignName?: string;
+  certEkey?: string;
+  antiCheatEnabled?: number;
+  maxFocusWarnings?: number;
+  shuffleQuestions?: number;
+  hasExam?: number;
+  hasCertificate?: number;
   createdAt: string;
+  /** @nullable */
+  certTemplateUrl?: string | null;
+  certTemplateType?: string;
 }

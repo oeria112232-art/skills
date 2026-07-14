@@ -21,15 +21,22 @@ export interface LoginInput {
   password: string;
 }
 
+export type UserCv = { [key: string]: unknown } | null;
+
+export type UserContactInfo = { [key: string]: unknown } | null;
+
 export interface User {
   id: number;
   name: string;
   email: string;
   role: string;
+  allowedPages?: string[] | null;
   points: number;
   streak?: number;
   /** @nullable */
   avatarUrl?: string | null;
+  cv?: UserCv;
+  contactInfo?: UserContactInfo;
   createdAt: string;
 }
 
@@ -38,17 +45,26 @@ export interface AuthResponse {
   user: User;
 }
 
+export type UserUpdateCv = { [key: string]: unknown } | null;
+
+export type UserUpdateContactInfo = { [key: string]: unknown } | null;
+
 export interface UserUpdate {
   name?: string;
   role?: string;
+  allowedPages?: string[] | null;
   /** @nullable */
   avatarUrl?: string | null;
+  cv?: UserUpdateCv;
+  contactInfo?: UserUpdateContactInfo;
 }
 
 export interface Job {
   id: number;
   title: string;
   company: string;
+  /** @nullable */
+  companyId?: number | null;
   description: string;
   type: string;
   level: string;
@@ -62,12 +78,16 @@ export interface Job {
   status: string;
   passScore: number;
   applicationCount?: number;
+  /** @nullable */
+  companyLogo?: string | null;
   createdAt: string;
 }
 
 export interface JobInput {
   title: string;
   company: string;
+  /** @nullable */
+  companyId?: number | null;
   description: string;
   type: string;
   level: string;
@@ -83,6 +103,8 @@ export interface JobInput {
 export interface JobUpdate {
   title?: string;
   company?: string;
+  /** @nullable */
+  companyId?: number | null;
   description?: string;
   type?: string;
   level?: string;
@@ -120,6 +142,10 @@ export interface ScreeningQuestionInput {
   order?: number;
 }
 
+export type ApplicationCvSnapshot = { [key: string]: unknown } | null;
+
+export type ApplicationContactInfoSnapshot = { [key: string]: unknown } | null;
+
 export interface Application {
   id: number;
   jobId: number;
@@ -138,6 +164,8 @@ export interface Application {
   screeningPassed?: boolean | null;
   /** @nullable */
   userId?: number | null;
+  cvSnapshot?: ApplicationCvSnapshot;
+  contactInfoSnapshot?: ApplicationContactInfoSnapshot;
   createdAt: string;
 }
 
@@ -182,7 +210,21 @@ export interface Workshop {
   capacity: number;
   enrolledCount: number;
   passScore: number;
+  /** @nullable */
+  timeLimitMinutes?: number | null;
+  certSignTitle?: string;
+  certSignName?: string;
+  certEkey?: string;
+  antiCheatEnabled?: number;
+  maxFocusWarnings?: number;
+  shuffleQuestions?: number;
+  hasExam?: number;
+  hasCertificate?: number;
   createdAt: string;
+  /** @nullable */
+  certTemplateUrl?: string | null;
+  certTemplateType?: string;
+  price?: number;
 }
 
 export interface WorkshopInput {
@@ -196,6 +238,20 @@ export interface WorkshopInput {
   imageUrl?: string | null;
   capacity: number;
   passScore: number;
+  /** @nullable */
+  timeLimitMinutes?: number | null;
+  certSignTitle?: string;
+  certSignName?: string;
+  certEkey?: string;
+  antiCheatEnabled?: number;
+  maxFocusWarnings?: number;
+  shuffleQuestions?: number;
+  hasExam?: number;
+  hasCertificate?: number;
+  /** @nullable */
+  certTemplateUrl?: string | null;
+  certTemplateType?: string;
+  price?: number;
 }
 
 export interface WorkshopUpdate {
@@ -210,12 +266,44 @@ export interface WorkshopUpdate {
   status?: string;
   capacity?: number;
   passScore?: number;
+  /** @nullable */
+  timeLimitMinutes?: number | null;
+  certSignTitle?: string;
+  certSignName?: string;
+  certEkey?: string;
+  antiCheatEnabled?: number;
+  maxFocusWarnings?: number;
+  shuffleQuestions?: number;
+  hasExam?: number;
+  hasCertificate?: number;
+  /** @nullable */
+  certTemplateUrl?: string | null;
+  certTemplateType?: string;
+  price?: number;
+}
+
+export interface WorkshopTemplateUpload {
+  fileName: string;
+  fileType: string;
+  base64Data: string;
+}
+
+export interface WorkshopImageUpload {
+  fileName: string;
+  fileType: string;
+  base64Data: string;
+}
+
+export interface UserAvatarUpload {
+  fileName: string;
+  fileType: string;
+  base64Data: string;
 }
 
 export interface EnrollInput {
-  userId: number;
-  userName: string;
-  userEmail: string;
+  userId?: number;
+  userName?: string;
+  userEmail?: string;
 }
 
 export interface Enrollment {
@@ -233,6 +321,8 @@ export interface ExamQuestion {
   question: string;
   options: string[];
   order: number;
+  points?: number;
+  type?: string;
 }
 
 export interface Exam {
@@ -249,11 +339,15 @@ export interface ExamQuestionInput {
   options: string[];
   correctIndex: number;
   order?: number;
+  points?: number;
+  type?: string;
 }
 
 export interface ExamSubmission {
   userId: number;
-  answers: number[];
+  answers: string[];
+  focusWarningsCount?: number;
+  antiCheatViolated?: boolean;
 }
 
 export interface ExamResult {
@@ -266,15 +360,41 @@ export interface ExamResult {
   message?: string;
 }
 
+export type CertificateType = typeof CertificateType[keyof typeof CertificateType];
+
+
+export const CertificateType = {
+  track: 'track',
+  workshop: 'workshop',
+  participation: 'participation',
+} as const;
+
+export type CertificateStatus = typeof CertificateStatus[keyof typeof CertificateStatus];
+
+
+export const CertificateStatus = {
+  locked: 'locked',
+  issued: 'issued',
+} as const;
+
 export interface Certificate {
   id: number;
   userId: number;
   userName: string;
-  workshopId?: number;
-  workshopTitle: string;
+  workshopId?: number | null;
+  workshopTitle?: string | null;
+  trackId?: number | null;
+  trackTitle?: string | null;
+  type: CertificateType;
   issuedAt: string;
   score: number;
-  certificateNumber?: string;
+  certificateNumber: string;
+  verificationCode: string;
+  level: number;
+  cost: number;
+  status: CertificateStatus;
+  signatureHash?: string | null;
+  isPaid: number;
 }
 
 export interface Track {
@@ -289,6 +409,13 @@ export interface Track {
   moduleCount: number;
   estimatedHours: number;
   enrolledCount?: number;
+  /** @nullable */
+  instructorId?: number | null;
+  /** @nullable */
+  instructorName?: string | null;
+  /** @nullable */
+  instructorAvatar?: string | null;
+  price?: number;
 }
 
 export interface TrackModule {
@@ -315,7 +442,14 @@ export interface TrackDetail {
   moduleCount: number;
   estimatedHours: number;
   enrolledCount?: number;
+  /** @nullable */
+  instructorId?: number | null;
+  /** @nullable */
+  instructorName?: string | null;
+  /** @nullable */
+  instructorAvatar?: string | null;
   modules: TrackModule[];
+  price?: number;
 }
 
 export interface TrackProgress {
@@ -325,6 +459,7 @@ export interface TrackProgress {
   totalModules: number;
   percentComplete: number;
   points: number;
+  isEnrolled: boolean;
 }
 
 export interface ProgressUpdate {
@@ -392,20 +527,129 @@ export interface MockInterviewResponse {
   score?: number | null;
 }
 
+export interface Consultation {
+  id: number;
+  userId: number;
+  userName?: string;
+  userEmail?: string;
+  category: string;
+  title: string;
+  message: string;
+  status: string;
+  assignedTo?: number | null;
+  assignedName?: string;
+  response?: string;
+  repliedBy?: number | null;
+  repliedName?: string;
+  repliedAt?: string;
+  createdAt: string;
+}
+
+export interface CreateConsultationInput {
+  category: string;
+  title: string;
+  message: string;
+  assignedTo?: number | null;
+}
+
+export interface ReplyConsultationInput {
+  response: string;
+}
+
+export interface DepositRequest {
+  id: number;
+  userId: number;
+  userName: string;
+  userEmail: string;
+  pointsAmount: number;
+  cashAmount: string;
+  status: string;
+  transferScreenshot: string;
+  notes?: string;
+  adminNotes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PointsTransaction {
+  id: number;
+  senderId?: number | null;
+  senderName?: string;
+  receiverId: number;
+  receiverName: string;
+  amount: number;
+  type: string;
+  notes?: string;
+  createdAt: string;
+}
+
+export interface WalletInfo {
+  points: number;
+  deposits: DepositRequest[];
+  transactions: PointsTransaction[];
+}
+
+export interface CreateDepositRequestInput {
+  pointsAmount: number;
+  cashAmount: string;
+  transferScreenshot: string;
+  notes?: string;
+}
+
+export interface VerifyTransferInput {
+  email: string;
+  amount: number;
+}
+
+export interface VerifyTransferOutput {
+  verified: boolean;
+  recipientName: string;
+  recipientEmail: string;
+  amount: number;
+}
+
+export interface ConfirmTransferInput {
+  email: string;
+  amount: number;
+}
+
+export interface ConfirmTransferOutput {
+  success: boolean;
+  message: string;
+  newBalance: number;
+}
+
+export interface ApproveDepositInput {
+  adminNotes?: string;
+}
+
+export interface RejectDepositInput {
+  adminNotes?: string;
+}
+
 export type ListJobsParams = {
 type?: string;
 level?: string;
 search?: string;
+companyId?: number;
 remote?: string;
 };
 
 export type ListApplicationsParams = {
 jobId?: number;
 status?: string;
+userId?: number;
+companyId?: number;
 };
 
 export type ListWorkshopsParams = {
 status?: string;
+};
+
+export type VerifyCertificate200 = {
+  verified?: boolean;
+  error?: string | null;
+  certificate?: Certificate;
 };
 
 export type GetLeaderboardParams = {

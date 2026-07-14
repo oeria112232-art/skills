@@ -9,6 +9,8 @@
 export interface JobInput {
   title: string;
   company: string;
+  /** @nullable */
+  companyId?: number | null;
   description: string;
   type: string;
   level: string;

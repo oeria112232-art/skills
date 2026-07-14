@@ -8,5 +8,7 @@
 
 export interface ExamSubmission {
   userId: number;
-  answers: number[];
+  answers: string[];
+  focusWarningsCount?: number;
+  antiCheatViolated?: boolean;
 }

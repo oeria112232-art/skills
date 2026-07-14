@@ -364,6 +364,13 @@ export async function customFetch<T = unknown>(
 
   if (!response.ok) {
     const errorData = await parseErrorBody(response, method);
+    if (response.status === 401 && typeof window !== "undefined") {
+      localStorage.removeItem("mharat-token");
+      localStorage.removeItem("mharat-user");
+      if (!window.location.pathname.includes("/auth")) {
+        window.location.href = "/auth";
+      }
+    }
     throw new ApiError(response, errorData, requestInfo);
   }
 

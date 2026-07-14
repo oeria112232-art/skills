@@ -9,6 +9,8 @@
 export interface JobUpdate {
   title?: string;
   company?: string;
+  /** @nullable */
+  companyId?: number | null;
   description?: string;
   type?: string;
   level?: string;

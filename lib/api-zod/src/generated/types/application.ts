@@ -5,6 +5,8 @@
  * Educational & Career Development Platform API
  * OpenAPI spec version: 0.1.0
  */
+import type { ApplicationContactInfoSnapshot } from './applicationContactInfoSnapshot';
+import type { ApplicationCvSnapshot } from './applicationCvSnapshot';
 
 export interface Application {
   id: number;
@@ -24,5 +26,7 @@ export interface Application {
   screeningPassed?: boolean | null;
   /** @nullable */
   userId?: number | null;
+  cvSnapshot?: ApplicationCvSnapshot;
+  contactInfoSnapshot?: ApplicationContactInfoSnapshot;
   createdAt: string;
 }

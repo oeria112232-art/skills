@@ -11,4 +11,6 @@ export interface ExamQuestionInput {
   options: string[];
   correctIndex: number;
   order?: number;
+  points?: number;
+  type?: string;
 }

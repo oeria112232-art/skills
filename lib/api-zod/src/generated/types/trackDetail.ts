@@ -19,5 +19,11 @@ export interface TrackDetail {
   moduleCount: number;
   estimatedHours: number;
   enrolledCount?: number;
+  /** @nullable */
+  instructorId?: number | null;
+  /** @nullable */
+  instructorName?: string | null;
+  /** @nullable */
+  instructorAvatar?: string | null;
   modules: TrackModule[];
 }

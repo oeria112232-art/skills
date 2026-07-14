@@ -13,6 +13,7 @@ import { Switch } from "@/components/ui/switch";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
+import { useLanguage } from "@/components/layout/LanguageContext";
 
 type JobForm = {
   title: string; company: string; description: string;
@@ -23,6 +24,8 @@ type JobForm = {
 const defaultForm: JobForm = { title: "", company: "", description: "", type: "full-time", level: "mid", location: "", isRemote: false, salaryMin: "", salaryMax: "", passScore: "70" };
 
 export default function AdminJobsPage() {
+  const { language } = useLanguage();
+  const isAr = language === "ar";
   const { data: jobs, isLoading } = useListJobs();
   const createJob = useCreateJob();
   const updateJob = useUpdateJob();
@@ -34,7 +37,7 @@ export default function AdminJobsPage() {
   const [editing, setEditing] = useState<number | null>(null);
   const [form, setForm] = useState<JobForm>(defaultForm);
 
-  const handleOpen = (job?: typeof jobs extends (infer T)[] ? T : never) => {
+  const handleOpen = (job?: Exclude<typeof jobs, undefined> extends (infer T)[] ? T : never) => {
     if (job) {
       setEditing(job.id);
       setForm({ title: job.title, company: job.company, description: job.description, type: job.type, level: job.level, location: job.location || "", isRemote: job.isRemote, salaryMin: job.salaryMin?.toString() || "", salaryMax: job.salaryMax?.toString() || "", passScore: job.passScore.toString() });
@@ -75,41 +78,55 @@ export default function AdminJobsPage() {
     <AppLayout>
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold mb-1" data-testid="heading-admin-jobs">Manage Jobs</h1>
-          <p className="text-muted-foreground">Create and manage job postings</p>
+          <h1 className="text-2xl font-bold mb-1" data-testid="heading-admin-jobs">
+            {isAr ? "إدارة الوظائف" : "Manage Jobs"}
+          </h1>
+          <p className="text-muted-foreground">
+            {isAr ? "إنشاء وإدارة إعلانات الوظائف" : "Create and manage job postings"}
+          </p>
         </div>
         <Button onClick={() => handleOpen()} className="gap-2" data-testid="button-add-job">
-          <Plus className="w-4 h-4" /> Add Job
+          <Plus className="w-4 h-4" /> {isAr ? "إضافة وظيفة" : "Add Job"}
         </Button>
       </div>
 
       {isLoading ? (
         <div className="space-y-3">{[1, 2, 3].map(i => <Skeleton key={i} className="h-20 rounded-xl" />)}</div>
       ) : (
-        <div className="rounded-xl border border-border overflow-hidden">
-          <table className="w-full">
+        <div className="rounded-xl border border-border overflow-x-auto">
+          <table className="w-full min-w-[650px]">
             <thead>
               <tr className="bg-muted/50 text-left">
-                <th className="px-4 py-3 text-xs font-medium text-muted-foreground uppercase">Title</th>
-                <th className="px-4 py-3 text-xs font-medium text-muted-foreground uppercase hidden sm:table-cell">Company</th>
-                <th className="px-4 py-3 text-xs font-medium text-muted-foreground uppercase hidden md:table-cell">Type</th>
-                <th className="px-4 py-3 text-xs font-medium text-muted-foreground uppercase">Status</th>
-                <th className="px-4 py-3 text-xs font-medium text-muted-foreground uppercase text-right">Actions</th>
+                <th className="px-4 py-3 text-xs font-medium text-muted-foreground uppercase">{isAr ? "العنوان" : "Title"}</th>
+                <th className="px-4 py-3 text-xs font-medium text-muted-foreground uppercase hidden sm:table-cell">{isAr ? "الشركة" : "Company"}</th>
+                <th className="px-4 py-3 text-xs font-medium text-muted-foreground uppercase hidden md:table-cell">{isAr ? "النوع" : "Type"}</th>
+                <th className="px-4 py-3 text-xs font-medium text-muted-foreground uppercase">{isAr ? "الحالة" : "Status"}</th>
+                <th className="px-4 py-3 text-xs font-medium text-muted-foreground uppercase text-right">{isAr ? "الإجراءات" : "Actions"}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
               {!jobs || jobs.length === 0 ? (
-                <tr><td colSpan={5} className="text-center py-12 text-muted-foreground"><Briefcase className="w-8 h-8 mx-auto mb-2 opacity-20" /><p>No jobs yet</p></td></tr>
+                <tr><td colSpan={5} className="text-center py-12 text-muted-foreground"><Briefcase className="w-8 h-8 mx-auto mb-2 opacity-20" /><p>{isAr ? "لا توجد وظائف بعد" : "No jobs yet"}</p></td></tr>
               ) : jobs.map(job => (
                 <tr key={job.id} className="hover:bg-muted/30 transition-colors" data-testid={`admin-job-row-${job.id}`}>
                   <td className="px-4 py-3">
                     <p className="font-medium text-sm">{job.title}</p>
-                    <p className="text-xs text-muted-foreground">{job.applicationCount} applicants</p>
+                    <p className="text-xs text-muted-foreground">{job.applicationCount} {isAr ? "متقدمين" : "applicants"}</p>
                   </td>
                   <td className="px-4 py-3 text-sm hidden sm:table-cell">{job.company}</td>
-                  <td className="px-4 py-3 text-sm hidden md:table-cell capitalize">{job.type}</td>
+                  <td className="px-4 py-3 text-sm hidden md:table-cell capitalize">
+                    {isAr 
+                      ? (job.type === "full-time" ? "دوام كامل" 
+                         : job.type === "part-time" ? "دوام جزئي" 
+                         : job.type === "contract" ? "عقد" 
+                         : "تدريب")
+                      : job.type
+                    }
+                  </td>
                   <td className="px-4 py-3">
-                    <Badge variant={job.status === "open" ? "default" : "secondary"}>{job.status}</Badge>
+                    <Badge variant={job.status === "open" ? "default" : "secondary"}>
+                      {isAr ? (job.status === "open" ? "مفتوح" : "مغلق") : job.status}
+                    </Badge>
                   </td>
                   <td className="px-4 py-3 text-right">
                     <div className="flex items-center justify-end gap-2">
@@ -130,48 +147,78 @@ export default function AdminJobsPage() {
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>{editing ? "Edit Job" : "New Job Posting"}</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>
+              {editing 
+                ? (isAr ? "تعديل وظيفة" : "Edit Job") 
+                : (isAr ? "إعلان وظيفة جديد" : "New Job Posting")
+              }
+            </DialogTitle>
+          </DialogHeader>
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
-              <div className="col-span-2"><Label>Job Title</Label><Input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="e.g. Senior Developer" data-testid="input-job-title" /></div>
-              <div className="col-span-2"><Label>Company</Label><Input value={form.company} onChange={e => setForm(f => ({ ...f, company: e.target.value }))} placeholder="Company name" data-testid="input-job-company" /></div>
+              <div className="col-span-2">
+                <Label>{isAr ? "المسمى الوظيفي" : "Job Title"}</Label>
+                <Input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder={isAr ? "مثال: مطور أول" : "e.g. Senior Developer"} data-testid="input-job-title" />
+              </div>
+              <div className="col-span-2">
+                <Label>{isAr ? "الشركة" : "Company"}</Label>
+                <Input value={form.company} onChange={e => setForm(f => ({ ...f, company: e.target.value }))} placeholder={isAr ? "اسم الشركة" : "Company name"} data-testid="input-job-company" />
+              </div>
               <div>
-                <Label>Type</Label>
+                <Label>{isAr ? "النوع" : "Type"}</Label>
                 <Select value={form.type} onValueChange={v => setForm(f => ({ ...f, type: v }))}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="full-time">Full-time</SelectItem>
-                    <SelectItem value="part-time">Part-time</SelectItem>
-                    <SelectItem value="contract">Contract</SelectItem>
-                    <SelectItem value="internship">Internship</SelectItem>
+                    <SelectItem value="full-time">{isAr ? "دوام كامل" : "Full-time"}</SelectItem>
+                    <SelectItem value="part-time">{isAr ? "دوام جزئي" : "Part-time"}</SelectItem>
+                    <SelectItem value="contract">{isAr ? "عقد" : "Contract"}</SelectItem>
+                    <SelectItem value="internship">{isAr ? "تدريب" : "Internship"}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div>
-                <Label>Level</Label>
+                <Label>{isAr ? "المستوى" : "Level"}</Label>
                 <Select value={form.level} onValueChange={v => setForm(f => ({ ...f, level: v }))}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="junior">Junior</SelectItem>
-                    <SelectItem value="mid">Mid</SelectItem>
-                    <SelectItem value="senior">Senior</SelectItem>
+                    <SelectItem value="junior">{isAr ? "مبتدئ" : "Junior"}</SelectItem>
+                    <SelectItem value="mid">{isAr ? "متوسط" : "Mid"}</SelectItem>
+                    <SelectItem value="senior">{isAr ? "متقدم" : "Senior"}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-              <div><Label>Location</Label><Input value={form.location} onChange={e => setForm(f => ({ ...f, location: e.target.value }))} placeholder="e.g. Cairo, Egypt" /></div>
-              <div><Label>Pass Score (%)</Label><Input type="number" value={form.passScore} onChange={e => setForm(f => ({ ...f, passScore: e.target.value }))} data-testid="input-pass-score" /></div>
-              <div><Label>Salary Min ($)</Label><Input type="number" value={form.salaryMin} onChange={e => setForm(f => ({ ...f, salaryMin: e.target.value }))} /></div>
-              <div><Label>Salary Max ($)</Label><Input type="number" value={form.salaryMax} onChange={e => setForm(f => ({ ...f, salaryMax: e.target.value }))} /></div>
+              <div>
+                <Label>{isAr ? "الموقع" : "Location"}</Label>
+                <Input value={form.location} onChange={e => setForm(f => ({ ...f, location: e.target.value }))} placeholder={isAr ? "مثال: بغداد، العراق" : "e.g. Baghdad, Iraq"} />
+              </div>
+              <div>
+                <Label>{isAr ? "علامة القبول (%)" : "Pass Score (%)"}</Label>
+                <Input type="number" value={form.passScore} onChange={e => setForm(f => ({ ...f, passScore: e.target.value }))} data-testid="input-pass-score" />
+              </div>
+              <div>
+                <Label>{isAr ? "الحد الأدنى للراتب (د.ع / IQD)" : "Salary Min (د.ع / IQD)"}</Label>
+                <Input type="number" value={form.salaryMin} onChange={e => setForm(f => ({ ...f, salaryMin: e.target.value }))} />
+              </div>
+              <div>
+                <Label>{isAr ? "الحد الأقصى للراتب (د.ع / IQD)" : "Salary Max (د.ع / IQD)"}</Label>
+                <Input type="number" value={form.salaryMax} onChange={e => setForm(f => ({ ...f, salaryMax: e.target.value }))} />
+              </div>
               <div className="col-span-2 flex items-center gap-3">
                 <Switch checked={form.isRemote} onCheckedChange={v => setForm(f => ({ ...f, isRemote: v }))} id="remote-toggle" />
-                <Label htmlFor="remote-toggle">Remote position</Label>
+                <Label htmlFor="remote-toggle">{isAr ? "موقع عمل عن بعد" : "Remote position"}</Label>
               </div>
-              <div className="col-span-2"><Label>Description</Label><Textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} rows={4} placeholder="Job description..." data-testid="textarea-job-description" /></div>
+              <div className="col-span-2">
+                <Label>{isAr ? "الوصف" : "Description"}</Label>
+                <Textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} rows={4} placeholder={isAr ? "وصف الوظيفة..." : "Job description..."} data-testid="textarea-job-description" />
+              </div>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-            <Button onClick={handleSave} disabled={!form.title || !form.company || createJob.isPending || updateJob.isPending} data-testid="button-save-job">Save</Button>
+            <Button variant="outline" onClick={() => setOpen(false)}>{isAr ? "إلغاء" : "Cancel"}</Button>
+            <Button onClick={handleSave} disabled={!form.title || !form.company || createJob.isPending || updateJob.isPending} data-testid="button-save-job">
+              {isAr ? "حفظ" : "Save"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

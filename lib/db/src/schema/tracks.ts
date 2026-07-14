@@ -14,6 +14,11 @@ export const tracksTable = pgTable("tracks", {
   moduleCount: integer("module_count").notNull().default(0),
   estimatedHours: integer("estimated_hours").notNull().default(0),
   enrolledCount: integer("enrolled_count").notNull().default(0),
+  price: integer("price").notNull().default(0), // Points cost to enroll (0 = free)
+  instructorId: integer("instructor_id"),
+  certType: text("cert_type").notNull().default("track"), // "track" or "participation"
+  certLevel: integer("cert_level").notNull().default(3), // 1=Participation, 2=Professional, 3=Expert, 4=Master
+  certCost: integer("cert_cost").notNull().default(250), // Points to claim the certificate
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

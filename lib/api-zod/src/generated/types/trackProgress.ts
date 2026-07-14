@@ -13,4 +13,5 @@ export interface TrackProgress {
   totalModules: number;
   percentComplete: number;
   points: number;
+  isEnrolled: boolean;
 }

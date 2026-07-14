@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { db, mockInterviewSessionsTable, mockInterviewMessagesTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
+import { requireAuth, requireRole, type AuthenticatedRequest } from "../middlewares/auth";
 
 const router = Router();
 
@@ -40,29 +41,51 @@ function getFeedback(message: string) {
   return "Well-structured answer. You demonstrated clear communication skills. Continue to provide specific examples to strengthen your responses.";
 }
 
-router.get("/mock-interview/sessions", async (_req, res): Promise<void> => {
-  const sessions = await db.select().from(mockInterviewSessionsTable).orderBy(mockInterviewSessionsTable.createdAt);
+router.get("/mock-interview/sessions", requireAuth, async (req: AuthenticatedRequest, res): Promise<void> => {
+  const user = req.user!;
+  let sessions;
+  if (user.role === "admin" || user.role === "instructor") {
+    sessions = await db.select().from(mockInterviewSessionsTable).orderBy(mockInterviewSessionsTable.createdAt);
+  } else {
+    sessions = await db.select().from(mockInterviewSessionsTable).where(eq(mockInterviewSessionsTable.userId, user.id)).orderBy(mockInterviewSessionsTable.createdAt);
+  }
   res.json(sessions.map(s => ({ ...s, createdAt: s.createdAt.toISOString() })));
 });
 
-router.post("/mock-interview/sessions", async (req, res): Promise<void> => {
-  const { userId, track, title } = req.body;
-  if (!userId || !track) {
-    res.status(400).json({ error: "userId and track required" });
+router.post("/mock-interview/sessions", requireAuth, async (req: AuthenticatedRequest, res): Promise<void> => {
+  const { track, title } = req.body;
+  if (!track) {
+    res.status(400).json({ error: "track required" });
     return;
   }
+  const user = req.user!;
   const [session] = await db.insert(mockInterviewSessionsTable).values({
-    userId: parseInt(userId, 10),
+    userId: user.id,
     track,
     title: title || `${track} Mock Interview`,
   }).returning();
   res.status(201).json({ ...session, createdAt: session.createdAt.toISOString() });
 });
 
-router.post("/mock-interview/message", async (req, res): Promise<void> => {
+router.post("/mock-interview/message", requireAuth, async (req: AuthenticatedRequest, res): Promise<void> => {
   const { sessionId, message, role } = req.body;
   if (!sessionId || !message || !role) {
     res.status(400).json({ error: "sessionId, message and role required" });
+    return;
+  }
+
+  const user = req.user!;
+  // Get session to check authorization
+  const [session] = await db.select().from(mockInterviewSessionsTable)
+    .where(eq(mockInterviewSessionsTable.id, parseInt(sessionId, 10)));
+
+  if (!session) {
+    res.status(404).json({ error: "Session not found" });
+    return;
+  }
+
+  if (user.role !== "admin" && user.role !== "instructor" && session.userId !== user.id) {
+    res.status(403).json({ error: "Forbidden" });
     return;
   }
 
@@ -72,10 +95,6 @@ router.post("/mock-interview/message", async (req, res): Promise<void> => {
     role,
     message,
   });
-
-  // Get session for track
-  const [session] = await db.select().from(mockInterviewSessionsTable)
-    .where(eq(mockInterviewSessionsTable.id, parseInt(sessionId, 10)));
 
   // Count messages for response index
   const messages = await db.select().from(mockInterviewMessagesTable)

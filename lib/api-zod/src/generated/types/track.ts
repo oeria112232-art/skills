@@ -18,4 +18,10 @@ export interface Track {
   moduleCount: number;
   estimatedHours: number;
   enrolledCount?: number;
+  /** @nullable */
+  instructorId?: number | null;
+  /** @nullable */
+  instructorName?: string | null;
+  /** @nullable */
+  instructorAvatar?: string | null;
 }

@@ -30,6 +30,7 @@ async function buildAll() {
     external: [
       "*.node",
       "sharp",
+      "helmet",
       "better-sqlite3",
       "sqlite3",
       "canvas",
@@ -61,6 +62,8 @@ async function buildAll() {
       "@grpc/*",
       "@swc/*",
       "@aws-sdk/*",
+      "@aws-sdk/client-s3",
+      "@aws-sdk/s3-request-presigner",
       "@azure/*",
       "@opentelemetry/*",
       "@google-cloud/*",

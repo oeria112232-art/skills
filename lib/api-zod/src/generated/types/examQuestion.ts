@@ -12,4 +12,6 @@ export interface ExamQuestion {
   question: string;
   options: string[];
   order: number;
+  points?: number;
+  type?: string;
 }

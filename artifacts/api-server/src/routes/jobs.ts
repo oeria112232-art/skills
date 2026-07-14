@@ -1,39 +1,54 @@
 import { Router } from "express";
-import { db, jobsTable, screeningQuestionsTable, applicationsTable } from "@workspace/db";
+import { db, jobsTable, screeningQuestionsTable, applicationsTable, usersTable } from "@workspace/db";
 import { eq, ilike, and, sql } from "drizzle-orm";
 import {
   ListJobsQueryParams, CreateJobBody, GetJobParams,
   UpdateJobParams, UpdateJobBody, DeleteJobParams,
   GetJobScreeningQuestionsParams, AddJobScreeningQuestionParams, AddJobScreeningQuestionBody,
 } from "@workspace/api-zod";
+import { requireAuth, requireRole } from "../middlewares/auth";
 
 const router = Router();
 
 router.get("/jobs", async (req, res): Promise<void> => {
   const parsed = ListJobsQueryParams.safeParse(req.query);
   const q = parsed.success ? parsed.data : {};
-
+  
   let conditions: ReturnType<typeof eq>[] = [];
   if (q.type) conditions.push(eq(jobsTable.type, q.type));
   if (q.level) conditions.push(eq(jobsTable.level, q.level));
   if (q.remote === "true") conditions.push(eq(jobsTable.isRemote, true));
-
+  if (q.companyId) conditions.push(eq(jobsTable.companyId, q.companyId));
+  
   const jobs = conditions.length > 0
     ? await db.select().from(jobsTable).where(and(...conditions)).orderBy(jobsTable.createdAt)
     : await db.select().from(jobsTable).orderBy(jobsTable.createdAt);
-
+  
   const filtered = q.search
     ? jobs.filter(j => j.title.toLowerCase().includes(q.search!.toLowerCase()) || j.company.toLowerCase().includes(q.search!.toLowerCase()))
     : jobs;
-
-  res.json(filtered.map(j => ({
-    ...j,
-    isRemote: Boolean(j.isRemote),
-    createdAt: j.createdAt.toISOString(),
-  })));
+  
+  const users = await db.select().from(usersTable);
+  const companyMap = new Map(users.map(u => [u.id, u.avatarUrl]));
+  
+  const limit = Math.min(parseInt(req.query.limit as string) || 50, 200);
+  const offset = parseInt(req.query.offset as string) || 0;
+  const paginated = filtered.slice(offset, offset + limit);
+  
+  res.json({ 
+    data: paginated.map(j => ({
+      ...j,
+      isRemote: Boolean(j.isRemote),
+      createdAt: j.createdAt.toISOString(),
+      companyLogo: j.companyId ? (companyMap.get(j.companyId) || null) : null,
+    })), 
+    total: filtered.length, 
+    limit, 
+    offset 
+  });
 });
 
-router.post("/jobs", async (req, res): Promise<void> => {
+router.post("/jobs", requireAuth, requireRole(["admin", "company"]), async (req, res): Promise<void> => {
   const parsed = CreateJobBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
@@ -61,20 +76,44 @@ router.get("/jobs/:id", async (req, res): Promise<void> => {
   if (!params.success) { res.status(400).json({ error: "Invalid id" }); return; }
   const [job] = await db.select().from(jobsTable).where(eq(jobsTable.id, params.data.id));
   if (!job) { res.status(404).json({ error: "Job not found" }); return; }
-  res.json({ ...job, isRemote: Boolean(job.isRemote), createdAt: job.createdAt.toISOString() });
+  
+  let companyLogo = null;
+  if (job.companyId) {
+    const [comp] = await db.select().from(usersTable).where(eq(usersTable.id, job.companyId));
+    if (comp) companyLogo = comp.avatarUrl;
+  }
+  
+  res.json({ 
+    ...job, 
+    isRemote: Boolean(job.isRemote), 
+    createdAt: job.createdAt.toISOString(),
+    companyLogo,
+  });
 });
 
-router.patch("/jobs/:id", async (req, res): Promise<void> => {
+router.patch("/jobs/:id", requireAuth, requireRole(["admin", "company"]), async (req, res): Promise<void> => {
   const params = UpdateJobParams.safeParse(req.params);
   if (!params.success) { res.status(400).json({ error: "Invalid id" }); return; }
   const parsed = UpdateJobBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
   const [job] = await db.update(jobsTable).set(parsed.data).where(eq(jobsTable.id, params.data.id)).returning();
   if (!job) { res.status(404).json({ error: "Job not found" }); return; }
-  res.json({ ...job, isRemote: Boolean(job.isRemote), createdAt: job.createdAt.toISOString() });
+  
+  let companyLogo = null;
+  if (job.companyId) {
+    const [comp] = await db.select().from(usersTable).where(eq(usersTable.id, job.companyId));
+    if (comp) companyLogo = comp.avatarUrl;
+  }
+  
+  res.json({ 
+    ...job, 
+    isRemote: Boolean(job.isRemote), 
+    createdAt: job.createdAt.toISOString(),
+    companyLogo,
+  });
 });
 
-router.delete("/jobs/:id", async (req, res): Promise<void> => {
+router.delete("/jobs/:id", requireAuth, requireRole(["admin", "company"]), async (req, res): Promise<void> => {
   const params = DeleteJobParams.safeParse(req.params);
   if (!params.success) { res.status(400).json({ error: "Invalid id" }); return; }
   await db.delete(jobsTable).where(eq(jobsTable.id, params.data.id));
@@ -90,7 +129,7 @@ router.get("/jobs/:id/screening-questions", async (req, res): Promise<void> => {
   res.json(questions);
 });
 
-router.post("/jobs/:id/screening-questions", async (req, res): Promise<void> => {
+router.post("/jobs/:id/screening-questions", requireAuth, requireRole(["admin", "company"]), async (req, res): Promise<void> => {
   const params = AddJobScreeningQuestionParams.safeParse(req.params);
   if (!params.success) { res.status(400).json({ error: "Invalid id" }); return; }
   const parsed = AddJobScreeningQuestionBody.safeParse(req.body);

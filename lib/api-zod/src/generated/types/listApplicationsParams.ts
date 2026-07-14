@@ -9,4 +9,6 @@
 export type ListApplicationsParams = {
 jobId?: number;
 status?: string;
+userId?: number;
+companyId?: number;
 };

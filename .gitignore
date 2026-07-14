@@ -1,7 +1,9 @@
 # See https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files for more about ignoring files.
 
-# compiled output
+# compiled output - allow production build output for deployment
 dist
+!artifacts/api-server/dist
+!artifacts/eduplat/dist
 tmp
 out-tsc
 *.tsbuildinfo
@@ -47,3 +49,14 @@ Thumbs.db
 # Replit
 .cache/
 .local/
+
+# Local custom ignore
+.env
+uploads/
+scratch/
+*.jpg
+*.pdf
+artifacts/api-server/scratch-check-db.js
+ffmpeg/
+
+

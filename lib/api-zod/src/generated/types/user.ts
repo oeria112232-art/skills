@@ -5,15 +5,20 @@
  * Educational & Career Development Platform API
  * OpenAPI spec version: 0.1.0
  */
+import type { UserContactInfo } from './userContactInfo';
+import type { UserCv } from './userCv';
 
 export interface User {
   id: number;
   name: string;
   email: string;
   role: string;
+  allowedPages?: string[] | null;
   points: number;
   streak?: number;
   /** @nullable */
   avatarUrl?: string | null;
+  cv?: UserCv;
+  contactInfo?: UserContactInfo;
   createdAt: string;
 }
