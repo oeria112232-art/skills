@@ -89,7 +89,10 @@ if (process.env.NODE_ENV === "production") {
   app.use(express.static(publicPath));
   
   // SPA routing fallback
-  app.get(/^(?!\/api\/).*/, (_req, res) => {
+  app.get(/^(?!\/api\/).*/, (req, res, next) => {
+    if (req.path.includes(".")) {
+      return next();
+    }
     res.sendFile(path.resolve(publicPath, "index.html"));
   });
 }

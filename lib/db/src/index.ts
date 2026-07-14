@@ -3,6 +3,8 @@ import pg from "pg";
 import { initializeApp } from "firebase/app";
 import { getDatabase, ref, get, set, remove } from "firebase/database";
 import * as schema from "./schema";
+import fs from "fs";
+import path from "path";
 
 // Firebase Configuration — read from environment variables (never hardcode secrets)
 const firebaseConfig = {
@@ -97,11 +99,41 @@ function toArray<T>(obj: any): T[] {
 const fbCache = new Map<string, { data: any[]; expiresAt: number }>();
 const FB_CACHE_TTL_MS = 3000; // 3 seconds — balances freshness vs perf on burst reads
 
+const fallbackFilePath = path.resolve(import.meta.dirname, "../../../db-fallback.json");
+let localDbState: Record<string, any[]> = {};
+
+function loadLocalDb() {
+  try {
+    if (fs.existsSync(fallbackFilePath)) {
+      const content = fs.readFileSync(fallbackFilePath, "utf8");
+      localDbState = JSON.parse(content);
+      console.log(`Loaded fallback database from: ${fallbackFilePath}`);
+    } else {
+      localDbState = {};
+      console.log(`Initialized empty fallback database.`);
+    }
+  } catch (err) {
+    console.error("Failed to load local fallback DB:", err);
+    localDbState = {};
+  }
+}
+
+function saveLocalDb() {
+  try {
+    fs.writeFileSync(fallbackFilePath, JSON.stringify(localDbState, null, 2), "utf8");
+  } catch (err) {
+    console.error("Failed to save local fallback DB:", err);
+  }
+}
+
+if (!database) {
+  loadLocalDb();
+}
+
 async function fbGet(node: string): Promise<any[]> {
   validateFirebasePath(node);
   if (!database) {
-    console.warn(`Firebase Database is not initialized. Skipping GET for node: ${node}`);
-    return [];
+    return parseDates(localDbState[node] || []) as any[];
   }
   const now = Date.now();
   const cached = fbCache.get(node);
@@ -124,32 +156,60 @@ function fbInvalidate(node: string) {
 }
 
 // Write record to Firebase Realtime Database
-async function fbPut(path: string, data: any): Promise<void> {
-  validateFirebasePath(path);
+async function fbPut(dbPath: string, data: any): Promise<void> {
+  validateFirebasePath(dbPath);
   if (!database) {
-    console.warn(`Firebase Database is not initialized. Skipping PUT for path: ${path}`);
+    console.warn(`Firebase Database is not initialized. Using local fallback for PUT: ${dbPath}`);
+    const segments = dbPath.split("/").filter(Boolean);
+    const node = segments[0];
+    const key = segments[1];
+    if (node) {
+      if (!localDbState[node]) {
+        localDbState[node] = [];
+      }
+      const idVal = /^\d+$/.test(key) ? Number(key) : key;
+      localDbState[node] = localDbState[node].filter(item => {
+        if (!item) return false;
+        return String(item.id) !== String(idVal);
+      });
+      localDbState[node].push(data);
+      saveLocalDb();
+    }
     return;
   }
   try {
     const serialized = serializeDates(data);
-    await set(ref(database, path), serialized);
+    await set(ref(database, dbPath), serialized);
   } catch (err) {
-    console.error(`Firebase SDK PUT error for path ${path}:`, err);
+    console.error(`Firebase SDK PUT error for path ${dbPath}:`, err);
     throw err;
   }
 }
 
 // Delete record from Firebase Realtime Database
-async function fbDelete(path: string): Promise<void> {
-  validateFirebasePath(path);
+async function fbDelete(dbPath: string): Promise<void> {
+  validateFirebasePath(dbPath);
   if (!database) {
-    console.warn(`Firebase Database is not initialized. Skipping DELETE for path: ${path}`);
+    console.warn(`Firebase Database is not initialized. Using local fallback for DELETE: ${dbPath}`);
+    const segments = dbPath.split("/").filter(Boolean);
+    const node = segments[0];
+    const key = segments[1];
+    if (node && key) {
+      if (localDbState[node]) {
+        const idVal = /^\d+$/.test(key) ? Number(key) : key;
+        localDbState[node] = localDbState[node].filter(item => {
+          if (!item) return false;
+          return String(item.id) !== String(idVal);
+        });
+        saveLocalDb();
+      }
+    }
     return;
   }
   try {
-    await remove(ref(database, path));
+    await remove(ref(database, dbPath));
   } catch (err) {
-    console.error(`Firebase SDK DELETE error for path ${path}:`, err);
+    console.error(`Firebase SDK DELETE error for path ${dbPath}:`, err);
     throw err;
   }
 }
