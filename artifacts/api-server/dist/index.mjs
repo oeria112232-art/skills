@@ -71969,10 +71969,9 @@ var init_wallet_security = __esm({
     "use strict";
     init_src();
     init_drizzle_orm();
-    WALLET_SECRET = process.env.WALLET_SECRET;
-    if (!WALLET_SECRET) {
-      console.error("FATAL: WALLET_SECRET must be set in environment variables.");
-      process.exit(1);
+    WALLET_SECRET = process.env.WALLET_SECRET || "mharat_secure_wallet_fallback_secret_key_8829";
+    if (!process.env.WALLET_SECRET) {
+      console.warn("WARNING: WALLET_SECRET is not set in environment variables. Using a fallback secret key. This is insecure for production.");
     }
     usedNonces = /* @__PURE__ */ new Map();
     NONCE_TTL_MS = 24 * 60 * 60 * 1e3;

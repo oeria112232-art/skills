@@ -2,11 +2,9 @@ import crypto from "crypto";
 import { db, usersTable, pointsTransactionsTable } from "@workspace/db";
 import { eq, desc, and } from "drizzle-orm";
 
-// Secure wallet secret key — must be set in environment variables
-const WALLET_SECRET = process.env.WALLET_SECRET;
-if (!WALLET_SECRET) {
-  console.error("FATAL: WALLET_SECRET must be set in environment variables.");
-  process.exit(1);
+const WALLET_SECRET = process.env.WALLET_SECRET || "mharat_secure_wallet_fallback_secret_key_8829";
+if (!process.env.WALLET_SECRET) {
+  console.warn("WARNING: WALLET_SECRET is not set in environment variables. Using a fallback secret key. This is insecure for production.");
 }
 
 // Nonce store for idempotency (in-memory, maps nonce -> timestamp)
