@@ -8,6 +8,7 @@ import { requireAuth, tokenBlocklist } from "../middlewares/auth";
 import { hashPassword } from "../services/auth-utils";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
+import bcrypt from "bcryptjs";
 
 const JWT_SECRET = process.env.JWT_SECRET || process.env.SESSION_SECRET || "mharat_secure_default_jwt_secret_key_8829";
 

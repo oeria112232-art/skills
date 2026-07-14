@@ -100,13 +100,15 @@ if (process.env.NODE_ENV === "production") {
 // Global error handler — must be AFTER all routes
 app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
   const statusCode = err.statusCode || err.status || 500;
-  const message = err.message || "Internal server error";
+  const message = statusCode === 500 ? "Internal server error" : err.message;
 
-  logger.error({ err, url: _req.url, method: _req.method }, "Unhandled server error");
+  if (statusCode === 500) {
+    logger.error({ err, url: _req.url, method: _req.method }, "Unhandled server error");
+  }
 
   res.status(statusCode).json({
     error: message,
-    stack: err.stack,
+    ...(process.env.NODE_ENV !== "production" && statusCode === 500 && { stack: err.stack }),
   });
 });
 

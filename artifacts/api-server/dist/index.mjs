@@ -79022,7 +79022,7 @@ router2.post("/auth/login", async (req, res) => {
   const isBcrypt = user.passwordHash.startsWith("$2a$") || user.passwordHash.startsWith("$2b$");
   let isValid2 = false;
   if (isBcrypt) {
-    isValid2 = bcrypt.compareSync(password, user.passwordHash);
+    isValid2 = bcryptjs_default.compareSync(password, user.passwordHash);
   } else {
     const legacyHash = Buffer.from(password + "salt_eduplat").toString("base64");
     isValid2 = user.passwordHash === legacyHash;
@@ -83046,11 +83046,13 @@ if (process.env.NODE_ENV === "production") {
 }
 app.use((err, _req, res, _next) => {
   const statusCode = err.statusCode || err.status || 500;
-  const message = err.message || "Internal server error";
-  logger4.error({ err, url: _req.url, method: _req.method }, "Unhandled server error");
+  const message = statusCode === 500 ? "Internal server error" : err.message;
+  if (statusCode === 500) {
+    logger4.error({ err, url: _req.url, method: _req.method }, "Unhandled server error");
+  }
   res.status(statusCode).json({
     error: message,
-    stack: err.stack
+    ...process.env.NODE_ENV !== "production" && statusCode === 500 && { stack: err.stack }
   });
 });
 var app_default = app;
