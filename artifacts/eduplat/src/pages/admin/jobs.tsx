@@ -193,10 +193,7 @@ export default function AdminJobsPage() {
                 <Label>{isAr ? "الموقع" : "Location"}</Label>
                 <Input value={form.location} onChange={e => setForm(f => ({ ...f, location: e.target.value }))} placeholder={isAr ? "مثال: بغداد، العراق" : "e.g. Baghdad, Iraq"} />
               </div>
-              <div>
-                <Label>{isAr ? "علامة القبول (%)" : "Pass Score (%)"}</Label>
-                <Input type="number" value={form.passScore} onChange={e => setForm(f => ({ ...f, passScore: e.target.value }))} data-testid="input-pass-score" />
-              </div>
+
               <div>
                 <Label>{isAr ? "الحد الأدنى للراتب (د.ع / IQD)" : "Salary Min (د.ع / IQD)"}</Label>
                 <Input type="number" value={form.salaryMin} onChange={e => setForm(f => ({ ...f, salaryMin: e.target.value }))} />

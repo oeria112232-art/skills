@@ -170,10 +170,7 @@ export default function CompanyJobsPage() {
                 <Label>{isAr ? "الحد الأعلى للراتب" : "Max Salary"}</Label>
                 <Input type="number" value={form.salaryMax} onChange={e => setForm({...form, salaryMax: e.target.value})} />
               </div>
-              <div className="space-y-2 col-span-2">
-                <Label>{isAr ? "درجة النجاح في التقييم (%)" : "Assessment Pass Score (%)"}</Label>
-                <Input type="number" value={form.passScore} onChange={e => setForm({...form, passScore: e.target.value})} />
-              </div>
+
             </div>
             <DialogFooter>
               <Button onClick={handleSave} disabled={createJob.isPending || updateJob.isPending}>

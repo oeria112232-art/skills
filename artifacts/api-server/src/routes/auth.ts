@@ -49,6 +49,7 @@ router.post("/auth/register", async (req, res): Promise<void> => {
       id: user.id, name: user.name, email: user.email,
       role: user.role, allowedPages: user.allowedPages, points: user.points, streak: user.streak,
       avatarUrl: user.avatarUrl, cv: user.cv, contactInfo: user.contactInfo,
+      companyCategory: (user as any).companyCategory || "general",
       createdAt: user.createdAt.toISOString(),
     },
   });
@@ -98,6 +99,7 @@ router.post("/auth/login", async (req, res): Promise<void> => {
       id: user.id, name: user.name, email: user.email,
       role: user.role, allowedPages: user.allowedPages, points: user.points, streak: user.streak,
       avatarUrl: user.avatarUrl, cv: user.cv, contactInfo: user.contactInfo,
+      companyCategory: (user as any).companyCategory || "general",
       createdAt: user.createdAt.toISOString(),
     },
   });
@@ -122,6 +124,7 @@ router.get("/auth/me", async (req, res): Promise<void> => {
       id: user.id, name: user.name, email: user.email,
       role: user.role, allowedPages: user.allowedPages, points: user.points, streak: user.streak,
       avatarUrl: user.avatarUrl, cv: user.cv, contactInfo: user.contactInfo,
+      companyCategory: (user as any).companyCategory || "general",
       createdAt: user.createdAt.toISOString(),
     });
   } catch {

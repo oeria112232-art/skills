@@ -39,7 +39,7 @@ router.get("/jobs", async (req, res): Promise<void> => {
     data: paginated.map(j => ({
       ...j,
       isRemote: Boolean(j.isRemote),
-      createdAt: j.createdAt.toISOString(),
+      createdAt: j.createdAt ? new Date(j.createdAt).toISOString() : new Date().toISOString(),
       companyLogo: j.companyId ? (companyMap.get(j.companyId) || null) : null,
     })), 
     total: filtered.length, 
@@ -55,7 +55,7 @@ router.post("/jobs", requireAuth, requireRole(["admin", "company"]), async (req,
     return;
   }
   const [job] = await db.insert(jobsTable).values(parsed.data).returning();
-  res.status(201).json({ ...job, isRemote: Boolean(job.isRemote), createdAt: job.createdAt.toISOString() });
+  res.status(201).json({ ...job, isRemote: Boolean(job.isRemote), createdAt: job.createdAt ? new Date(job.createdAt).toISOString() : new Date().toISOString() });
 });
 
 router.get("/jobs/stats", async (_req, res): Promise<void> => {
@@ -86,7 +86,7 @@ router.get("/jobs/:id", async (req, res): Promise<void> => {
   res.json({ 
     ...job, 
     isRemote: Boolean(job.isRemote), 
-    createdAt: job.createdAt.toISOString(),
+    createdAt: job.createdAt ? new Date(job.createdAt).toISOString() : new Date().toISOString(),
     companyLogo,
   });
 });
@@ -108,7 +108,7 @@ router.patch("/jobs/:id", requireAuth, requireRole(["admin", "company"]), async 
   res.json({ 
     ...job, 
     isRemote: Boolean(job.isRemote), 
-    createdAt: job.createdAt.toISOString(),
+    createdAt: job.createdAt ? new Date(job.createdAt).toISOString() : new Date().toISOString(),
     companyLogo,
   });
 });

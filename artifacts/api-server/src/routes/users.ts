@@ -14,6 +14,7 @@ function serializeUser(u: typeof usersTable.$inferSelect) {
     id: u.id, name: u.name, email: u.email,
     role: u.role, allowedPages: u.allowedPages, points: u.points, streak: u.streak,
     avatarUrl: u.avatarUrl, cv: u.cv, contactInfo: u.contactInfo,
+    companyCategory: (u as any).companyCategory || "general",
     createdAt: u.createdAt.toISOString(),
   };
 }
@@ -77,6 +78,7 @@ router.post("/users", requireAuth, requireRole(["admin"]), async (req: any, res)
     role: role || "student",
     points: 0,
     streak: 0,
+    companyCategory: (parsed.data as any).companyCategory || "general",
   }).returning();
   await logAuditEvent({ action: "user_create_admin", userId: req.user!.id, targetType: "user", targetId: newUser.id, details: { email, role }, req });
   res.status(201).json(serializeUser(newUser));

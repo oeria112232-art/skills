@@ -31,7 +31,8 @@ const arFilterNames: Record<string, string> = {
 
 export default function WorkshopsPage() {
   const [filter, setFilter] = useState("all");
-  const { data: workshops, isLoading } = useListWorkshops(filter !== "all" ? { status: filter } : undefined);
+  const { data: workshopsData, isLoading } = useListWorkshops(filter !== "all" ? { status: filter } : undefined);
+  const workshops = Array.isArray(workshopsData) ? workshopsData : (workshopsData && Array.isArray((workshopsData as any).data) ? (workshopsData as any).data : []);
   const { language } = useLanguage();
   const isAr = language === "ar";
   const [previewWorkshop, setPreviewWorkshop] = useState<any | null>(null);

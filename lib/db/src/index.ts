@@ -370,6 +370,7 @@ const jsKeyMap = new Map<string, string>([
   ["is_closed", "isClosed"],
   ["option_index", "optionIndex"],
   ["poll_id", "pollId"],
+  ["company_category", "companyCategory"],
 ]);
 
 function getJsKey(colName: string): string {

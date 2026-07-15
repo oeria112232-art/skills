@@ -25,10 +25,10 @@ export default function AdminCompaniesPage() {
   const companies = usersList.filter((u: any) => u.role === "company");
 
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [newCompany, setNewCompany] = useState({ name: "", email: "", password: "" });
+  const [newCompany, setNewCompany] = useState({ name: "", email: "", password: "", companyCategory: "tech" });
 
   const [editingCompany, setEditingCompany] = useState<any | null>(null);
-  const [editForm, setEditForm] = useState({ name: "", password: "" });
+  const [editForm, setEditForm] = useState({ name: "", password: "", companyCategory: "tech" });
 
   const handleCreateCompany = () => {
     if (!newCompany.name || !newCompany.email || !newCompany.password) {
@@ -45,7 +45,8 @@ export default function AdminCompaniesPage() {
         name: newCompany.name,
         email: newCompany.email,
         password: newCompany.password,
-        role: "company"
+        role: "company",
+        companyCategory: newCompany.companyCategory
       } as any
     }, {
       onSuccess: () => {
@@ -55,7 +56,7 @@ export default function AdminCompaniesPage() {
         });
         queryClient.invalidateQueries({ queryKey: getListUsersQueryKey() });
         setIsAddDialogOpen(false);
-        setNewCompany({ name: "", email: "", password: "" });
+        setNewCompany({ name: "", email: "", password: "", companyCategory: "tech" });
       },
       onError: () => {
         toast({
@@ -69,7 +70,7 @@ export default function AdminCompaniesPage() {
 
   const handleStartEdit = (company: any) => {
     setEditingCompany(company);
-    setEditForm({ name: company.name, password: "" });
+    setEditForm({ name: company.name, password: "", companyCategory: company.companyCategory || "tech" });
   };
 
   const handleUpdateCompany = () => {
@@ -87,6 +88,7 @@ export default function AdminCompaniesPage() {
       id: editingCompany.id,
       data: {
         name: editForm.name,
+        companyCategory: editForm.companyCategory,
         ...(editForm.password ? { password: editForm.password } : {})
       } as any
     }, {
@@ -173,6 +175,20 @@ export default function AdminCompaniesPage() {
                     placeholder={isAr ? "أدخل كلمة المرور" : "Enter password"}
                   />
                 </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">{isAr ? "تخصص/مجال الشركة" : "Company Category"}</label>
+                  <select
+                    value={newCompany.companyCategory}
+                    onChange={(e) => setNewCompany({...newCompany, companyCategory: e.target.value})}
+                    className="w-full h-10 rounded-xl border border-border/60 bg-background px-3 text-xs font-semibold text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  >
+                    <option value="tech">{isAr ? "تكنولوجيا وبرمجيات (Tech)" : "Technology & Software"}</option>
+                    <option value="marketing">{isAr ? "تسويق ومبيعات (Marketing)" : "Marketing & Sales"}</option>
+                    <option value="design">{isAr ? "تصميم وفنون (Design)" : "Design & Arts"}</option>
+                    <option value="business">{isAr ? "إدارة وأعمال (Business)" : "Business & Management"}</option>
+                    <option value="general">{isAr ? "مجال عام / أخرى (General)" : "General & Others"}</option>
+                  </select>
+                </div>
                 <Button className="w-full" onClick={handleCreateCompany} disabled={createUser.isPending}>
                   {createUser.isPending ? (isAr ? "جاري الإنشاء..." : "Creating...") : (isAr ? "إنشاء حساب" : "Create Account")}
                 </Button>
@@ -212,6 +228,13 @@ export default function AdminCompaniesPage() {
                   <div>
                     <h3 className="font-bold text-lg leading-tight mb-1">{company.name}</h3>
                     <p className="text-sm text-muted-foreground">{company.email}</p>
+                    <span className="inline-block mt-2 text-[10px] font-bold px-2 py-0.5 rounded-md bg-primary/10 text-primary border border-primary/20">
+                      {company.companyCategory === "tech" ? (isAr ? "تكنولوجيا وبرمجيات" : "Technology") :
+                       company.companyCategory === "marketing" ? (isAr ? "تسويق ومبيعات" : "Marketing") :
+                       company.companyCategory === "design" ? (isAr ? "تصميم وفنون" : "Design") :
+                       company.companyCategory === "business" ? (isAr ? "إدارة وأعمال" : "Business") :
+                       (isAr ? "مجال عام" : "General")}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -252,6 +275,20 @@ export default function AdminCompaniesPage() {
                     onChange={(e) => setEditForm({...editForm, password: e.target.value})}
                     placeholder={isAr ? "أدخل كلمة مرور جديدة" : "Enter new password"}
                   />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">{isAr ? "تخصص/مجال الشركة" : "Company Category"}</label>
+                  <select
+                    value={editForm.companyCategory}
+                    onChange={(e) => setEditForm({...editForm, companyCategory: e.target.value})}
+                    className="w-full h-10 rounded-xl border border-border/60 bg-background px-3 text-xs font-semibold text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  >
+                    <option value="tech">{isAr ? "تكنولوجيا وبرمجيات (Tech)" : "Technology & Software"}</option>
+                    <option value="marketing">{isAr ? "تسويق ومبيعات (Marketing)" : "Marketing & Sales"}</option>
+                    <option value="design">{isAr ? "تصميم وفنون (Design)" : "Design & Arts"}</option>
+                    <option value="business">{isAr ? "إدارة وأعمال (Business)" : "Business & Management"}</option>
+                    <option value="general">{isAr ? "مجال عام / أخرى (General)" : "General & Others"}</option>
+                  </select>
                 </div>
                 <Button className="w-full" onClick={handleUpdateCompany} disabled={updateUser.isPending}>
                   {updateUser.isPending ? (isAr ? "جاري التحديث..." : "Updating...") : (isAr ? "تعديل الحساب" : "Update Account")}

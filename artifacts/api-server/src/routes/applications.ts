@@ -11,9 +11,71 @@ import { logAuditEvent } from "../services/audit-log";
 
 const router = Router();
 
-async function getCvSnapshot(userId: number, existingSnapshot: any): Promise<any> {
+function getPriorityScore(title: string, category: string): number {
+  if (!title || !category) return 0;
+  const t = title.toLowerCase();
+  
+  const techKeywords = ["ويب", "برمجة", "تطوير", "سيسكو", "شبكات", "أمن", "سيبراني", "موبايل", "حاسوب", "ccna", "ccnp", "web", "programming", "developer", "code", "cybersecurity", "security", "network", "cisco", "mobile", "app", "computer", "basics", "fullstack", "react", "node", "javascript", "python", "برمج", "حاسب"];
+  const marketingKeywords = ["تسويق", "مبيعات", "إعلان", "ترويج", "سوشيال", "عملاء", "tot", "marketing", "sales", "social", "media", "seo", "tot", "train", "instructor", "communication", "ads", "اعلان", "تروج"];
+  const designKeywords = ["تصميم", "فوتوشوب", "رسم", "فيديو", "مونتاج", "جرافيك", "الوان", "ui", "ux", "design", "photoshop", "illustrator", "video", "editing", "graphic", "art", "creative", "الوان", "ألوان"];
+  const businessKeywords = ["إدارة", "أعمال", "محاسبة", "مالية", "بنوك", "مشاريع", "اقتصاد", "business", "management", "project", "finance", "accounting", "pmp", "startup", "office", "ادارة", "اعمال"];
+
+  let matches = false;
+  if (category === "tech") {
+    matches = techKeywords.some(kw => t.includes(kw));
+  } else if (category === "marketing") {
+    matches = marketingKeywords.some(kw => t.includes(kw));
+  } else if (category === "design") {
+    matches = designKeywords.some(kw => t.includes(kw));
+  } else if (category === "business") {
+    matches = businessKeywords.some(kw => t.includes(kw));
+  }
+
+  return matches ? 1 : 0;
+}
+
+function sortSnapshotByCompanyCategory(snapshot: any, category: string): any {
+  if (!snapshot) return snapshot;
+  const result = { ...snapshot };
+
+  if (Array.isArray(result.certificates)) {
+    result.certificates = [...result.certificates].sort((a: any, b: any) => {
+      const scoreA = getPriorityScore(a.workshopTitle || "", category);
+      const scoreB = getPriorityScore(b.workshopTitle || "", category);
+      return scoreB - scoreA;
+    });
+  }
+
+  if (Array.isArray(result.tracks)) {
+    result.tracks = [...result.tracks].sort((a: any, b: any) => {
+      const scoreA = getPriorityScore(a.title || "", category);
+      const scoreB = getPriorityScore(b.title || "", category);
+      return scoreB - scoreA;
+    });
+  }
+
+  if (Array.isArray(result.workshops)) {
+    result.workshops = [...result.workshops].sort((a: any, b: any) => {
+      const scoreA = getPriorityScore(a.title || "", category);
+      const scoreB = getPriorityScore(b.title || "", category);
+      return scoreB - scoreA;
+    });
+  }
+
+  return result;
+}
+
+async function getCvSnapshot(userId: number, existingSnapshot: any, companyId?: number | null): Promise<any> {
+  let companyCategory = "general";
+  if (companyId) {
+    const [companyUser] = await db.select().from(usersTable).where(eq(usersTable.id, companyId));
+    if (companyUser) {
+      companyCategory = (companyUser as any).companyCategory || "general";
+    }
+  }
+
   if (existingSnapshot && Object.keys(existingSnapshot).length > 0 && (existingSnapshot.summary || (existingSnapshot.experience && existingSnapshot.experience.length > 0))) {
-    return existingSnapshot;
+    return sortSnapshotByCompanyCategory(existingSnapshot, companyCategory);
   }
   
   // Fallback: compile from user's current profile
@@ -57,7 +119,8 @@ async function getCvSnapshot(userId: number, existingSnapshot: any): Promise<any
     workshops: workshopsSnapshot
   };
 
-  return JSON.parse(JSON.stringify(snapshot, (k, v) => v === undefined ? null : v));
+  const sortedSnapshot = sortSnapshotByCompanyCategory(snapshot, companyCategory);
+  return JSON.parse(JSON.stringify(sortedSnapshot, (k, v) => v === undefined ? null : v));
 }
 
 async function getContactInfoSnapshot(userId: number, existingSnapshot: any): Promise<any> {
@@ -98,7 +161,7 @@ router.get("/applications", requireAuth, async (req: AuthenticatedRequest, res):
     });
 
   const resolved = await Promise.all(filteredApps.map(async a => {
-    const cvSnapshot = await getCvSnapshot(a.app.userId || 0, a.app.cvSnapshot);
+    const cvSnapshot = await getCvSnapshot(a.app.userId || 0, a.app.cvSnapshot, a.companyId);
     const contactInfoSnapshot = await getContactInfoSnapshot(a.app.userId || 0, a.app.contactInfoSnapshot);
     return {
       ...a.app,
@@ -122,6 +185,16 @@ router.post("/applications", requireAuth, async (req: AuthenticatedRequest, res)
   const user = req.user!;
   const userId = user.role === "admin" ? (parsed.data.userId || user.id) : user.id;
   
+  const [job] = await db.select().from(jobsTable).where(eq(jobsTable.id, parsed.data.jobId));
+  const companyId = job ? job.companyId : null;
+  let companyCategory = "general";
+  if (companyId) {
+    const [companyUser] = await db.select().from(usersTable).where(eq(usersTable.id, companyId));
+    if (companyUser) {
+      companyCategory = (companyUser as any).companyCategory || "general";
+    }
+  }
+
   let cvSnapshot = null;
   let contactInfoSnapshot = null;
   const [appUser] = await db.select().from(usersTable).where(eq(usersTable.id, userId));
@@ -148,7 +221,7 @@ router.post("/applications", requireAuth, async (req: AuthenticatedRequest, res)
       return w ? { title: w.title } : null;
     }).filter(Boolean);
 
-    cvSnapshot = {
+    const snapshot = {
       ...(appUser.cv as any || {}),
       certificates: certs.map(c => ({
         id: c.id,
@@ -160,6 +233,7 @@ router.post("/applications", requireAuth, async (req: AuthenticatedRequest, res)
       tracks: tracksSnapshot,
       workshops: workshopsSnapshot
     };
+    cvSnapshot = sortSnapshotByCompanyCategory(snapshot, companyCategory);
     contactInfoSnapshot = appUser.contactInfo;
   }
 
@@ -194,7 +268,7 @@ router.get("/applications/:id", requireAuth, async (req: AuthenticatedRequest, r
     return;
   }
 
-  const cvSnapshot = await getCvSnapshot(app.userId || 0, app.cvSnapshot);
+  const cvSnapshot = await getCvSnapshot(app.userId || 0, app.cvSnapshot, job ? job.companyId : null);
   const contactInfoSnapshot = await getContactInfoSnapshot(app.userId || 0, app.contactInfoSnapshot);
 
   res.json({ 

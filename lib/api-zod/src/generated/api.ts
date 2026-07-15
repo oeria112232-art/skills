@@ -937,7 +937,8 @@ export const CreateUserBody = zod.object({
   "name": zod.string(),
   "email": zod.string(),
   "password": zod.string(),
-  "role": zod.string().optional()
+  "role": zod.string().optional(),
+  "companyCategory": zod.string().optional()
 })
 
 export const CreateUserResponse = zod.object({
@@ -984,7 +985,8 @@ export const UpdateUserBody = zod.object({
   "allowedPages": zod.array(zod.string()).nullish(),
   "avatarUrl": zod.string().nullish(),
   "cv": zod.record(zod.string(), zod.unknown()).nullish(),
-  "contactInfo": zod.record(zod.string(), zod.unknown()).nullish()
+  "contactInfo": zod.record(zod.string(), zod.unknown()).nullish(),
+  "companyCategory": zod.string().nullish()
 })
 
 export const UpdateUserResponse = zod.object({

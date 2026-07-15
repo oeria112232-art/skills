@@ -68722,6 +68722,7 @@ var init_users = __esm({
       contactInfo: json("contact_info").$type(),
       // Will store contact info
       createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+      companyCategory: text("company_category").default("general"),
       updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => /* @__PURE__ */ new Date()),
       deletedAt: timestamp("deleted_at", { withTimezone: true })
     });
@@ -69721,7 +69722,8 @@ var init_src = __esm({
       ["is_answered", "isAnswered"],
       ["is_closed", "isClosed"],
       ["option_index", "optionIndex"],
-      ["poll_id", "pollId"]
+      ["poll_id", "pollId"],
+      ["company_category", "companyCategory"]
     ]);
     pool = new esm_default.Pool();
     dbMock = {
@@ -78937,7 +78939,8 @@ var CreateUserBody = objectType({
   "name": stringType(),
   "email": stringType(),
   "password": stringType(),
-  "role": stringType().optional()
+  "role": stringType().optional(),
+  "companyCategory": stringType().optional()
 });
 var CreateUserResponse = objectType({
   "id": numberType(),
@@ -78977,7 +78980,8 @@ var UpdateUserBody = objectType({
   "allowedPages": arrayType(stringType()).nullish(),
   "avatarUrl": stringType().nullish(),
   "cv": recordType(stringType(), unknownType()).nullish(),
-  "contactInfo": recordType(stringType(), unknownType()).nullish()
+  "contactInfo": recordType(stringType(), unknownType()).nullish(),
+  "companyCategory": stringType().nullish()
 });
 var UpdateUserResponse = objectType({
   "id": numberType(),
@@ -79437,6 +79441,7 @@ router2.post("/auth/register", async (req, res) => {
       avatarUrl: user.avatarUrl,
       cv: user.cv,
       contactInfo: user.contactInfo,
+      companyCategory: user.companyCategory || "general",
       createdAt: user.createdAt.toISOString()
     }
   });
@@ -79487,6 +79492,7 @@ router2.post("/auth/login", async (req, res) => {
       avatarUrl: user.avatarUrl,
       cv: user.cv,
       contactInfo: user.contactInfo,
+      companyCategory: user.companyCategory || "general",
       createdAt: user.createdAt.toISOString()
     }
   });
@@ -79517,6 +79523,7 @@ router2.get("/auth/me", async (req, res) => {
       avatarUrl: user.avatarUrl,
       cv: user.cv,
       contactInfo: user.contactInfo,
+      companyCategory: user.companyCategory || "general",
       createdAt: user.createdAt.toISOString()
     });
   } catch {
@@ -79558,7 +79565,7 @@ router3.get("/jobs", async (req, res) => {
     data: paginated.map((j) => ({
       ...j,
       isRemote: Boolean(j.isRemote),
-      createdAt: j.createdAt.toISOString(),
+      createdAt: j.createdAt ? new Date(j.createdAt).toISOString() : (/* @__PURE__ */ new Date()).toISOString(),
       companyLogo: j.companyId ? companyMap.get(j.companyId) || null : null
     })),
     total: filtered.length,
@@ -79573,7 +79580,7 @@ router3.post("/jobs", requireAuth, requireRole(["admin", "company"]), async (req
     return;
   }
   const [job] = await db.insert(jobsTable).values(parsed.data).returning();
-  res.status(201).json({ ...job, isRemote: Boolean(job.isRemote), createdAt: job.createdAt.toISOString() });
+  res.status(201).json({ ...job, isRemote: Boolean(job.isRemote), createdAt: job.createdAt ? new Date(job.createdAt).toISOString() : (/* @__PURE__ */ new Date()).toISOString() });
 });
 router3.get("/jobs/stats", async (_req, res) => {
   const [{ count: totalJobs }] = await db.select({ count: sql`count(*)` }).from(jobsTable);
@@ -79606,7 +79613,7 @@ router3.get("/jobs/:id", async (req, res) => {
   res.json({
     ...job,
     isRemote: Boolean(job.isRemote),
-    createdAt: job.createdAt.toISOString(),
+    createdAt: job.createdAt ? new Date(job.createdAt).toISOString() : (/* @__PURE__ */ new Date()).toISOString(),
     companyLogo
   });
 });
@@ -79634,7 +79641,7 @@ router3.patch("/jobs/:id", requireAuth, requireRole(["admin", "company"]), async
   res.json({
     ...job,
     isRemote: Boolean(job.isRemote),
-    createdAt: job.createdAt.toISOString(),
+    createdAt: job.createdAt ? new Date(job.createdAt).toISOString() : (/* @__PURE__ */ new Date()).toISOString(),
     companyLogo
   });
 });
@@ -79681,9 +79688,61 @@ var import_express4 = __toESM(require_express2(), 1);
 init_src();
 init_drizzle_orm();
 var router4 = (0, import_express4.Router)();
-async function getCvSnapshot(userId, existingSnapshot) {
+function getPriorityScore(title, category) {
+  if (!title || !category) return 0;
+  const t = title.toLowerCase();
+  const techKeywords = ["\u0648\u064A\u0628", "\u0628\u0631\u0645\u062C\u0629", "\u062A\u0637\u0648\u064A\u0631", "\u0633\u064A\u0633\u0643\u0648", "\u0634\u0628\u0643\u0627\u062A", "\u0623\u0645\u0646", "\u0633\u064A\u0628\u0631\u0627\u0646\u064A", "\u0645\u0648\u0628\u0627\u064A\u0644", "\u062D\u0627\u0633\u0648\u0628", "ccna", "ccnp", "web", "programming", "developer", "code", "cybersecurity", "security", "network", "cisco", "mobile", "app", "computer", "basics", "fullstack", "react", "node", "javascript", "python", "\u0628\u0631\u0645\u062C", "\u062D\u0627\u0633\u0628"];
+  const marketingKeywords = ["\u062A\u0633\u0648\u064A\u0642", "\u0645\u0628\u064A\u0639\u0627\u062A", "\u0625\u0639\u0644\u0627\u0646", "\u062A\u0631\u0648\u064A\u062C", "\u0633\u0648\u0634\u064A\u0627\u0644", "\u0639\u0645\u0644\u0627\u0621", "tot", "marketing", "sales", "social", "media", "seo", "tot", "train", "instructor", "communication", "ads", "\u0627\u0639\u0644\u0627\u0646", "\u062A\u0631\u0648\u062C"];
+  const designKeywords = ["\u062A\u0635\u0645\u064A\u0645", "\u0641\u0648\u062A\u0648\u0634\u0648\u0628", "\u0631\u0633\u0645", "\u0641\u064A\u062F\u064A\u0648", "\u0645\u0648\u0646\u062A\u0627\u062C", "\u062C\u0631\u0627\u0641\u064A\u0643", "\u0627\u0644\u0648\u0627\u0646", "ui", "ux", "design", "photoshop", "illustrator", "video", "editing", "graphic", "art", "creative", "\u0627\u0644\u0648\u0627\u0646", "\u0623\u0644\u0648\u0627\u0646"];
+  const businessKeywords = ["\u0625\u062F\u0627\u0631\u0629", "\u0623\u0639\u0645\u0627\u0644", "\u0645\u062D\u0627\u0633\u0628\u0629", "\u0645\u0627\u0644\u064A\u0629", "\u0628\u0646\u0648\u0643", "\u0645\u0634\u0627\u0631\u064A\u0639", "\u0627\u0642\u062A\u0635\u0627\u062F", "business", "management", "project", "finance", "accounting", "pmp", "startup", "office", "\u0627\u062F\u0627\u0631\u0629", "\u0627\u0639\u0645\u0627\u0644"];
+  let matches = false;
+  if (category === "tech") {
+    matches = techKeywords.some((kw) => t.includes(kw));
+  } else if (category === "marketing") {
+    matches = marketingKeywords.some((kw) => t.includes(kw));
+  } else if (category === "design") {
+    matches = designKeywords.some((kw) => t.includes(kw));
+  } else if (category === "business") {
+    matches = businessKeywords.some((kw) => t.includes(kw));
+  }
+  return matches ? 1 : 0;
+}
+function sortSnapshotByCompanyCategory(snapshot, category) {
+  if (!snapshot) return snapshot;
+  const result = { ...snapshot };
+  if (Array.isArray(result.certificates)) {
+    result.certificates = [...result.certificates].sort((a, b) => {
+      const scoreA = getPriorityScore(a.workshopTitle || "", category);
+      const scoreB = getPriorityScore(b.workshopTitle || "", category);
+      return scoreB - scoreA;
+    });
+  }
+  if (Array.isArray(result.tracks)) {
+    result.tracks = [...result.tracks].sort((a, b) => {
+      const scoreA = getPriorityScore(a.title || "", category);
+      const scoreB = getPriorityScore(b.title || "", category);
+      return scoreB - scoreA;
+    });
+  }
+  if (Array.isArray(result.workshops)) {
+    result.workshops = [...result.workshops].sort((a, b) => {
+      const scoreA = getPriorityScore(a.title || "", category);
+      const scoreB = getPriorityScore(b.title || "", category);
+      return scoreB - scoreA;
+    });
+  }
+  return result;
+}
+async function getCvSnapshot(userId, existingSnapshot, companyId) {
+  let companyCategory = "general";
+  if (companyId) {
+    const [companyUser] = await db.select().from(usersTable).where(eq(usersTable.id, companyId));
+    if (companyUser) {
+      companyCategory = companyUser.companyCategory || "general";
+    }
+  }
   if (existingSnapshot && Object.keys(existingSnapshot).length > 0 && (existingSnapshot.summary || existingSnapshot.experience && existingSnapshot.experience.length > 0)) {
-    return existingSnapshot;
+    return sortSnapshotByCompanyCategory(existingSnapshot, companyCategory);
   }
   const [user] = await db.select().from(usersTable).where(eq(usersTable.id, userId));
   if (!user || !user.cv || !user.cv.summary && (!user.cv.experience || user.cv.experience.length === 0)) {
@@ -79721,7 +79780,8 @@ async function getCvSnapshot(userId, existingSnapshot) {
     tracks: tracksSnapshot,
     workshops: workshopsSnapshot
   };
-  return JSON.parse(JSON.stringify(snapshot, (k, v) => v === void 0 ? null : v));
+  const sortedSnapshot = sortSnapshotByCompanyCategory(snapshot, companyCategory);
+  return JSON.parse(JSON.stringify(sortedSnapshot, (k, v) => v === void 0 ? null : v));
 }
 async function getContactInfoSnapshot(userId, existingSnapshot) {
   if (existingSnapshot && Object.keys(existingSnapshot).length > 0) {
@@ -79751,7 +79811,7 @@ router4.get("/applications", requireAuth, async (req, res) => {
     return false;
   });
   const resolved = await Promise.all(filteredApps.map(async (a) => {
-    const cvSnapshot = await getCvSnapshot(a.app.userId || 0, a.app.cvSnapshot);
+    const cvSnapshot = await getCvSnapshot(a.app.userId || 0, a.app.cvSnapshot, a.companyId);
     const contactInfoSnapshot = await getContactInfoSnapshot(a.app.userId || 0, a.app.contactInfoSnapshot);
     return {
       ...a.app,
@@ -79771,6 +79831,15 @@ router4.post("/applications", requireAuth, async (req, res) => {
   }
   const user = req.user;
   const userId = user.role === "admin" ? parsed.data.userId || user.id : user.id;
+  const [job] = await db.select().from(jobsTable).where(eq(jobsTable.id, parsed.data.jobId));
+  const companyId = job ? job.companyId : null;
+  let companyCategory = "general";
+  if (companyId) {
+    const [companyUser] = await db.select().from(usersTable).where(eq(usersTable.id, companyId));
+    if (companyUser) {
+      companyCategory = companyUser.companyCategory || "general";
+    }
+  }
   let cvSnapshot = null;
   let contactInfoSnapshot = null;
   const [appUser] = await db.select().from(usersTable).where(eq(usersTable.id, userId));
@@ -79795,7 +79864,7 @@ router4.post("/applications", requireAuth, async (req, res) => {
       const w = allWorkshops.find((ws) => ws.id === e.workshopId);
       return w ? { title: w.title } : null;
     }).filter(Boolean);
-    cvSnapshot = {
+    const snapshot = {
       ...appUser.cv || {},
       certificates: certs.map((c) => ({
         id: c.id,
@@ -79807,6 +79876,7 @@ router4.post("/applications", requireAuth, async (req, res) => {
       tracks: tracksSnapshot,
       workshops: workshopsSnapshot
     };
+    cvSnapshot = sortSnapshotByCompanyCategory(snapshot, companyCategory);
     contactInfoSnapshot = appUser.contactInfo;
   }
   const cleanCvSnapshot = cvSnapshot ? JSON.parse(JSON.stringify(cvSnapshot, (k, v) => v === void 0 ? null : v)) : null;
@@ -79837,7 +79907,7 @@ router4.get("/applications/:id", requireAuth, async (req, res) => {
     res.status(403).json({ error: "Forbidden" });
     return;
   }
-  const cvSnapshot = await getCvSnapshot(app2.userId || 0, app2.cvSnapshot);
+  const cvSnapshot = await getCvSnapshot(app2.userId || 0, app2.cvSnapshot, job ? job.companyId : null);
   const contactInfoSnapshot = await getContactInfoSnapshot(app2.userId || 0, app2.contactInfoSnapshot);
   res.json({
     ...app2,
@@ -81871,6 +81941,7 @@ function serializeUser(u) {
     avatarUrl: u.avatarUrl,
     cv: u.cv,
     contactInfo: u.contactInfo,
+    companyCategory: u.companyCategory || "general",
     createdAt: u.createdAt.toISOString()
   };
 }
@@ -81945,7 +82016,8 @@ router8.post("/users", requireAuth, requireRole(["admin"]), async (req, res) => 
     passwordHash: hashPassword(password),
     role: role || "student",
     points: 0,
-    streak: 0
+    streak: 0,
+    companyCategory: parsed.data.companyCategory || "general"
   }).returning();
   await logAuditEvent({ action: "user_create_admin", userId: req.user.id, targetType: "user", targetId: newUser.id, details: { email: email3, role }, req });
   res.status(201).json(serializeUser(newUser));

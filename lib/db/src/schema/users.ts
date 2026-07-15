@@ -47,6 +47,7 @@ export const usersTable = pgTable("users", {
   cv: json("cv").$type<CVStructure>(), // Will store structured CV data
   contactInfo: json("contact_info").$type<ContactInfo>(), // Will store contact info
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  companyCategory: text("company_category").default("general"),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
   deletedAt: timestamp("deleted_at", { withTimezone: true }),
 });
