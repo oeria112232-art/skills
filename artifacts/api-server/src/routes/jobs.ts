@@ -40,7 +40,7 @@ router.get("/jobs", async (req, res): Promise<void> => {
       ...j,
       isRemote: Boolean(j.isRemote),
       createdAt: j.createdAt ? new Date(j.createdAt).toISOString() : new Date().toISOString(),
-      companyLogo: j.companyId ? (companyMap.get(j.companyId) || null) : null,
+      companyLogo: j.companyId ? (companyMap.get(Number(j.companyId)) || null) : null,
     })), 
     total: filtered.length, 
     limit, 

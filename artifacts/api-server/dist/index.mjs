@@ -69818,7 +69818,8 @@ var init_src = __esm({
       ["stream_key", "streamKey"],
       ["is_live", "isLive"],
       ["enrolled_students", "enrolledStudents"],
-      ["tags", "tags"]
+      ["tags", "tags"],
+      ["job_id", "jobId"]
     ]);
     pool = new esm_default.Pool();
     dbMock = {
@@ -79666,7 +79667,7 @@ router3.get("/jobs", async (req, res) => {
       ...j,
       isRemote: Boolean(j.isRemote),
       createdAt: j.createdAt ? new Date(j.createdAt).toISOString() : (/* @__PURE__ */ new Date()).toISOString(),
-      companyLogo: j.companyId ? companyMap.get(j.companyId) || null : null
+      companyLogo: j.companyId ? companyMap.get(Number(j.companyId)) || null : null
     })),
     total: filtered.length,
     limit,
@@ -79852,7 +79853,7 @@ async function getCvSnapshot(userId, existingSnapshot, companyId) {
   const allTracks = await db.select().from(tracksTable);
   const userProgress = await db.select().from(userProgressTable).where(eq(userProgressTable.userId, user.id));
   const tracksSnapshot = allTracks.map((t) => {
-    const trackProgress = userProgress.filter((p) => p.trackId === t.id);
+    const trackProgress = userProgress.filter((p) => p.trackId == t.id);
     const completedModules = trackProgress.filter((p) => p.completed === 1);
     const percent = t.moduleCount > 0 ? Math.round(completedModules.length / t.moduleCount * 100) : 0;
     return {
@@ -79865,7 +79866,7 @@ async function getCvSnapshot(userId, existingSnapshot, companyId) {
   const userEnrollments = await db.select().from(enrollmentsTable).where(eq(enrollmentsTable.userId, user.id));
   const allWorkshops = await db.select().from(workshopsTable);
   const workshopsSnapshot = userEnrollments.map((e) => {
-    const w = allWorkshops.find((ws) => ws.id === e.workshopId);
+    const w = allWorkshops.find((ws) => ws.id == e.workshopId);
     return w ? { title: w.title } : null;
   }).filter(Boolean);
   const snapshot = {
@@ -79896,7 +79897,7 @@ router4.get("/applications", requireAuth, async (req, res) => {
   const allApps = await db.select().from(applicationsTable);
   const allJobs = await db.select().from(jobsTable);
   const apps = allApps.map((app2) => {
-    const job = allJobs.find((j) => j.id === app2.jobId);
+    const job = allJobs.find((j) => j.id == app2.jobId);
     return {
       app: app2,
       jobTitle: job ? job.title : null,
@@ -79904,10 +79905,10 @@ router4.get("/applications", requireAuth, async (req, res) => {
     };
   });
   const user = req.user;
-  const filteredApps = apps.filter((a) => !q.jobId || a.app.jobId === q.jobId).filter((a) => !q.status || a.app.status === q.status).filter((a) => !q.userId || a.app.userId === q.userId).filter((a) => !q.companyId || a.companyId === q.companyId).filter((a) => {
+  const filteredApps = apps.filter((a) => !q.jobId || a.app.jobId == q.jobId).filter((a) => !q.status || a.app.status === q.status).filter((a) => !q.userId || a.app.userId == q.userId).filter((a) => !q.companyId || a.companyId == q.companyId).filter((a) => {
     if (user.role === "admin") return true;
-    if (user.role === "company") return a.companyId === user.id;
-    if (user.role === "student") return a.app.userId === user.id;
+    if (user.role === "company") return a.companyId == user.id;
+    if (user.role === "student") return a.app.userId == user.id;
     return false;
   });
   const resolved = await Promise.all(filteredApps.map(async (a) => {
@@ -79948,8 +79949,8 @@ router4.post("/applications", requireAuth, async (req, res) => {
     const allTracks = await db.select().from(tracksTable);
     const userProgress = await db.select().from(userProgressTable).where(eq(userProgressTable.userId, appUser.id));
     const tracksSnapshot = allTracks.map((t) => {
-      const trackProgress = userProgress.filter((p) => p.trackId === t.id);
-      const completedModules = trackProgress.filter((p) => p.completed === 1);
+      const trackProgress = userProgress.filter((p) => p.trackId == t.id);
+      const completedModules = trackProgress.filter((p) => p.completed == 1);
       const percent = t.moduleCount > 0 ? Math.round(completedModules.length / t.moduleCount * 100) : 0;
       return {
         title: t.title,
@@ -79961,7 +79962,7 @@ router4.post("/applications", requireAuth, async (req, res) => {
     const userEnrollments = await db.select().from(enrollmentsTable).where(eq(enrollmentsTable.userId, appUser.id));
     const allWorkshops = await db.select().from(workshopsTable);
     const workshopsSnapshot = userEnrollments.map((e) => {
-      const w = allWorkshops.find((ws) => ws.id === e.workshopId);
+      const w = allWorkshops.find((ws) => ws.id == e.workshopId);
       return w ? { title: w.title } : null;
     }).filter(Boolean);
     const snapshot = {
@@ -80035,8 +80036,8 @@ router4.patch("/applications/:id", requireAuth, async (req, res) => {
   }
   const [job] = await db.select().from(jobsTable).where(eq(jobsTable.id, existingApp.jobId));
   const user = req.user;
-  const isSelf = existingApp.userId === user.id;
-  const isJobOwner = job && job.companyId === user.id;
+  const isSelf = existingApp.userId == user.id;
+  const isJobOwner = job && job.companyId == user.id;
   const isAdmin2 = user.role === "admin";
   if (!isAdmin2 && !isSelf && !isJobOwner) {
     res.status(403).json({ error: "Forbidden" });

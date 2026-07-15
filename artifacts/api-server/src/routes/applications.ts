@@ -88,7 +88,7 @@ async function getCvSnapshot(userId: number, existingSnapshot: any, companyId?: 
   const allTracks = await db.select().from(tracksTable);
   const userProgress = await db.select().from(userProgressTable).where(eq(userProgressTable.userId, user.id));
   const tracksSnapshot = allTracks.map(t => {
-    const trackProgress = userProgress.filter(p => p.trackId === t.id);
+    const trackProgress = userProgress.filter(p => p.trackId == t.id);
     const completedModules = trackProgress.filter(p => p.completed === 1);
     const percent = t.moduleCount > 0 ? Math.round((completedModules.length / t.moduleCount) * 100) : 0;
     return {
@@ -102,7 +102,7 @@ async function getCvSnapshot(userId: number, existingSnapshot: any, companyId?: 
   const userEnrollments = await db.select().from(enrollmentsTable).where(eq(enrollmentsTable.userId, user.id));
   const allWorkshops = await db.select().from(workshopsTable);
   const workshopsSnapshot = userEnrollments.map(e => {
-    const w = allWorkshops.find(ws => ws.id === e.workshopId);
+    const w = allWorkshops.find(ws => ws.id == e.workshopId);
     return w ? { title: w.title } : null;
   }).filter(Boolean);
 
@@ -139,7 +139,7 @@ router.get("/applications", requireAuth, async (req: AuthenticatedRequest, res):
   const allJobs = await db.select().from(jobsTable);
 
   const apps = allApps.map(app => {
-    const job = allJobs.find(j => j.id === app.jobId);
+    const job = allJobs.find(j => j.id == app.jobId);
     return {
       app,
       jobTitle: job ? job.title : null,
@@ -149,14 +149,14 @@ router.get("/applications", requireAuth, async (req: AuthenticatedRequest, res):
 
   const user = req.user!;
   const filteredApps = apps
-    .filter(a => !q.jobId || a.app.jobId === q.jobId)
+    .filter(a => !q.jobId || a.app.jobId == q.jobId)
     .filter(a => !q.status || a.app.status === q.status)
-    .filter(a => !q.userId || a.app.userId === q.userId)
-    .filter(a => !q.companyId || a.companyId === q.companyId)
+    .filter(a => !q.userId || a.app.userId == q.userId)
+    .filter(a => !q.companyId || a.companyId == q.companyId)
     .filter(a => {
       if (user.role === "admin") return true;
-      if (user.role === "company") return a.companyId === user.id;
-      if (user.role === "student") return a.app.userId === user.id;
+      if (user.role === "company") return a.companyId == user.id;
+      if (user.role === "student") return a.app.userId == user.id;
       return false;
     });
 
@@ -203,8 +203,8 @@ router.post("/applications", requireAuth, async (req: AuthenticatedRequest, res)
     const allTracks = await db.select().from(tracksTable);
     const userProgress = await db.select().from(userProgressTable).where(eq(userProgressTable.userId, appUser.id));
     const tracksSnapshot = allTracks.map(t => {
-      const trackProgress = userProgress.filter(p => p.trackId === t.id);
-      const completedModules = trackProgress.filter(p => p.completed === 1);
+      const trackProgress = userProgress.filter(p => p.trackId == t.id);
+      const completedModules = trackProgress.filter(p => p.completed == 1);
       const percent = t.moduleCount > 0 ? Math.round((completedModules.length / t.moduleCount) * 100) : 0;
       return {
         title: t.title,
@@ -217,7 +217,7 @@ router.post("/applications", requireAuth, async (req: AuthenticatedRequest, res)
     const userEnrollments = await db.select().from(enrollmentsTable).where(eq(enrollmentsTable.userId, appUser.id));
     const allWorkshops = await db.select().from(workshopsTable);
     const workshopsSnapshot = userEnrollments.map(e => {
-      const w = allWorkshops.find(ws => ws.id === e.workshopId);
+      const w = allWorkshops.find(ws => ws.id == e.workshopId);
       return w ? { title: w.title } : null;
     }).filter(Boolean);
 
@@ -292,8 +292,8 @@ router.patch("/applications/:id", requireAuth, async (req: AuthenticatedRequest,
   const [job] = await db.select().from(jobsTable).where(eq(jobsTable.id, existingApp.jobId));
   const user = req.user!;
   
-  const isSelf = existingApp.userId === user.id;
-  const isJobOwner = job && job.companyId === user.id;
+  const isSelf = existingApp.userId == user.id;
+  const isJobOwner = job && job.companyId == user.id;
   const isAdmin = user.role === "admin";
   
   if (!isAdmin && !isSelf && !isJobOwner) {

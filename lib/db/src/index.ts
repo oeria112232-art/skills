@@ -475,6 +475,7 @@ const jsKeyMap = new Map<string, string>([
   ["is_live", "isLive"],
   ["enrolled_students", "enrolledStudents"],
   ["tags", "tags"],
+  ["job_id", "jobId"],
 ]);
 
 function getJsKey(colName: string): string {

@@ -58,10 +58,12 @@ export default function AdminCompaniesPage() {
         setIsAddDialogOpen(false);
         setNewCompany({ name: "", email: "", password: "", companyCategory: "tech" });
       },
-      onError: () => {
+      onError: (err: any) => {
+        const serverError = err?.response?.data?.error;
+        console.error("Create company error:", err);
         toast({
           title: isAr ? "خطأ" : "Error",
-          description: isAr ? "حدث خطأ أثناء إنشاء حساب الشركة" : "Error creating company account",
+          description: serverError || (isAr ? "حدث خطأ أثناء إنشاء حساب الشركة" : "Error creating company account"),
           variant: "destructive"
         });
       }
