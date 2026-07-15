@@ -1,9 +1,9 @@
 import { Router } from "express";
 import { db, tracksTable, trackModulesTable, userProgressTable, usersTable, certificatesTable } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
-import {
-  GetTrackParams, GetTrackProgressParams, UpdateTrackProgressParams, UpdateTrackProgressBody,
-} from "@workspace/api-zod";
+import { GetTrackParams, GetTrackProgressParams, UpdateTrackProgressParams, UpdateTrackProgressBody } from "@workspace/api-zod";
+import { z } from "zod";
+import crypto from "crypto";
 import { requireAuth, requireRole, type AuthenticatedRequest } from "../middlewares/auth";
 import {
   verifyAndHardenUserBalance,
@@ -17,6 +17,27 @@ import { paymentRateLimit } from "../middlewares/rateLimit";
 import { logAuditEvent } from "../services/audit-log";
 
 const router = Router();
+
+const TrackBodySchema = z.object({
+  title: z.string().min(1),
+  slug: z.string().min(1),
+  description: z.string().optional(),
+  category: z.string().optional(),
+  level: z.string().optional(),
+  estimatedHours: z.number().int().nonnegative().optional(),
+  iconUrl: z.string().url().optional().nullable(),
+  instructorId: z.number().int().positive().optional().nullable(),
+  price: z.number().int().nonnegative().optional().default(0),
+});
+
+const ModuleBodySchema = z.object({
+  title: z.string().min(1),
+  description: z.string().optional(),
+  type: z.enum(["lesson", "video", "quiz", "exercise"]),
+  estimatedMinutes: z.number().int().nonnegative().optional().default(15),
+  content: z.string().optional(),
+  sortOrder: z.number().int().nonnegative().optional().default(0),
+});
 
 // Track CRUD
 router.get("/tracks", async (_req, res): Promise<void> => {
@@ -35,13 +56,37 @@ router.get("/tracks", async (_req, res): Promise<void> => {
   }));
 });
 
-router.post("/tracks", requireAuth, requireRole(["admin"]), async (req, res): Promise<void> => {
-  const newTrack = await db.insert(tracksTable).values(req.body).returning();
+router.post("/tracks", requireAuth, requireRole(["admin"]), async (req: any, res): Promise<void> => {
+  const parsed = TrackBodySchema.safeParse(req.body);
+  if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
+  const newTrack = await db.insert(tracksTable).values({
+    title: parsed.data.title,
+    slug: parsed.data.slug,
+    description: parsed.data.description || "",
+    category: parsed.data.category || "",
+    level: parsed.data.level || "",
+    estimatedHours: parsed.data.estimatedHours || 0,
+    iconUrl: parsed.data.iconUrl || null,
+    instructorId: parsed.data.instructorId || null,
+    price: parsed.data.price || 0,
+  }).returning();
   res.status(201).json(newTrack[0]);
 });
 
-router.put("/tracks/:id", requireAuth, requireRole(["admin"]), async (req, res): Promise<void> => {
-  const updated = await db.update(tracksTable).set(req.body).where(eq(tracksTable.id, parseInt(req.params.id as string))).returning();
+router.put("/tracks/:id", requireAuth, requireRole(["admin"]), async (req: any, res): Promise<void> => {
+  const parsed = TrackBodySchema.partial().safeParse(req.body);
+  if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
+  const updated = await db.update(tracksTable).set({
+    title: parsed.data.title,
+    slug: parsed.data.slug,
+    description: parsed.data.description,
+    category: parsed.data.category,
+    level: parsed.data.level,
+    estimatedHours: parsed.data.estimatedHours,
+    iconUrl: parsed.data.iconUrl,
+    instructorId: parsed.data.instructorId,
+    price: parsed.data.price,
+  }).where(eq(tracksTable.id, parseInt(req.params.id as string))).returning();
   res.json(updated[0]);
 });
 
@@ -56,16 +101,35 @@ router.get("/tracks/:trackId/modules", async (req, res): Promise<void> => {
   res.json(modules);
 });
 
-router.post("/tracks/:trackId/modules", requireAuth, requireRole(["admin"]), async (req, res): Promise<void> => {
+router.post("/tracks/:trackId/modules", requireAuth, requireRole(["admin"]), async (req: any, res): Promise<void> => {
   const trackId = parseInt(req.params.trackId as string);
-  const newModule = await db.insert(trackModulesTable).values({ ...req.body, trackId }).returning();
+  const parsed = ModuleBodySchema.safeParse(req.body);
+  if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
+  const newModule = await db.insert(trackModulesTable).values({
+    trackId,
+    title: parsed.data.title,
+    description: parsed.data.description || "",
+    type: parsed.data.type,
+    estimatedMinutes: parsed.data.estimatedMinutes || 15,
+    content: parsed.data.content || "",
+    order: parsed.data.sortOrder || 0,
+  }).returning();
   const allModules = await db.select().from(trackModulesTable).where(eq(trackModulesTable.trackId, trackId));
   await db.update(tracksTable).set({ moduleCount: allModules.length }).where(eq(tracksTable.id, trackId));
   res.status(201).json(newModule[0]);
 });
 
-router.put("/modules/:id", requireAuth, requireRole(["admin"]), async (req, res): Promise<void> => {
-  const updated = await db.update(trackModulesTable).set(req.body).where(eq(trackModulesTable.id, parseInt(req.params.id as string))).returning();
+router.put("/modules/:id", requireAuth, requireRole(["admin"]), async (req: any, res): Promise<void> => {
+  const parsed = ModuleBodySchema.partial().safeParse(req.body);
+  if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
+  const updated = await db.update(trackModulesTable).set({
+    title: parsed.data.title,
+    description: parsed.data.description,
+    type: parsed.data.type,
+    estimatedMinutes: parsed.data.estimatedMinutes,
+    content: parsed.data.content,
+    order: parsed.data.sortOrder,
+  }).where(eq(trackModulesTable.id, parseInt(req.params.id as string))).returning();
   res.json(updated[0]);
 });
 
@@ -272,7 +336,7 @@ router.post("/tracks/:slug/progress", requireAuth, async (req: AuthenticatedRequ
       const [u] = await db.select().from(usersTable).where(eq(usersTable.id, parsed.data.userId));
       if (u) {
         const certNumber = `CERT-TRK-${track.id}-${u.id}-${Date.now()}`;
-        const verificationCode = `MH-VFY-${Math.random().toString(36).substring(2, 8).toUpperCase()}-${Math.floor(1000 + Math.random() * 9000)}`;
+        const verificationCode = `MH-VFY-${crypto.randomBytes(3).toString("hex").toUpperCase()}-${crypto.randomInt(1000, 10000)}`;
         const trackCertLevel = (track as any).certLevel ?? 3;
         const trackCertCost = (track as any).certCost ?? 250;
         const trackCertType = (track as any).certType ?? "track";

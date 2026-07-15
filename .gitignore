@@ -58,5 +58,6 @@ scratch/
 *.pdf
 artifacts/api-server/scratch-check-db.js
 ffmpeg/
+db-fallback.json
 
 

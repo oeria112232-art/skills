@@ -16,11 +16,13 @@
     "drizzle-zod": "^0.8.3",
     "firebase": "^12.15.0",
     "pg": "^8.22.0",
-    "zod": "catalog:"
+    "zod": "catalog:",
+    "bcryptjs": "^3.0.3"
   },
   "devDependencies": {
     "@types/node": "catalog:",
     "@types/pg": "^8.20.0",
+    "@types/bcryptjs": "^3.0.0",
     "drizzle-kit": "^0.31.10"
   }
 }

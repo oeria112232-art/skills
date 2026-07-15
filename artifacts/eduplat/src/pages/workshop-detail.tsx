@@ -41,7 +41,8 @@ export default function WorkshopDetailPage() {
 
   const queryClient = useQueryClient();
   const { data: certs } = useListCertificates();
-  const hasEarnedCert = certs?.some(c => c.workshopId === workshopId);
+  const certsList = Array.isArray(certs) ? certs : (certs && Array.isArray((certs as any).data) ? (certs as any).data : []);
+  const hasEarnedCert = certsList.some((c: any) => c.workshopId === workshopId);
   const [claiming, setClaiming] = useState(false);
 
   const handleClaimCertificate = async () => {

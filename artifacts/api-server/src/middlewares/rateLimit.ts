@@ -1,4 +1,5 @@
 import type { Request, Response, NextFunction } from "express";
+import { redis } from "../lib/redis";
 
 interface RateLimitEntry {
   count: number;
@@ -19,31 +20,55 @@ export function rateLimit(options: {
 }) {
   const { windowMs, max, keyPrefix = "rl", message } = options;
 
-  return (req: Request, res: Response, next: NextFunction): void => {
+  return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const ip = getClientIp(req);
     const key = `${keyPrefix}:${ip}`;
     const now = Date.now();
 
-    let entry = store.get(key);
-    if (!entry || now > entry.resetTime) {
-      entry = { count: 1, resetTime: now + windowMs };
-      store.set(key, entry);
+    try {
+      const countStr = await redis.get(key);
+      const count = countStr ? parseInt(countStr, 10) : 0;
+
+      if (count === 0) {
+        await redis.set(key, "1", "EX", Math.ceil(windowMs / 1000));
+        next();
+        return;
+      }
+
+      if (count >= max) {
+        const retryAfter = Math.ceil(windowMs / 1000);
+        res.setHeader("Retry-After", String(retryAfter));
+        res.status(429).json({
+          error: message || "Too many requests. Please try again later.",
+          retryAfter,
+        });
+        return;
+      }
+
+      await redis.incr(key);
       next();
-      return;
-    }
+    } catch (err) {
+      let entry = store.get(key);
+      if (!entry || now > entry.resetTime) {
+        entry = { count: 1, resetTime: now + windowMs };
+        store.set(key, entry);
+        next();
+        return;
+      }
 
-    entry.count++;
-    if (entry.count > max) {
-      const retryAfter = Math.ceil((entry.resetTime - now) / 1000);
-      res.setHeader("Retry-After", String(retryAfter));
-      res.status(429).json({
-        error: message || "Too many requests. Please try again later.",
-        retryAfter,
-      });
-      return;
-    }
+      entry.count++;
+      if (entry.count > max) {
+        const retryAfter = Math.ceil((entry.resetTime - now) / 1000);
+        res.setHeader("Retry-After", String(retryAfter));
+        res.status(429).json({
+          error: message || "Too many requests. Please try again later.",
+          retryAfter,
+        });
+        return;
+      }
 
-    next();
+      next();
+    }
   };
 }
 

@@ -29,7 +29,8 @@ export default function AdminInstructorsPage() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  const instructors = Array.isArray(users) ? users.filter(u => u.role === "instructor") : [];
+  const usersList = Array.isArray(users) ? users : (users && Array.isArray((users as any).data) ? (users as any).data : []);
+  const instructors = usersList.filter((u: any) => u.role === "instructor");
 
   const [selectedInstructorId, setSelectedInstructorId] = useState<number | null>(null);
   const [tempAllowedPages, setTempAllowedPages] = useState<string[]>([]);
@@ -168,12 +169,12 @@ export default function AdminInstructorsPage() {
               <Shield className="w-8 h-8 mx-auto mb-2 opacity-20" />
               <p>{isAr ? "لا يوجد معلمين حالياً. يمكنك تغيير رتبة مستخدم من صفحة المستخدمين." : "No instructors found. You can change a user's role from the Users page."}</p>
             </div>
-          ) : instructors.map(instructor => (
+          ) : instructors.map((instructor: any) => (
             <div key={instructor.id} className="bg-card border border-border rounded-xl p-5 shadow-sm">
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
-                    {instructor.name.split(" ").map(n => n[0]).join("").slice(0, 2)}
+                    {instructor.name.split(" ").map((n: string) => n[0]).join("").slice(0, 2)}
                   </div>
                   <div>
                     <h3 className="font-bold text-sm">{instructor.name}</h3>

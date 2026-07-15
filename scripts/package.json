@@ -11,10 +11,12 @@
   "dependencies": {
     "@workspace/db": "workspace:*",
     "drizzle-orm": "catalog:",
-    "pg": "^8.22.0"
+    "pg": "^8.22.0",
+    "bcryptjs": "^3.0.3"
   },
   "devDependencies": {
     "@types/node": "catalog:",
+    "@types/bcryptjs": "^3.0.0",
     "tsx": "catalog:"
   }
 }

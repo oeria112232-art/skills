@@ -215,7 +215,8 @@ export default function UserSettingsPage() {
 
   if (!user) return null;
 
-  const myCerts = certs?.filter(c => c.userId === user.id) || [];
+  const certsList = Array.isArray(certs) ? certs : (certs && Array.isArray((certs as any).data) ? (certs as any).data : []);
+  const myCerts = certsList.filter((c: any) => c.userId === user.id);
 
   return (
     <AppLayout>

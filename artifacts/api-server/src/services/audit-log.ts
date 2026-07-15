@@ -1,5 +1,6 @@
 import { db, auditLogTable } from "@workspace/db";
 import type { Request } from "express";
+import { logger } from "../lib/logger";
 
 export async function logAuditEvent(params: {
   action: string;

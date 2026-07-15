@@ -31,6 +31,8 @@ export default function AdminCertificatesPage() {
   const { data: tracks } = useListTracks();
   const updateWorkshop = useUpdateWorkshop();
 
+  const certsList = Array.isArray(issuedCerts) ? issuedCerts : (issuedCerts && Array.isArray((issuedCerts as any).data) ? (issuedCerts as any).data : []);
+
   const [selectedWorkshopId, setSelectedWorkshopId] = useState<number | null>(null);
 
   // Certificate Settings state (per-level pricing, shape, linked entity)
@@ -873,7 +875,7 @@ export default function AdminCertificatesPage() {
                   [1, 2].map(i => (
                     <tr key={i}><td colSpan={8} className="p-4"><Skeleton className="h-10 rounded-xl bg-muted/65" /></td></tr>
                   ))
-                ) : !Array.isArray(issuedCerts) || issuedCerts.length === 0 ? (
+                ) : certsList.length === 0 ? (
                   <tr>
                     <td colSpan={8} className="text-center py-16 text-muted-foreground">
                       <Award className="w-10 h-10 mx-auto opacity-20 text-primary mb-3" />
@@ -881,7 +883,7 @@ export default function AdminCertificatesPage() {
                     </td>
                   </tr>
                 ) : (
-                  issuedCerts.map(c => (
+                  certsList.map((c: any) => (
                     <tr key={c.id} className="hover:bg-muted/30 transition-colors">
                       <td className="px-4 py-3 font-mono font-bold text-slate-500 text-[10px]">{c.certificateNumber}</td>
                       <td className="px-4 py-3 font-bold text-foreground">{c.userName}</td>

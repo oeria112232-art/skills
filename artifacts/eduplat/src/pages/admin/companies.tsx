@@ -21,7 +21,8 @@ export default function AdminCompaniesPage() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  const companies = Array.isArray(users) ? users.filter((u: any) => u.role === "company") : [];
+  const usersList = Array.isArray(users) ? users : (users && Array.isArray((users as any).data) ? (users as any).data : []);
+  const companies = usersList.filter((u: any) => u.role === "company");
 
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [newCompany, setNewCompany] = useState({ name: "", email: "", password: "" });

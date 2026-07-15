@@ -13,7 +13,20 @@ import {
 import { consultationRateLimit } from "../middlewares/rateLimit";
 import { logAuditEvent } from "../services/audit-log";
 
+import { z } from "zod";
+
 const router = Router();
+
+const ConsultationBodySchema = z.object({
+  category: z.string().min(1),
+  title: z.string().min(1).max(200),
+  message: z.string().min(1),
+  assignedTo: z.string().optional().nullable(),
+});
+
+const ConsultationReplyBodySchema = z.object({
+  response: z.string().min(1),
+});
 
 // 1. GET /consultations
 router.get("/consultations", requireAuth, async (req: AuthenticatedRequest, res): Promise<void> => {
@@ -60,11 +73,12 @@ router.get("/consultations", requireAuth, async (req: AuthenticatedRequest, res)
 const CONSULTATION_COST = 100;
 
 router.post("/consultations", requireAuth, consultationRateLimit, async (req: AuthenticatedRequest, res): Promise<void> => {
-  const { category, title, message, assignedTo } = req.body;
-  if (!category || !title || !message) {
-    res.status(400).json({ error: "category, title and message are required" });
+  const parsed = ConsultationBodySchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
     return;
   }
+  const { category, title, message, assignedTo } = parsed.data;
 
   const cost = CONSULTATION_COST;
   const userId = req.user!.id;
@@ -166,11 +180,12 @@ router.post("/consultations/:id/reply", requireAuth, async (req: AuthenticatedRe
     }
 
     const id = parseInt(req.params.id as string, 10);
-    const { response } = req.body;
-    if (!response) {
-      res.status(400).json({ error: "response is required" });
+    const parsed = ConsultationReplyBodySchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: parsed.error.message });
       return;
     }
+    const { response } = parsed.data;
 
     const [existing] = await db.select().from(consultationsTable).where(eq(consultationsTable.id, id));
     if (!existing) {

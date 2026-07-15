@@ -13,7 +13,44 @@ import {
   claimNonce,
 } from "../services/wallet-security";
 import { paymentRateLimit, transferRateLimit } from "../middlewares/rateLimit";
-import { logAuditEvent } from "../services/audit-log";
+import { z } from "zod";
+
+const DepositRequestSchema = z.object({
+  pointsAmount: z.union([z.number(), z.string().transform((v: string) => parseInt(v, 10))]).pipe(z.number().int().positive()),
+  cashAmount: z.string().min(1),
+  transferScreenshot: z.string().min(1),
+  notes: z.string().optional().nullable(),
+  paymentMethodId: z.union([z.number(), z.string().transform((v: string) => parseInt(v, 10))]).optional().nullable(),
+});
+
+const TransferVerifySchema = z.object({
+  email: z.string().email(),
+  amount: z.union([z.number(), z.string().transform((v: string) => parseInt(v, 10))]).pipe(z.number().int().positive()),
+});
+
+const TransferConfirmSchema = z.object({
+  email: z.string().email(),
+  amount: z.union([z.number(), z.string().transform((v: string) => parseInt(v, 10))]).pipe(z.number().int().positive()),
+});
+
+const AdminDiscountCodeSchema = z.object({
+  code: z.string().min(1),
+  discountType: z.enum(["percent", "fixed_points"]),
+  discountValue: z.number().positive(),
+  maxUses: z.union([z.number(), z.string().transform((v: string) => parseInt(v, 10))]).optional().nullable(),
+  expiresAt: z.string().optional().nullable(),
+  description: z.string().optional().nullable(),
+});
+
+const AdminPaymentMethodSchema = z.object({
+  name: z.string().min(1),
+  accountName: z.string().min(1),
+  accountNumber: z.string().min(1),
+  icon: z.string().optional().nullable(),
+  instructions: z.string().optional().nullable(),
+  isActive: z.boolean().optional().default(true),
+  sortOrder: z.union([z.number(), z.string().transform((v: string) => parseInt(v, 10))]).optional().nullable(),
+});
 
 const router = Router();
 
@@ -160,31 +197,23 @@ router.get("/points/platform-info", requireAuth, async (_req: AuthenticatedReque
 // 4. POST /points/deposit-request - Submit deposit proof
 router.post("/points/deposit-request", requireAuth, paymentRateLimit, async (req: AuthenticatedRequest, res): Promise<void> => {
   try {
-    const { pointsAmount, cashAmount, transferScreenshot, notes, paymentMethodId } = req.body;
-    
-    if (!pointsAmount || isNaN(parseInt(pointsAmount, 10)) || parseInt(pointsAmount, 10) <= 0) {
-      res.status(400).json({ error: "Valid points amount is required" });
+    const parsed = DepositRequestSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: parsed.error.message });
       return;
     }
-    if (!cashAmount || String(cashAmount).trim() === "") {
-      res.status(400).json({ error: "Cash amount description is required" });
-      return;
-    }
-    if (!transferScreenshot || String(transferScreenshot).trim() === "") {
-      res.status(400).json({ error: "Screenshot proof of transfer is required" });
-      return;
-    }
+    const { pointsAmount, cashAmount, transferScreenshot, notes, paymentMethodId } = parsed.data;
 
     const [newRequest] = await db.insert(depositRequestsTable).values({
       userId: req.user!.id,
-      pointsAmount: parseInt(pointsAmount, 10),
-      cashAmount: String(cashAmount).trim(),
-      transferScreenshot: String(transferScreenshot),
+      pointsAmount,
+      cashAmount,
+      transferScreenshot,
       notes: notes ? `${notes}${paymentMethodId ? ` | Method ID: ${paymentMethodId}` : ""}` : (paymentMethodId ? `Method ID: ${paymentMethodId}` : ""),
       status: "pending",
     }).returning();
 
-    await logAuditEvent({ action: "deposit_request", userId: req.user!.id, targetType: "deposit", targetId: newRequest.id, details: { pointsAmount: parseInt(pointsAmount, 10), cashAmount }, req });
+    await logAuditEvent({ action: "deposit_request", userId: req.user!.id, targetType: "deposit", targetId: newRequest.id, details: { pointsAmount, cashAmount }, req });
     res.status(201).json(serializeDeposit(newRequest, req.user!.name, req.user!.email));
   } catch (err: any) {
     res.status(500).json({ error: "Internal server error" });
@@ -249,30 +278,24 @@ router.post("/points/apply-discount", requireAuth, async (req: AuthenticatedRequ
 // 6. POST /points/transfer/verify - Verify transfer destination
 router.post("/points/transfer/verify", requireAuth, async (req: AuthenticatedRequest, res): Promise<void> => {
   try {
-    const { email, amount } = req.body;
-    
-    if (!email || String(email).trim() === "") {
-      res.status(400).json({ error: "Email is required" });
+    const parsed = TransferVerifySchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: parsed.error.message });
       return;
     }
-    
-    const parsedAmount = parseInt(amount, 10);
-    if (isNaN(parsedAmount) || parsedAmount <= 0) {
-      res.status(400).json({ error: "Transfer amount must be a positive integer" });
-      return;
-    }
+    const { email, amount } = parsed.data;
 
     const [sender] = await db.select().from(usersTable).where(eq(usersTable.id, req.user!.id));
     if (!sender) {
       res.status(404).json({ error: "Sender not found" });
       return;
     }
-    if ((sender.points || 0) < parsedAmount) {
+    if ((sender.points || 0) < amount) {
       res.status(400).json({ error: `Insufficient points. You only have ${sender.points || 0} points.` });
       return;
     }
 
-    const targetEmail = String(email).trim().toLowerCase();
+    const targetEmail = email.trim().toLowerCase();
     if (targetEmail === sender.email.toLowerCase()) {
       res.status(400).json({ error: "Cannot transfer points to your own email" });
       return;
@@ -290,7 +313,7 @@ router.post("/points/transfer/verify", requireAuth, async (req: AuthenticatedReq
       verified: true,
       recipientName: recipient.name,
       recipientEmail: recipient.email,
-      amount: parsedAmount,
+      amount,
     });
   } catch (err: any) {
     res.status(500).json({ error: "Internal server error" });
@@ -299,22 +322,16 @@ router.post("/points/transfer/verify", requireAuth, async (req: AuthenticatedReq
 
 // 7. POST /points/transfer/confirm - Complete the points transfer
 router.post("/points/transfer/confirm", requireAuth, transferRateLimit, async (req: AuthenticatedRequest, res): Promise<void> => {
-  const { email, amount } = req.body;
-  
-  if (!email || String(email).trim() === "") {
-    res.status(400).json({ error: "Email is required" });
+  const parsed = TransferConfirmSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
     return;
   }
-  
-  const parsedAmount = parseInt(amount, 10);
-  if (isNaN(parsedAmount) || parsedAmount <= 0) {
-    res.status(400).json({ error: "Amount must be a positive integer" });
-    return;
-  }
+  const { email, amount: parsedAmount } = parsed.data;
 
   // Find recipient first
   const allUsers = await db.select().from(usersTable);
-  const targetEmail = String(email).trim().toLowerCase();
+  const targetEmail = email.trim().toLowerCase();
   const recipient = (allUsers as any[]).find((u: any) => u.email.toLowerCase() === targetEmail);
   if (!recipient) {
     res.status(404).json({ error: "Recipient not found" });
@@ -550,41 +567,28 @@ router.get("/admin/discount-codes", requireAuth, requireRole(["admin"]), async (
 // A5. POST /admin/discount-codes - Create discount code
 router.post("/admin/discount-codes", requireAuth, requireRole(["admin"]), async (req: AuthenticatedRequest, res): Promise<void> => {
   try {
-    const { code, discountType, discountValue, maxUses, expiresAt, description } = req.body;
-    
-    if (!code || String(code).trim() === "") {
-      res.status(400).json({ error: "Code is required" });
+    const parsed = AdminDiscountCodeSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: parsed.error.message });
       return;
     }
-    if (!discountType || !["percent", "fixed_points"].includes(discountType)) {
-      res.status(400).json({ error: "discountType must be 'percent' or 'fixed_points'" });
-      return;
-    }
-    const dv = parseFloat(discountValue);
-    if (isNaN(dv) || dv <= 0) {
-      res.status(400).json({ error: "discountValue must be a positive number" });
-      return;
-    }
-    if (discountType === "percent" && dv > 100) {
-      res.status(400).json({ error: "Percent discount cannot exceed 100%" });
-      return;
-    }
+    const { code, discountType, discountValue, maxUses, expiresAt, description } = parsed.data;
 
     // Check uniqueness
     const existing = await db.select().from(discountCodesTable);
-    const duplicate = (existing as any[]).find((c: any) => c.code.toUpperCase() === String(code).trim().toUpperCase());
+    const duplicate = (existing as any[]).find((c: any) => c.code.toUpperCase() === code.trim().toUpperCase());
     if (duplicate) {
       res.status(409).json({ error: "A discount code with this name already exists" });
       return;
     }
 
     const [newCode] = await db.insert(discountCodesTable).values({
-      code: String(code).trim().toUpperCase(),
+      code: code.trim().toUpperCase(),
       discountType,
-      discountValue: dv,
-      maxUses: maxUses ? parseInt(maxUses, 10) : null,
+      discountValue,
+      maxUses,
       expiresAt: expiresAt ? new Date(expiresAt) : null,
-      description: description ? String(description).trim() : null,
+      description: description ? description.trim() : null,
       isActive: true,
       usedCount: 0,
     }).returning();
@@ -648,20 +652,21 @@ router.get("/admin/payment-methods", requireAuth, requireRole(["admin"]), async 
 // A9. POST /admin/payment-methods - Create payment method
 router.post("/admin/payment-methods", requireAuth, requireRole(["admin"]), async (req: AuthenticatedRequest, res): Promise<void> => {
   try {
-    const { name, accountName, accountNumber, icon, instructions, sortOrder } = req.body;
-    if (!name || !accountName || !accountNumber) {
-      res.status(400).json({ error: "name, accountName, and accountNumber are required" });
+    const parsed = AdminPaymentMethodSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: parsed.error.message });
       return;
     }
+    const { name, accountName, accountNumber, icon, instructions, isActive, sortOrder } = parsed.data;
 
     const [newMethod] = await db.insert(paymentMethodsTable).values({
-      name: String(name).trim(),
-      accountName: String(accountName).trim(),
-      accountNumber: String(accountNumber).trim(),
-      icon: icon ? String(icon).trim() : "💳",
-      instructions: instructions ? String(instructions).trim() : null,
-      isActive: true,
-      sortOrder: sortOrder ? parseInt(sortOrder, 10) : 0,
+      name: name.trim(),
+      accountName: accountName.trim(),
+      accountNumber: accountNumber.trim(),
+      icon: icon ? icon.trim() : "💳",
+      instructions: instructions ? instructions.trim() : null,
+      isActive: isActive !== false,
+      sortOrder: sortOrder ? parseInt(sortOrder as any, 10) : 0,
     }).returning();
 
     res.status(201).json(serializePaymentMethod(newMethod));

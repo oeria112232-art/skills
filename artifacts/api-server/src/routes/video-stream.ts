@@ -4,10 +4,12 @@ import { db, platformSettingsTable } from "@workspace/db";
 import { S3Client, GetObjectCommand, HeadObjectCommand } from "@aws-sdk/client-s3";
 import jwt from "jsonwebtoken";
 import { Readable } from "node:stream";
+import fs from "fs";
+import path from "path";
 
 const router: IRouter = Router();
 
-const JWT_SECRET = process.env.JWT_SECRET || process.env.SESSION_SECRET || "mharat_secure_default_jwt_secret_key_8829";
+import { JWT_SECRET } from "../lib/secrets";
 
 async function getR2Config() {
   const settings = await db.select().from(platformSettingsTable);
@@ -75,10 +77,31 @@ router.get("/video-stream", async (req: any, res): Promise<void> => {
       res.status(400).json({ error: "key query parameter required" });
       return;
     }
+    if (key.includes("..") || key.includes("\\") || key.includes(":")) {
+      res.status(400).json({ error: "Invalid key format" });
+      return;
+    }
 
     const config = await getR2Config();
-    if (!config.accountId || !config.accessKeyId || !config.secretAccessKey || !config.bucket) {
-      res.status(500).json({ error: "R2 not configured" });
+    const isLocalPath = key.startsWith("uploads/");
+    const isR2Configured = !!(config.accountId && config.accessKeyId && config.secretAccessKey && config.bucket);
+
+    if (isLocalPath || !isR2Configured) {
+      console.warn("Serving video locally for key:", key);
+      const filename = path.basename(key);
+      const localFilePath = path.resolve(import.meta.dirname, "../../../uploads/videos", filename);
+      if (fs.existsSync(localFilePath)) {
+        res.sendFile(localFilePath);
+        return;
+      }
+
+      const altLocalFilePath = path.resolve(import.meta.dirname, "../../../uploads", filename);
+      if (fs.existsSync(altLocalFilePath)) {
+        res.sendFile(altLocalFilePath);
+        return;
+      }
+
+      res.status(404).json({ error: "Video file not found locally" });
       return;
     }
 

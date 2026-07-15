@@ -68,8 +68,6 @@ async function getContactInfoSnapshot(userId: number, existingSnapshot: any): Pr
   return user ? user.contactInfo : null;
 }
 
-import { requireAuth, type AuthenticatedRequest } from "../middlewares/auth";
-
 router.get("/applications", requireAuth, async (req: AuthenticatedRequest, res): Promise<void> => {
   const parsed = ListApplicationsQueryParams.safeParse(req.query);
   const q = parsed.success ? parsed.data : {};

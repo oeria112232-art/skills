@@ -47,6 +47,8 @@ const getLevelDetails = (level: number, isAr: boolean) => {
 export default function CertificatesPage() {
   const { data: certs, isLoading } = useListCertificates();
   const { data: wallet } = useGetWallet();
+
+  const certsList = Array.isArray(certs) ? certs : (certs && Array.isArray((certs as any).data) ? (certs as any).data : []);
   const claimMutation = useClaimCertificate();
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -304,23 +306,23 @@ export default function CertificatesPage() {
           </TabsList>
 
           <TabsContent value="all" className="space-y-4 outline-none">
-            {renderCertGrid(certs)}
+            {renderCertGrid(certsList)}
           </TabsContent>
           
           <TabsContent value="active" className="space-y-4 outline-none">
-            {renderCertGrid(certs.filter(c => c.status === "issued"))}
+            {renderCertGrid(certsList.filter((c: any) => c.status === "issued"))}
           </TabsContent>
 
           <TabsContent value="locked" className="space-y-4 outline-none">
-            {renderCertGrid(certs.filter(c => c.status === "locked"))}
+            {renderCertGrid(certsList.filter((c: any) => c.status === "locked"))}
           </TabsContent>
           
           <TabsContent value="tracks" className="space-y-4 outline-none">
-            {renderCertGrid(certs.filter(c => c.type === "track"))}
+            {renderCertGrid(certsList.filter((c: any) => c.type === "track"))}
           </TabsContent>
 
           <TabsContent value="workshops" className="space-y-4 outline-none">
-            {renderCertGrid(certs.filter(c => c.type !== "track"))}
+            {renderCertGrid(certsList.filter((c: any) => c.type !== "track"))}
           </TabsContent>
         </Tabs>
       )}

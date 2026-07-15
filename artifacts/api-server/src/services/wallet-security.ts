@@ -1,11 +1,8 @@
 import crypto from "crypto";
 import { db, usersTable, pointsTransactionsTable } from "@workspace/db";
 import { eq, desc, and } from "drizzle-orm";
-
-const WALLET_SECRET = process.env.WALLET_SECRET || "mharat_secure_wallet_fallback_secret_key_8829";
-if (!process.env.WALLET_SECRET) {
-  console.warn("WARNING: WALLET_SECRET is not set in environment variables. Using a fallback secret key. This is insecure for production.");
-}
+import { WALLET_SECRET } from "../lib/secrets";
+import { redis } from "../lib/redis";
 
 // Nonce store for idempotency (in-memory, maps nonce -> timestamp)
 const usedNonces = new Map<string, number>();
@@ -221,20 +218,50 @@ const locks = new Map<number, Promise<void>>();
  * Returns a release function to be called in a finally block.
  */
 export async function acquireUserLock(userId: number): Promise<() => void> {
-  while (locks.has(userId)) {
-    await locks.get(userId);
+  const lockKey = `lock:user:${userId}`;
+  const lockVal = String(Date.now() + 10000); // 10 seconds expiry
+
+  let acquired = false;
+  try {
+    const startTime = Date.now();
+    while (!acquired && Date.now() - startTime < 10000) {
+      const res = await redis.setnx(lockKey, lockVal);
+      if (res === 1) {
+        await redis.expire(lockKey, 10);
+        acquired = true;
+      } else {
+        const currentVal = await redis.get(lockKey);
+        if (currentVal && Date.now() > parseInt(currentVal, 10)) {
+          await redis.del(lockKey);
+        } else {
+          await new Promise((resolve) => setTimeout(resolve, 50));
+        }
+      }
+    }
+  } catch (err) {
+    console.error("Redis lock failed, falling back to local lock:", err);
   }
 
-  let resolveLock: () => void = () => {};
-  const lockPromise = new Promise<void>((resolve) => {
-    resolveLock = resolve;
-  });
+  if (!acquired) {
+    while (locks.has(userId)) {
+      await locks.get(userId);
+    }
 
-  locks.set(userId, lockPromise);
+    let resolveLock: () => void = () => {};
+    const lockPromise = new Promise<void>((resolve) => {
+      resolveLock = resolve;
+    });
+
+    locks.set(userId, lockPromise);
+
+    return () => {
+      locks.delete(userId);
+      resolveLock();
+    };
+  }
 
   return () => {
-    locks.delete(userId);
-    resolveLock();
+    redis.del(lockKey).catch((err) => console.error("Failed to release Redis lock:", err));
   };
 }
 

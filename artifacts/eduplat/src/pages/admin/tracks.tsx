@@ -164,7 +164,8 @@ export default function AdminTracksPage() {
   const { data: users } = useListUsers();
   const { user } = useAuth();
   const isAdmin = user?.role === "admin";
-  const instructors = Array.isArray(users) ? users.filter((u: any) => u.role === "instructor") : [];
+  const usersList = Array.isArray(users) ? users : (users && Array.isArray((users as any).data) ? (users as any).data : []);
+  const instructors = usersList.filter((u: any) => u.role === "instructor");
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [, setLocation] = useLocation();

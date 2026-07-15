@@ -5,6 +5,7 @@ import { getDatabase, ref, get, set, remove } from "firebase/database";
 import * as schema from "./schema";
 import fs from "fs";
 import path from "path";
+import bcrypt from "bcryptjs";
 
 // Firebase Configuration — read from environment variables (never hardcode secrets)
 const firebaseConfig = {
@@ -97,7 +98,7 @@ function toArray<T>(obj: any): T[] {
 
 // Retrieve items list from Firebase Realtime Database (with short-lived cache)
 const fbCache = new Map<string, { data: any[]; expiresAt: number }>();
-const FB_CACHE_TTL_MS = 3000; // 3 seconds — balances freshness vs perf on burst reads
+const FB_CACHE_TTL_MS = 15000; // 15 seconds — balances freshness vs perf on burst reads
 
 const fallbackFilePath = path.resolve(import.meta.dirname, "../../../db-fallback.json");
 let localDbState: Record<string, any[]> = {};
@@ -115,6 +116,64 @@ function loadLocalDb() {
   } catch (err) {
     console.error("Failed to load local fallback DB:", err);
     localDbState = {};
+  }
+
+  // Ensure default seeds are present dynamically
+  if (!localDbState.users || localDbState.users.length === 0) {
+    console.log("Seeding default user accounts dynamically in local DB fallback...");
+    
+    const adminEmail = process.env.DEFAULT_ADMIN_EMAIL || "aliop@app.com";
+    const adminPassword = process.env.DEFAULT_ADMIN_PASSWORD || "ppooqqaa001122334455!@#$%";
+    const adminName = process.env.DEFAULT_ADMIN_NAME || "علي / Ali";
+
+    const testAdminPassword = process.env.DEFAULT_TEST_ADMIN_PASSWORD || "admin123";
+    const testStudentPassword = process.env.DEFAULT_TEST_STUDENT_PASSWORD || "pass123";
+
+    const adminAliHash = bcrypt.hashSync(adminPassword, 10);
+    const testAdminHash = bcrypt.hashSync(testAdminPassword, 10);
+    const testStudentHash = bcrypt.hashSync(testStudentPassword, 10);
+
+    localDbState.users = [
+      {
+        id: 1,
+        name: adminName,
+        email: adminEmail,
+        passwordHash: adminAliHash,
+        role: "admin",
+        points: 5000,
+        streak: 30,
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 2,
+        name: "أحمد الرشيدي / Ahmed Al-Rashidi",
+        email: "admin@eduplatform.com",
+        passwordHash: testAdminHash,
+        role: "admin",
+        points: 2450,
+        streak: 14,
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 3,
+        name: "طالب تجريبي / علي حسين",
+        email: "student@eduplatform.com",
+        passwordHash: testStudentHash,
+        role: "student",
+        points: 150,
+        streak: 4,
+        createdAt: new Date().toISOString()
+      }
+    ];
+
+    if (!localDbState.platform_settings || localDbState.platform_settings.length === 0) {
+      localDbState.platform_settings = [
+        { id: 1, key: "point_price_cents", value: "100", createdAt: new Date().toISOString() },
+        { id: 2, key: "r2_bucket_name", value: "mharat-bucket", createdAt: new Date().toISOString() }
+      ];
+    }
+
+    saveLocalDb();
   }
 }
 
@@ -258,50 +317,54 @@ function validateFirebasePath(path: string): string {
   return path;
 }
 
+const jsKeyMap = new Map<string, string>([
+  ["workshop_id", "workshopId"],
+  ["user_name", "userName"],
+  ["track_id", "trackId"],
+  ["module_id", "moduleId"],
+  ["user_id", "userId"],
+  ["estimated_minutes", "estimatedMinutes"],
+  ["estimated_hours", "estimatedHours"],
+  ["enrolled_count", "enrolledCount"],
+  ["module_count", "moduleCount"],
+  ["created_at", "createdAt"],
+  ["completed_at", "completedAt"],
+  ["icon_url", "iconUrl"],
+  ["password_hash", "passwordHash"],
+  ["avatar_url", "avatarUrl"],
+  ["assigned_to", "assignedTo"],
+  ["replied_by", "repliedBy"],
+  ["replied_at", "repliedAt"],
+  ["points_signature", "pointsSignature"],
+  ["previous_signature", "previousSignature"],
+  ["points_amount", "pointsAmount"],
+  ["cash_amount", "cashAmount"],
+  ["transfer_screenshot", "transferScreenshot"],
+  ["admin_notes", "adminNotes"],
+  ["sender_id", "senderId"],
+  ["receiver_id", "receiverId"],
+  ["discount_type", "discountType"],
+  ["discount_code", "discountCode"],
+  ["discount_value", "discountValue"],
+  ["max_uses", "maxUses"],
+  ["used_count", "usedCount"],
+  ["expires_at", "expiresAt"],
+  ["is_active", "isActive"],
+  ["account_name", "accountName"],
+  ["account_number", "accountNumber"],
+  ["sort_order", "sortOrder"],
+  ["updated_at", "updatedAt"],
+  ["daily_room_url", "dailyRoomUrl"],
+  ["daily_room_name", "dailyRoomName"],
+  ["attended_minutes", "attendedMinutes"],
+  ["is_answered", "isAnswered"],
+  ["is_closed", "isClosed"],
+  ["option_index", "optionIndex"],
+  ["poll_id", "pollId"],
+]);
+
 function getJsKey(colName: string): string {
-  if (colName === "workshop_id") return "workshopId";
-  if (colName === "user_name") return "userName";
-  if (colName === "track_id") return "trackId";
-  if (colName === "module_id") return "moduleId";
-  if (colName === "user_id") return "userId";
-  if (colName === "estimated_minutes") return "estimatedMinutes";
-  if (colName === "estimated_hours") return "estimatedHours";
-  if (colName === "enrolled_count") return "enrolledCount";
-  if (colName === "module_count") return "moduleCount";
-  if (colName === "created_at") return "createdAt";
-  if (colName === "completed_at") return "completedAt";
-  if (colName === "icon_url") return "iconUrl";
-  if (colName === "password_hash") return "passwordHash";
-  if (colName === "avatar_url") return "avatarUrl";
-  if (colName === "assigned_to") return "assignedTo";
-  if (colName === "replied_by") return "repliedBy";
-  if (colName === "replied_at") return "repliedAt";
-  if (colName === "points_signature") return "pointsSignature";
-  if (colName === "previous_signature") return "previousSignature";
-  if (colName === "points_amount") return "pointsAmount";
-  if (colName === "cash_amount") return "cashAmount";
-  if (colName === "transfer_screenshot") return "transferScreenshot";
-  if (colName === "admin_notes") return "adminNotes";
-  if (colName === "sender_id") return "senderId";
-  if (colName === "receiver_id") return "receiverId";
-  if (colName === "discount_type") return "discountType";
-  if (colName === "discount_value") return "discountValue";
-  if (colName === "max_uses") return "maxUses";
-  if (colName === "used_count") return "usedCount";
-  if (colName === "expires_at") return "expiresAt";
-  if (colName === "is_active") return "isActive";
-  if (colName === "account_name") return "accountName";
-  if (colName === "account_number") return "accountNumber";
-  if (colName === "sort_order") return "sortOrder";
-  if (colName === "updated_at") return "updatedAt";
-  if (colName === "daily_room_url") return "dailyRoomUrl";
-  if (colName === "daily_room_name") return "dailyRoomName";
-  if (colName === "attended_minutes") return "attendedMinutes";
-  if (colName === "is_answered") return "isAnswered";
-  if (colName === "is_closed") return "isClosed";
-  if (colName === "option_index") return "optionIndex";
-  if (colName === "poll_id") return "pollId";
-  return colName;
+  return jsKeyMap.get(colName) || colName;
 }
 
 // Parse Drizzle condition into a local filter function
@@ -588,6 +651,6 @@ const dbMock = {
   }
 };
 
-export const db = (dbMock as any) as ReturnType<typeof drizzle>;
+export const db = dbMock as unknown as ReturnType<typeof drizzle>;
 
 export * from "./schema";

@@ -28,6 +28,8 @@ import {
 } from "../services/wallet-security";
 import { paymentRateLimit, rateLimit } from "../middlewares/rateLimit";
 import { logAuditEvent } from "../services/audit-log";
+import { requireAuth, requireRole, type AuthenticatedRequest } from "../middlewares/auth";
+import { CERT_SIGN_SECRET } from "../lib/secrets";
 
 const workshopUploadRateLimit = rateLimit({
   windowMs: 60 * 1000,
@@ -92,7 +94,7 @@ router.get("/workshops", async (req, res): Promise<void> => {
   res.json({ data: paginated, total: filtered.length, limit, offset });
 });
 
-import { requireAuth, requireRole, type AuthenticatedRequest } from "../middlewares/auth";
+
 
 router.post("/workshops", requireAuth, requireRole(["admin", "instructor"]), async (req: AuthenticatedRequest, res): Promise<void> => {
   const parsed = CreateWorkshopBody.safeParse(req.body);
@@ -124,6 +126,15 @@ router.patch("/workshops/:id", requireAuth, requireRole(["admin", "instructor"])
 router.delete("/workshops/:id", requireAuth, requireRole(["admin", "instructor"]), async (req: AuthenticatedRequest, res): Promise<void> => {
   const params = DeleteWorkshopParams.safeParse(req.params);
   if (!params.success) { res.status(400).json({ error: "Invalid id" }); return; }
+  const [w] = await db.select().from(workshopsTable).where(eq(workshopsTable.id, params.data.id));
+  if (!w) {
+    res.status(404).json({ error: "Workshop not found" });
+    return;
+  }
+  if (w.dailyRoomUrl && w.isClosed !== 1) {
+    res.status(400).json({ error: "Cannot delete workshop with an active live stream / لا يمكن حذف ورشة عمل بها بث مباشر نشط" });
+    return;
+  }
   await db.delete(workshopsTable).where(eq(workshopsTable.id, params.data.id));
   await logAuditEvent({ action: "workshop_delete", userId: req.user!.id, targetType: "workshop", targetId: params.data.id, details: {}, req });
   res.sendStatus(204);
@@ -203,8 +214,8 @@ router.post("/workshops/:id/enroll", requireAuth, paymentRateLimit, async (req: 
   const [enrollment] = await db.insert(enrollmentsTable).values({
     workshopId: params.data.id,
     userId: targetUserId,
-    userName: (user.role === "admin" || user.role === "instructor") ? parsed.data.userName : user.name,
-    userEmail: (user.role === "admin" || user.role === "instructor") ? parsed.data.userEmail : user.email,
+    userName: (((user.role === "admin" || user.role === "instructor") ? parsed.data.userName : null) || user.name || ""),
+    userEmail: (((user.role === "admin" || user.role === "instructor") ? parsed.data.userEmail : null) || user.email || ""),
   }).returning();
   const [wsForCount] = await db.select().from(workshopsTable).where(eq(workshopsTable.id, params.data.id));
   await db.update(workshopsTable)
@@ -405,10 +416,8 @@ router.post("/workshops/:id/exam/submit", requireAuth, async (req: Authenticated
       certificateId = cert.id;
     }
     
-    // Award XP/points
-    await db.update(usersTable)
-      .set({ points: sql`${usersTable.points} + 100` as any })
-      .where(eq(usersTable.id, user.id));
+    // Award XP/points safely
+    await updateAndSignUserBalance(user.id, 100);
   }
 
   res.json({
@@ -446,8 +455,8 @@ router.post("/workshops/:id/exam/setup", requireAuth, requireRole(["admin", "ins
 });
 
 router.delete("/workshops/:id/exam/questions/:questionId", requireAuth, requireRole(["admin", "instructor"]), async (req, res): Promise<void> => {
-  const workshopId = parseInt(req.params.id, 10);
-  const questionId = parseInt(req.params.questionId, 10);
+  const workshopId = parseInt(req.params.id as string, 10);
+  const questionId = parseInt(req.params.questionId as string, 10);
   if (isNaN(workshopId) || isNaN(questionId)) {
     res.status(400).json({ error: "Invalid id params" });
     return;
@@ -505,24 +514,21 @@ router.post("/workshops/:id/certificate/claim", requireAuth, async (req: Authent
     signatureHash: "",
   } as any) as any).returning();
 
-  const signatureKey = process.env.SESSION_SECRET || "mharat_secure_secret_key_8829";
   const data = `${cert.id}:${cert.userId}:${cert.type}:${cert.score}:${cert.certificateNumber}`;
-  const signature = crypto.createHmac("sha256", signatureKey).update(data).digest("hex");
+  const signature = crypto.createHmac("sha256", CERT_SIGN_SECRET).update(data).digest("hex");
 
   await db.update(certificatesTable)
     .set({ signatureHash: signature })
     .where(eq(certificatesTable.id, cert.id));
-  
-  // Award XP/points
-  await db.update(usersTable)
-    .set({ points: sql`${usersTable.points} + 100` as any })
-    .where(eq(usersTable.id, dbUser.id));
+
+  // Award XP/points safely
+  await updateAndSignUserBalance(dbUser.id, 100);
     
   res.status(201).json({ success: true, certificateId: cert.id, alreadyClaimed: false });
 });
 
 router.post("/workshops/:id/template", requireAuth, requireRole(["admin", "instructor"]), workshopUploadRateLimit, async (req, res): Promise<void> => {
-  const workshopId = parseInt(req.params.id || "0", 10);
+  const workshopId = parseInt(req.params.id as string || "0", 10);
   if (isNaN(workshopId) || workshopId <= 0) {
     res.status(400).json({ error: "Invalid workshop id" });
     return;
@@ -817,6 +823,10 @@ router.post("/workshops/:id/attendance", requireAuth, async (req: AuthenticatedR
     res.status(400).json({ error: "Invalid durationMinutes" });
     return;
   }
+  if (minutes > 300) {
+    res.status(400).json({ error: "Duration exceeds maximum limit of 300 minutes" });
+    return;
+  }
 
   const user = req.user!;
   
@@ -886,6 +896,18 @@ router.post("/workshops/:id/qa", requireAuth, async (req: AuthenticatedRequest, 
 router.post("/workshops/:id/qa/:qaId/vote", requireAuth, async (req, res): Promise<void> => {
   const qaId = parseInt(req.params.qaId as string, 10);
   if (isNaN(qaId)) { res.status(400).json({ error: "Invalid qaId" }); return; }
+  const workshopId = parseInt(req.params.id as string, 10);
+
+  const user = (req as any).user!;
+  if (user.role !== "admin" && user.role !== "instructor") {
+    const [enrollment] = await db.select()
+      .from(enrollmentsTable)
+      .where(and(eq(enrollmentsTable.workshopId, workshopId), eq(enrollmentsTable.userId, user.id)));
+    if (!enrollment) {
+      res.status(403).json({ error: "Access denied: You must be enrolled in this workshop to vote" });
+      return;
+    }
+  }
 
   const [qa] = await db.select().from(workshopQaTable).where(eq(workshopQaTable.id, qaId));
   if (!qa) {
@@ -958,7 +980,7 @@ router.get("/workshops/:id/polls", requireAuth, async (req: AuthenticatedRequest
 });
 
 // POST /workshops/:id/polls - Create a new poll (Moderator only)
-router.post("/workshops/:id/polls", requireAuth, requireRole(["admin", "instructor"]), async (req, res): Promise<void> => {
+router.post("/workshops/:id/polls", requireAuth, requireRole(["admin", "instructor"]), async (req: AuthenticatedRequest, res): Promise<void> => {
   const workshopId = parseInt(req.params.id as string, 10);
   if (isNaN(workshopId)) { res.status(400).json({ error: "Invalid id" }); return; }
 
@@ -983,14 +1005,24 @@ router.post("/workshops/:id/polls", requireAuth, requireRole(["admin", "instruct
 router.post("/workshops/:id/polls/:pollId/vote", requireAuth, async (req: AuthenticatedRequest, res): Promise<void> => {
   const pollId = parseInt(req.params.pollId as string, 10);
   if (isNaN(pollId)) { res.status(400).json({ error: "Invalid pollId" }); return; }
+  const workshopId = parseInt(req.params.id as string, 10);
+  
+  const user = req.user!;
+  if (user.role !== "admin" && user.role !== "instructor") {
+    const [enrollment] = await db.select()
+      .from(enrollmentsTable)
+      .where(and(eq(enrollmentsTable.workshopId, workshopId), eq(enrollmentsTable.userId, user.id)));
+    if (!enrollment) {
+      res.status(403).json({ error: "Access denied: You must be enrolled in this workshop to vote" });
+      return;
+    }
+  }
 
   const { optionIndex } = req.body;
   if (optionIndex === undefined || isNaN(Number(optionIndex))) {
     res.status(400).json({ error: "optionIndex is required" });
     return;
   }
-
-  const user = req.user!;
 
   // Check if poll exists and is open
   const [poll] = await db.select().from(workshopPollsTable).where(eq(workshopPollsTable.id, pollId));

@@ -10,7 +10,7 @@ import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import bcrypt from "bcryptjs";
 
-const JWT_SECRET = process.env.JWT_SECRET || process.env.SESSION_SECRET || "mharat_secure_default_jwt_secret_key_8829";
+import { JWT_SECRET } from "../lib/secrets";
 
 const router = Router();
 
@@ -76,6 +76,7 @@ router.post("/auth/login", async (req, res): Promise<void> => {
     const legacyHash = Buffer.from(password + "salt_eduplat").toString("base64");
     isValid = user.passwordHash === legacyHash;
     if (isValid) {
+      logger.warn({ userId: user.id }, "User logged in using deprecated legacy base64 password hash. Upgrading to bcrypt.");
       // Dynamically upgrade hash to bcrypt!
       const newHash = hashPassword(password);
       await db.update(usersTable).set({ passwordHash: newHash }).where(eq(usersTable.id, user.id));
@@ -133,7 +134,7 @@ router.post("/auth/logout", requireAuth, async (req: any, res): Promise<void> =>
   const token = authHeader.replace("Bearer ", "");
   const decoded = jwt.decode(token) as { jti: string; exp: number };
   if (decoded && decoded.jti) {
-    tokenBlocklist.set(decoded.jti, decoded.exp);
+    await tokenBlocklist.set(decoded.jti, decoded.exp || (Math.floor(Date.now() / 1000) + 7 * 24 * 3600));
   }
   res.json({ success: true });
 });

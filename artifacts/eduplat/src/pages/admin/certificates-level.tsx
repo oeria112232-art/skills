@@ -104,6 +104,9 @@ export default function AdminCertificatesLevelPage() {
   const { data: issuedCerts, isLoading: loadingCerts } = useListCertificates();
   const updateWorkshop = useUpdateWorkshop();
 
+  const usersList = Array.isArray(allUsers) ? allUsers : (allUsers && Array.isArray((allUsers as any).data) ? (allUsers as any).data : []);
+  const certsList = Array.isArray(issuedCerts) ? issuedCerts : (issuedCerts && Array.isArray((issuedCerts as any).data) ? (issuedCerts as any).data : []);
+
   // Local configurations state
   const meta = getLevelMetadata(levelNum, isAr);
   
@@ -200,7 +203,7 @@ export default function AdminCertificatesLevelPage() {
       return;
     }
 
-    const userObj = allUsers?.find(u => u.id === Number(selectedUserId));
+    const userObj = usersList.find((u: any) => u.id === Number(selectedUserId));
     if (!userObj) return;
 
     setIssuing(true);
@@ -300,7 +303,7 @@ export default function AdminCertificatesLevelPage() {
   };
 
   // Filter issued ledger for this level only
-  const filteredCerts = issuedCerts?.filter(c => c.level === levelNum) || [];
+  const filteredCerts = certsList.filter((c: any) => c.level === levelNum);
 
   return (
     <AppLayout>
@@ -384,7 +387,7 @@ export default function AdminCertificatesLevelPage() {
                     </td>
                   </tr>
                 ) : (
-                  filteredCerts.map(c => {
+                  filteredCerts.map((c: any) => {
                     const isLocked = c.status === "locked";
                     return (
                       <tr key={c.id} className="hover:bg-muted/30 transition-colors">
@@ -468,7 +471,7 @@ export default function AdminCertificatesLevelPage() {
                   required
                 >
                   <option value="">{isAr ? "— اختر الطالب —" : "— Select Student —"}</option>
-                  {allUsers?.filter(u => u.role !== "admin" && u.role !== "instructor").map(u => (
+                  {usersList.filter((u: any) => u.role !== "admin" && u.role !== "instructor").map((u: any) => (
                     <option key={u.id} value={u.id}>{u.name} ({u.email})</option>
                   ))}
                 </select>

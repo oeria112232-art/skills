@@ -2,14 +2,23 @@ import type { Request, Response, NextFunction } from "express";
 import { db, usersTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import jwt from "jsonwebtoken";
-
-const JWT_SECRET = process.env.JWT_SECRET || process.env.SESSION_SECRET || "mharat_secure_default_jwt_secret_key_8829";
+import { JWT_SECRET } from "../lib/secrets";
+import { redis } from "../lib/redis";
 
 export interface AuthenticatedRequest extends Request {
   user?: typeof usersTable.$inferSelect;
 }
 
-export const tokenBlocklist = new Map<string, number>(); // jti -> expiryTime
+export const tokenBlocklist = {
+  async has(jti: string): Promise<boolean> {
+    const revoked = await redis.get(`blocklist:${jti}`);
+    return revoked === "1";
+  },
+  async set(jti: string, exp: number): Promise<void> {
+    const ttl = Math.max(0, exp - Math.floor(Date.now() / 1000));
+    await redis.set(`blocklist:${jti}`, "1", "EX", ttl);
+  }
+};
 
 export async function requireAuth(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
   const authHeader = req.headers.authorization;
@@ -22,7 +31,8 @@ export async function requireAuth(req: AuthenticatedRequest, res: Response, next
     const decoded = jwt.verify(token, JWT_SECRET) as { userId: number; jti: string; exp: number };
     
     // Check blocklist
-    if (tokenBlocklist.has(decoded.jti)) {
+    const isBlocked = await tokenBlocklist.has(decoded.jti);
+    if (isBlocked) {
       res.status(401).json({ error: "Token is revoked" });
       return;
     }

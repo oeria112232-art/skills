@@ -25,6 +25,8 @@ export const certificatesTable = pgTable("certificates", {
   issuedAt: timestamp("issued_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
-export const insertCertificateSchema = createInsertSchema(certificatesTable).omit({ id: true, issuedAt: true });
+export const insertCertificateSchema = createInsertSchema(certificatesTable, {
+  level: z.number().int().min(1).max(5)
+}).omit({ id: true, issuedAt: true });
 export type InsertCertificate = z.infer<typeof insertCertificateSchema>;
 export type Certificate = typeof certificatesTable.$inferSelect;

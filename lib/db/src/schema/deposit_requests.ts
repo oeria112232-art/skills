@@ -23,6 +23,7 @@ export const pointsTransactionsTable = pgTable("points_transactions", {
   amount: integer("amount").notNull(),
   type: text("type").notNull(), // "deposit", "transfer", "refund", "consultation_payment", "workshop_enrollment", "track_enrollment", "certificate_purchase"
   notes: text("notes"),
+  discountCode: text("discount_code"),
   signature: text("signature"),
   previousSignature: text("previous_signature"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

@@ -218,7 +218,8 @@ export default function ConsultationsPage() {
   }
 
   // Derived values
-  const instructors = allUsers?.filter((u: any) => u.role === "instructor" || u.role === "admin") || [];
+  const usersList = Array.isArray(allUsers) ? allUsers : (allUsers && Array.isArray((allUsers as any).data) ? (allUsers as any).data : []);
+  const instructors = usersList.filter((u: any) => u.role === "instructor" || u.role === "admin");
   const activeConsultation = consultations?.find((c: any) => c.id === activeConsultationId);
   const filteredConsultations = (consultations || []).filter((c: any) => {
     const matchStatus = filterStatus === "all" || c.status === filterStatus;

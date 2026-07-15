@@ -1,9 +1,10 @@
 import { Router } from "express";
-import { db, certificatesTable, usersTable, pointsTransactionsTable, platformSettingsTable, tracksTable, trackModulesTable, userProgressTable } from "@workspace/db";
+import { db, certificatesTable, usersTable, pointsTransactionsTable, platformSettingsTable, tracksTable, trackModulesTable, userProgressTable, workshopsTable } from "@workspace/db";
 import { eq, or, and, inArray } from "drizzle-orm";
 import { GetCertificateParams } from "@workspace/api-zod";
 import crypto from "crypto";
 import jwt from "jsonwebtoken";
+import { JWT_SECRET, CERT_SIGN_SECRET } from "../lib/secrets";
 import { certVerifyRateLimit } from "../middlewares/rateLimit";
 import {
   verifyAndHardenUserBalance,
@@ -17,8 +18,6 @@ import { paymentRateLimit } from "../middlewares/rateLimit";
 import { logAuditEvent } from "../services/audit-log";
 
 const router = Router();
-
-const CERT_SIGN_SECRET = process.env.SESSION_SECRET || "mharat_secure_default_session_secret_key_8829";
 
 // Calculate cryptographic signature for a certificate
 export function calculateSignature(cert: {
@@ -59,7 +58,7 @@ router.get("/certificates", requireAuth, async (req: AuthenticatedRequest, res):
 });
 
 // 2. POST /certificates - Generate new certificate (Admin only)
-router.post("/certificates", requireAuth, requireRole(["admin"]), async (req, res): Promise<void> => {
+router.post("/certificates", requireAuth, requireRole(["admin"]), async (req: AuthenticatedRequest, res): Promise<void> => {
   const { userId, userName, workshopId, workshopTitle, trackId, trackTitle, type, score, level, cost } = req.body;
   if (!userId || !userName || !type) {
     res.status(400).json({ error: "userId, userName, and type are required" });
@@ -107,7 +106,7 @@ router.post("/certificates", requireAuth, requireRole(["admin"]), async (req, re
 
 // 3. GET /certificates/verify/:code - Public certificate verification (NO AUTH REQUIRED)
 router.get("/certificates/verify/:code", certVerifyRateLimit, async (req, res): Promise<void> => {
-  const code = req.params.code;
+  const code = req.params.code as string;
   if (!code) {
     res.status(400).json({ error: "Verification code is required" });
     return;
@@ -257,11 +256,6 @@ router.get("/certificates/:id", async (req, res): Promise<void> => {
     // so we manually check token for locked certs
     try {
       const token = authHeader.replace("Bearer ", "");
-      const JWT_SECRET = process.env.JWT_SECRET || process.env.SESSION_SECRET;
-      if (!JWT_SECRET) {
-        res.status(500).json({ error: "Server configuration error" });
-        return;
-      }
       const verified = jwt.verify(token, JWT_SECRET) as { userId: number };
       
       const [u] = await db.select().from(usersTable).where(eq(usersTable.id, verified.userId));
@@ -279,7 +273,7 @@ router.get("/certificates/:id", async (req, res): Promise<void> => {
 });
 
 // 6. DELETE /certificates/:id - Revoke/Delete certificate (Admin only)
-router.delete("/certificates/:id", requireAuth, requireRole(["admin"]), async (req, res): Promise<void> => {
+router.delete("/certificates/:id", requireAuth, requireRole(["admin"]), async (req: AuthenticatedRequest, res): Promise<void> => {
   const certId = parseInt(req.params.id as string, 10);
   if (isNaN(certId)) {
     res.status(400).json({ error: "Invalid certificate id" });
@@ -298,7 +292,7 @@ router.delete("/certificates/:id", requireAuth, requireRole(["admin"]), async (r
 });
 
 // 7. POST /certificates/batch-issue - Issue certificates to all eligible students (Admin only)
-router.post("/certificates/batch-issue", requireAuth, requireRole(["admin"]), async (req, res): Promise<void> => {
+router.post("/certificates/batch-issue", requireAuth, requireRole(["admin"]), async (req: AuthenticatedRequest, res): Promise<void> => {
   const { type, entityId, score } = req.body;
   if (!type || !entityId) {
     res.status(400).json({ error: "type and entityId are required" });
@@ -379,7 +373,6 @@ router.post("/certificates/batch-issue", requireAuth, requireRole(["admin"]), as
       issuedCount++;
     }
   } else if (type === "workshop") {
-    const { workshopsTable } = await import("@workspace/db");
     const [workshop] = await db.select().from(workshopsTable).where(eq(workshopsTable.id, Number(entityId)));
     if (!workshop) { res.status(404).json({ error: "Workshop not found" }); return; }
     entityTitle = workshop.title;

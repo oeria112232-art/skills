@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { db, usersTable, certificatesTable } from "@workspace/db";
 import { eq, desc, sql } from "drizzle-orm";
+import path from "path";
 import { GetUserParams, UpdateUserParams, UpdateUserBody, CreateUserBody, DeleteUserParams } from "@workspace/api-zod";
 import { requireAuth, requireRole, type AuthenticatedRequest } from "../middlewares/auth";
 import { logAuditEvent } from "../services/audit-log";
@@ -17,15 +18,16 @@ function serializeUser(u: typeof usersTable.$inferSelect) {
   };
 }
 
-router.get("/users", requireAuth, requireRole(["admin"]), async (req, res): Promise<void> => {
+router.get("/users", requireAuth, requireRole(["admin"]), async (req: any, res): Promise<void> => {
   const users = await db.select().from(usersTable).orderBy(desc(usersTable.createdAt));
+  const activeUsers = users.filter(u => !u.deletedAt);
   const limit = Math.min(parseInt(req.query.limit as string) || 50, 200);
   const offset = parseInt(req.query.offset as string) || 0;
-  const paginated = users.slice(offset, offset + limit);
-  res.json({ data: paginated.map(serializeUser), total: users.length, limit, offset });
+  const paginated = activeUsers.slice(offset, offset + limit);
+  res.json({ data: paginated.map(serializeUser), total: activeUsers.length, limit, offset });
 });
 
-router.get("/users/:id", requireAuth, async (req: AuthenticatedRequest, res): Promise<void> => {
+router.get("/users/:id", requireAuth, async (req: any, res): Promise<void> => {
   const params = GetUserParams.safeParse(req.params);
   if (!params.success) { res.status(400).json({ error: "Invalid id" }); return; }
   
@@ -35,11 +37,11 @@ router.get("/users/:id", requireAuth, async (req: AuthenticatedRequest, res): Pr
   }
 
   const [user] = await db.select().from(usersTable).where(eq(usersTable.id, params.data.id));
-  if (!user) { res.status(404).json({ error: "User not found" }); return; }
+  if (!user || user.deletedAt) { res.status(404).json({ error: "User not found" }); return; }
   res.json(serializeUser(user));
 });
 
-router.patch("/users/:id", requireAuth, async (req: AuthenticatedRequest, res): Promise<void> => {
+router.patch("/users/:id", requireAuth, async (req: any, res): Promise<void> => {
   const params = UpdateUserParams.safeParse(req.params);
   if (!params.success) { res.status(400).json({ error: "Invalid id" }); return; }
   
@@ -47,6 +49,9 @@ router.patch("/users/:id", requireAuth, async (req: AuthenticatedRequest, res): 
     res.status(403).json({ error: "Forbidden" });
     return;
   }
+
+  const [existingUser] = await db.select().from(usersTable).where(eq(usersTable.id, params.data.id));
+  if (!existingUser || existingUser.deletedAt) { res.status(404).json({ error: "User not found" }); return; }
 
   const parsed = UpdateUserBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
@@ -56,7 +61,7 @@ router.patch("/users/:id", requireAuth, async (req: AuthenticatedRequest, res): 
   res.json(serializeUser(user));
 });
 
-router.post("/users", requireAuth, requireRole(["admin"]), async (req, res): Promise<void> => {
+router.post("/users", requireAuth, requireRole(["admin"]), async (req: any, res): Promise<void> => {
   const parsed = CreateUserBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
   const { name, email, password, role } = parsed.data;
@@ -77,21 +82,22 @@ router.post("/users", requireAuth, requireRole(["admin"]), async (req, res): Pro
   res.status(201).json(serializeUser(newUser));
 });
 
-router.delete("/users/:id", requireAuth, async (req: AuthenticatedRequest, res): Promise<void> => {
+router.delete("/users/:id", requireAuth, async (req: any, res): Promise<void> => {
   const params = DeleteUserParams.safeParse(req.params);
   if (!params.success) { res.status(400).json({ error: "Invalid id" }); return; }
   
-  if (req.user?.role !== "admin" && req.user?.id !== params.data.id) {
+  const user = (req as any).user;
+  if (user?.role !== "admin" && user?.id !== params.data.id) {
     res.status(403).json({ error: "Forbidden" });
     return;
   }
 
-  await db.delete(usersTable).where(eq(usersTable.id, params.data.id));
+  await db.update(usersTable).set({ deletedAt: new Date() }).where(eq(usersTable.id, params.data.id));
   await logAuditEvent({ action: "user_delete", userId: req.user!.id, targetType: "user", targetId: params.data.id, details: {}, req });
   res.status(204).send();
 });
 
-router.post("/users/:id/avatar", requireAuth, async (req: AuthenticatedRequest, res): Promise<void> => {
+router.post("/users/:id/avatar", requireAuth, async (req: any, res): Promise<void> => {
   const userId = parseInt((req.params.id as string) || "0", 10);
   if (isNaN(userId) || userId <= 0) {
     res.status(400).json({ error: "Invalid user id" });
