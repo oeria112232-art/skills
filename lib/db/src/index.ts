@@ -7,6 +7,7 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import bcrypt from "bcryptjs";
+import os from "os";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // Firebase Configuration — read from environment variables (never hardcode secrets)
@@ -106,11 +107,14 @@ function toArray<T>(obj: any): T[] {
 const fbCache = new Map<string, { data: any[]; expiresAt: number }>();
 const FB_CACHE_TTL_MS = 15000; // 15 seconds — balances freshness vs perf on burst reads
 
-const fallbackFilePath = path.resolve(__dirname, "../../../db-fallback.json");
+const fallbackFilePath = path.join(os.homedir(), "db-fallback.json");
 let localDbState: Record<string, any[]> = {};
 
 function loadLocalDb() {
   try {
+    if (!process.env.SILENT_DB_LOGS) {
+      console.log(`[Database] Active database file (persistent): ${fallbackFilePath}`);
+    }
     if (fs.existsSync(fallbackFilePath)) {
       const content = fs.readFileSync(fallbackFilePath, "utf8");
       localDbState = JSON.parse(content);

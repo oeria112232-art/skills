@@ -2,6 +2,7 @@ import { logger } from "./logger";
 import crypto from "crypto";
 import fs from "fs";
 import path from "path";
+import os from "os";
 
 // ---------------------------------------------------------------------------
 // Persistent key store
@@ -12,7 +13,7 @@ import path from "path";
 
 const KEYS_FILE = path.resolve(
   process.env.KEYS_FILE_PATH ||
-  path.join(process.cwd(), ".runtime-keys.json")
+  path.join(os.homedir(), ".runtime-keys.json")
 );
 
 function loadOrGenerateKey(keyName: string, envValue: string | undefined): string {

@@ -28152,7 +28152,7 @@ var require_pino = __commonJS({
       }
     }
     globalThis.__bundlerPathsOverrides = { ...globalThis.__bundlerPathsOverrides || {}, "thread-stream-worker": pinoBundlerAbsolutePath("./thread-stream-worker.mjs"), "pino-worker": pinoBundlerAbsolutePath("./pino-worker.mjs"), "pino/file": pinoBundlerAbsolutePath("./pino-file.mjs"), "pino-pretty": pinoBundlerAbsolutePath("./pino-pretty.mjs") };
-    var os2 = __require("node:os");
+    var os4 = __require("node:os");
     var stdSerializers = require_pino_std_serializers();
     var caller = require_caller();
     var redaction = require_redaction();
@@ -28199,7 +28199,7 @@ var require_pino = __commonJS({
     } = symbols;
     var { epochTime, nullTime } = time4;
     var { pid } = process;
-    var hostname2 = os2.hostname();
+    var hostname2 = os4.hostname();
     var defaultErrorSerializer = stdSerializers.err;
     var defaultOptions = {
       level: "info",
@@ -69254,6 +69254,7 @@ __export(src_exports, {
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import os from "os";
 function parseDates(obj) {
   if (!obj) return obj;
   if (obj instanceof Date) return obj;
@@ -69309,6 +69310,9 @@ function toArray(obj) {
 }
 function loadLocalDb() {
   try {
+    if (!process.env.SILENT_DB_LOGS) {
+      console.log(`[Database] Active database file (persistent): ${fallbackFilePath}`);
+    }
     if (fs.existsSync(fallbackFilePath)) {
       const content = fs.readFileSync(fallbackFilePath, "utf8");
       localDbState = JSON.parse(content);
@@ -69668,7 +69672,7 @@ var init_src = __esm({
     }
     fbCache = /* @__PURE__ */ new Map();
     FB_CACHE_TTL_MS = 15e3;
-    fallbackFilePath = path.resolve(__dirname2, "../../../db-fallback.json");
+    fallbackFilePath = path.join(os.homedir(), "db-fallback.json");
     localDbState = {};
     if (!database) {
       loadLocalDb();
@@ -73615,6 +73619,7 @@ var require_jsonwebtoken = __commonJS({
 import crypto2 from "crypto";
 import fs2 from "fs";
 import path2 from "path";
+import os2 from "os";
 function loadOrGenerateKey(keyName, envValue) {
   if (envValue && envValue.trim().length >= 16) {
     return envValue.trim();
@@ -73653,7 +73658,7 @@ var init_secrets = __esm({
     "use strict";
     init_logger2();
     KEYS_FILE = path2.resolve(
-      process.env.KEYS_FILE_PATH || path2.join(process.cwd(), ".runtime-keys.json")
+      process.env.KEYS_FILE_PATH || path2.join(os2.homedir(), ".runtime-keys.json")
     );
     JWT_SECRET = loadOrGenerateKey("jwt_secret", process.env.JWT_SECRET);
     CERT_SIGN_SECRET = loadOrGenerateKey("cert_sign_secret", process.env.CERT_SIGN_SECRET);
@@ -83073,7 +83078,7 @@ import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import fs4 from "node:fs";
 import path5 from "node:path";
-import os from "node:os";
+import os3 from "node:os";
 import { fileURLToPath as fileURLToPath3 } from "url";
 var execFileAsync = promisify(execFile);
 var __dirname4 = path5.dirname(fileURLToPath3(import.meta.url));
@@ -83108,7 +83113,7 @@ async function compressVideo(inputBuffer, inputMime, options = {}) {
   if (!isFfmpegAvailable()) {
     throw new Error("FFmpeg not available at " + FFMPEG_PATH);
   }
-  const tmpDir = fs4.mkdtempSync(path5.join(os.tmpdir(), "video-compress-"));
+  const tmpDir = fs4.mkdtempSync(path5.join(os3.tmpdir(), "video-compress-"));
   const ext = inputMime.includes("webm") ? "webm" : "mp4";
   const inputPath = path5.join(tmpDir, `input.${ext}`);
   const outputPath = path5.join(tmpDir, `output.${ext}`);
