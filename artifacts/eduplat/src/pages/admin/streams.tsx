@@ -41,8 +41,9 @@ export default function AdminStreamsPage() {
         headers: { "Authorization": `Bearer ${localStorage.getItem("mharat-token")}` }
       });
       if (response.ok) {
-        const data = await response.json();
-        setWorkshops(data);
+        const json = await response.json();
+        const list = Array.isArray(json) ? json : (json && Array.isArray(json.data) ? json.data : []);
+        setWorkshops(list);
       }
     } catch (e) {
       console.error(e);

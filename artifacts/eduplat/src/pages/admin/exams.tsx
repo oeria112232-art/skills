@@ -34,6 +34,7 @@ export default function AdminExamsPage() {
   const queryClient = useQueryClient();
 
   const { data: workshops, isLoading: loadingWorkshops } = useListWorkshops();
+  const workshopsList = Array.isArray(workshops) ? workshops : (workshops && Array.isArray((workshops as any).data) ? (workshops as any).data : []);
   const updateWorkshop = useUpdateWorkshop();
   const [selectedWorkshopId, setSelectedWorkshopId] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -92,7 +93,7 @@ export default function AdminExamsPage() {
     webhooks: false
   });
 
-  const selectedWorkshop = workshops?.find(w => w.id === selectedWorkshopId);
+  const selectedWorkshop = workshopsList.find((w: any) => w.id === selectedWorkshopId);
   const { data: serverExam, isLoading: loadingExam } = useGetWorkshopExam(selectedWorkshopId || 0, {
     query: { enabled: !!selectedWorkshopId, queryKey: getGetWorkshopExamQueryKey(selectedWorkshopId || 0) }
   });
@@ -265,7 +266,7 @@ export default function AdminExamsPage() {
   const handleConfirmCreateExam = async () => {
     if (!targetWorkshopId) return;
     const wsId = parseInt(targetWorkshopId, 10);
-    const originalWs = workshops?.find(w => w.id === wsId);
+    const originalWs = workshopsList.find((w: any) => w.id === wsId);
     if (!originalWs) return;
 
     try {
@@ -570,10 +571,10 @@ export default function AdminExamsPage() {
   };
 
   // Filter workshops by search query
-  const filteredWorkshops = workshops?.filter(w => 
+  const filteredWorkshops = workshopsList.filter((w: any) => 
     w.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     w.instructor.toLowerCase().includes(searchQuery.toLowerCase())
-  ) || [];
+  );
 
   return (
     <AppLayout>
@@ -648,7 +649,7 @@ export default function AdminExamsPage() {
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredWorkshops.map(w => (
+                {filteredWorkshops.map((w: any) => (
                   <motion.div
                     key={w.id}
                     initial={{ opacity: 0, y: 15 }}
@@ -707,7 +708,7 @@ export default function AdminExamsPage() {
                       {isAr ? "اختر ورشة العمل المراد ربط الاختبار بها:" : "Select the target workshop:"}
                     </Label>
                     
-                    {workshops?.filter(w => w.hasExam === 0).length === 0 ? (
+                    {workshopsList.filter((w: any) => w.hasExam === 0).length === 0 ? (
                       <div className="p-4 rounded-xl border border-dashed border-border/60 bg-card/20 text-center text-xs font-semibold text-muted-foreground">
                         {isAr 
                           ? "جميع ورش العمل الحالية مُعد لها اختبار بالفعل!" 
@@ -719,7 +720,7 @@ export default function AdminExamsPage() {
                           <SelectValue placeholder={isAr ? "اختر ورشة عمل..." : "Choose a workshop..."} />
                         </SelectTrigger>
                         <SelectContent className="rounded-xl bg-slate-900 border-border/50 text-foreground">
-                          {workshops?.filter(w => w.hasExam === 0).map(w => (
+                          {workshopsList.filter((w: any) => w.hasExam === 0).map((w: any) => (
                             <SelectItem key={w.id} value={w.id.toString()} className="text-xs font-medium focus:bg-primary/10">
                               {w.title}
                             </SelectItem>

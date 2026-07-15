@@ -106,6 +106,8 @@ export default function AdminCertificatesLevelPage() {
 
   const usersList = Array.isArray(allUsers) ? allUsers : (allUsers && Array.isArray((allUsers as any).data) ? (allUsers as any).data : []);
   const certsList = Array.isArray(issuedCerts) ? issuedCerts : (issuedCerts && Array.isArray((issuedCerts as any).data) ? (issuedCerts as any).data : []);
+  const workshopsList = Array.isArray(workshops) ? workshops : (workshops && Array.isArray((workshops as any).data) ? (workshops as any).data : []);
+  const tracksList2 = Array.isArray(tracks) ? tracks : (tracks && Array.isArray((tracks as any).data) ? (tracks as any).data : []);
 
   // Local configurations state
   const meta = getLevelMetadata(levelNum, isAr);
@@ -137,7 +139,7 @@ export default function AdminCertificatesLevelPage() {
   });
   const [uploading, setUploading] = useState(false);
 
-  const selectedWorkshop = workshops?.find(w => w.id === selectedTemplateWorkshopId);
+  const selectedWorkshop = workshopsList.find((w: any) => w.id === selectedTemplateWorkshopId);
 
   // Sync state with selected workshop template
   useEffect(() => {
@@ -161,10 +163,10 @@ export default function AdminCertificatesLevelPage() {
 
   // Select first workshop by default for template configuration
   useEffect(() => {
-    if (workshops && workshops.length > 0 && selectedTemplateWorkshopId === null) {
-      setSelectedTemplateWorkshopId(workshops[0].id);
+    if (workshopsList.length > 0 && selectedTemplateWorkshopId === null) {
+      setSelectedTemplateWorkshopId(workshopsList[0].id);
     }
-  }, [workshops, selectedTemplateWorkshopId]);
+  }, [workshopsList, selectedTemplateWorkshopId]);
 
   // Handle Certificate Revocation/Deletion
   const handleDeleteCert = async (certId: number) => {
@@ -218,11 +220,11 @@ export default function AdminCertificatesLevelPage() {
       };
 
       if (entityType === "track") {
-        const trk = tracks?.find(t => t.id === Number(selectedEntityId));
+        const trk = tracksList2.find((t: any) => t.id === Number(selectedEntityId));
         payload.trackId = trk?.id;
         payload.trackTitle = trk?.title;
       } else {
-        const wsh = workshops?.find(w => w.id === Number(selectedEntityId));
+        const wsh = workshopsList.find((w: any) => w.id === Number(selectedEntityId));
         payload.workshopId = wsh?.id;
         payload.workshopTitle = wsh?.title;
       }
@@ -506,9 +508,9 @@ export default function AdminCertificatesLevelPage() {
                 >
                   <option value="">{isAr ? "— اختر البرنامج —" : "— Select Program —"}</option>
                   {entityType === "track" ? (
-                    tracks?.map(t => <option key={t.id} value={t.id}>{t.title}</option>)
+                    tracksList2.map((t: any) => <option key={t.id} value={t.id}>{t.title}</option>)
                   ) : (
-                    workshops?.map(w => <option key={w.id} value={w.id}>{w.title}</option>)
+                    workshopsList.map((w: any) => <option key={w.id} value={w.id}>{w.title}</option>)
                   )}
                 </select>
               </div>
@@ -675,7 +677,7 @@ export default function AdminCertificatesLevelPage() {
                   </div>
                 ) : (
                   <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1">
-                    {workshops?.map(w => (
+                    {workshopsList.map((w: any) => (
                       <button
                         key={w.id}
                         onClick={() => setSelectedTemplateWorkshopId(w.id)}

@@ -32,6 +32,8 @@ export default function AdminCertificatesPage() {
   const updateWorkshop = useUpdateWorkshop();
 
   const certsList = Array.isArray(issuedCerts) ? issuedCerts : (issuedCerts && Array.isArray((issuedCerts as any).data) ? (issuedCerts as any).data : []);
+  const workshopsList = Array.isArray(workshops) ? workshops : (workshops && Array.isArray((workshops as any).data) ? (workshops as any).data : []);
+  const tracksList = Array.isArray(tracks) ? tracks : (tracks && Array.isArray((tracks as any).data) ? (tracks as any).data : []);
 
   const [selectedWorkshopId, setSelectedWorkshopId] = useState<number | null>(null);
 
@@ -64,7 +66,7 @@ export default function AdminCertificatesPage() {
   const [manualScore, setManualScore] = useState<number>(100);
   const [manualIssuing, setManualIssuing] = useState(false);
 
-  const selectedWorkshop = workshops?.find(w => w.id === selectedWorkshopId);
+  const selectedWorkshop = workshopsList.find((w: any) => w.id === selectedWorkshopId);
 
   // Sync state with selected workshop
   useEffect(() => {
@@ -79,10 +81,10 @@ export default function AdminCertificatesPage() {
 
   // Select first workshop by default
   useEffect(() => {
-    if (workshops && workshops.length > 0 && selectedWorkshopId === null) {
-      setSelectedWorkshopId(workshops[0].id);
+    if (workshopsList.length > 0 && selectedWorkshopId === null) {
+      setSelectedWorkshopId(workshopsList[0].id);
     }
-  }, [workshops, selectedWorkshopId]);
+  }, [workshopsList, selectedWorkshopId]);
 
   const handleSaveTemplate = async () => {
     if (!selectedWorkshopId) return;
@@ -422,7 +424,7 @@ export default function AdminCertificatesPage() {
                   </div>
                 ) : (
                   <div className="space-y-2 max-h-[250px] overflow-y-auto pr-1">
-                    {workshops?.map(w => (
+                    {workshopsList.map((w: any) => (
                       <button
                         key={w.id}
                         onClick={() => setSelectedWorkshopId(w.id)}
@@ -819,9 +821,9 @@ export default function AdminCertificatesPage() {
                 >
                   <option value="">{isAr ? "— اختر البرنامج —" : "— Select Program —"}</option>
                   {manualEntityType === "track" ? (
-                    tracks?.map(t => <option key={t.id} value={t.id}>{t.title}</option>)
+                    tracksList.map((t: any) => <option key={t.id} value={t.id}>{t.title}</option>)
                   ) : (
-                    workshops?.map(w => <option key={w.id} value={w.id}>{w.title}</option>)
+                    workshopsList.map((w: any) => <option key={w.id} value={w.id}>{w.title}</option>)
                   )}
                 </select>
               </div>

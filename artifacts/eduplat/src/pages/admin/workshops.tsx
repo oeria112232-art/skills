@@ -66,6 +66,7 @@ export default function AdminWorkshopsPage() {
   const { language } = useLanguage();
   const isAr = language === "ar";
   const { data: workshops, isLoading } = useListWorkshops();
+  const workshopsList = Array.isArray(workshops) ? workshops : (workshops && Array.isArray((workshops as any).data) ? (workshops as any).data : []);
   const createWorkshop = useCreateWorkshop();
   const updateWorkshop = useUpdateWorkshop();
   const deleteWorkshop = useDeleteWorkshop();
@@ -100,7 +101,7 @@ export default function AdminWorkshopsPage() {
     certEkey: ""
   });
 
-  const selectedWorkshop = workshops?.find(w => w.id === builderWorkshopId);
+  const selectedWorkshop = workshopsList.find((w: any) => w.id === builderWorkshopId);
   const { data: serverExam } = useGetWorkshopExam(builderWorkshopId || 0, {
     query: { enabled: !!builderWorkshopId, queryKey: getGetWorkshopExamQueryKey(builderWorkshopId || 0) }
   });
@@ -358,14 +359,14 @@ export default function AdminWorkshopsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {!Array.isArray(workshops) || workshops.length === 0 ? (
+              {workshopsList.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="text-center py-12 text-muted-foreground">
                     <BookOpen className="w-8 h-8 mx-auto mb-2 opacity-20" />
                     <p className="font-bold">{isAr ? "لا توجد ورش عمل حالياً" : "No workshops configured"}</p>
                   </td>
                 </tr>
-              ) : workshops.map(w => (
+              ) : workshopsList.map((w: any) => (
                 <tr key={w.id} className="hover:bg-muted/30 transition-colors" data-testid={`admin-workshop-row-${w.id}`}>
                   <td className="px-4 py-3">
                     <p className="font-bold text-sm text-foreground">{w.title}</p>
