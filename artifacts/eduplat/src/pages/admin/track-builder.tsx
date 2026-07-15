@@ -208,8 +208,60 @@ export default function AdminTrackBuilderPage() {
     fetchData();
   }, [trackId]);
 
+  const saveModuleDataSilently = async (
+    moduleToSave: TrackModule, 
+    currentType: ModuleType, 
+    currentTitle: string, 
+    currentDesc: string, 
+    currentMinutes: number, 
+    currentLesson: string, 
+    currentVideo: any, 
+    currentQuiz: any, 
+    currentExercise: any
+  ) => {
+    try {
+      let finalContent = "";
+      if (currentType === "lesson") {
+        finalContent = currentLesson;
+      } else if (currentType === "video") {
+        finalContent = JSON.stringify(currentVideo);
+      } else if (currentType === "quiz") {
+        finalContent = JSON.stringify(currentQuiz);
+      } else if (currentType === "exercise") {
+        finalContent = JSON.stringify(currentExercise);
+      }
+
+      const payload = {
+        title: currentTitle.trim(),
+        description: currentDesc.trim(),
+        type: currentType,
+        estimatedMinutes: currentMinutes,
+        content: finalContent,
+      };
+
+      const updated = await api(`/modules/${moduleToSave.id}`, "PUT", payload);
+      setModules(prev => prev.map(m => m.id === moduleToSave.id ? { ...m, ...updated } : m));
+    } catch (e) {
+      console.error("Auto-save failed:", e);
+    }
+  };
+
   /* ── Select Module Handler ── */
   const selectModule = (m: TrackModule) => {
+    if (selectedMod && selectedMod.id !== m.id) {
+      saveModuleDataSilently(
+        selectedMod, 
+        modType, 
+        modTitle, 
+        modDesc, 
+        modMinutes, 
+        lessonContent, 
+        videoConfig, 
+        quizConfig, 
+        exerciseConfig
+      );
+    }
+
     setSelectedModId(m.id);
     setSelectedMod(m);
     setModTitle(m.title);
