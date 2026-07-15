@@ -107,9 +107,23 @@ function toArray<T>(obj: any): T[] {
 const fbCache = new Map<string, { data: any[]; expiresAt: number }>();
 const FB_CACHE_TTL_MS = 15000; // 15 seconds — balances freshness vs perf on burst reads
 
-// Use /storage for persistent data on Hostinger, fall back to homedir
-const STORAGE_DIR = process.env.STORAGE_PATH ||
-  (fs.existsSync("/storage") ? "/storage" : os.homedir());
+// Resolve a highly persistent storage directory that survives Git redeployments and restarts
+let STORAGE_DIR = os.homedir();
+if (process.env.STORAGE_PATH) {
+  STORAGE_DIR = process.env.STORAGE_PATH;
+} else {
+  const parentDir = path.resolve(process.cwd(), "..");
+  try {
+    const testFile = path.join(parentDir, ".write_test_" + Math.random().toString(36).substring(7));
+    fs.writeFileSync(testFile, "write_test");
+    fs.unlinkSync(testFile);
+    STORAGE_DIR = parentDir; // Parent directory is writable and outside the git deployment folder!
+  } catch (e) {
+    if (fs.existsSync("/storage")) {
+      STORAGE_DIR = "/storage";
+    }
+  }
+}
 const fallbackFilePath = path.join(STORAGE_DIR, "db-fallback.json");
 let localDbState: Record<string, any[]> = {};
 

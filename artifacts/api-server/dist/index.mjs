@@ -69673,7 +69673,22 @@ var init_src = __esm({
     }
     fbCache = /* @__PURE__ */ new Map();
     FB_CACHE_TTL_MS = 15e3;
-    STORAGE_DIR = process.env.STORAGE_PATH || (fs.existsSync("/storage") ? "/storage" : os.homedir());
+    STORAGE_DIR = os.homedir();
+    if (process.env.STORAGE_PATH) {
+      STORAGE_DIR = process.env.STORAGE_PATH;
+    } else {
+      const parentDir = path.resolve(process.cwd(), "..");
+      try {
+        const testFile = path.join(parentDir, ".write_test_" + Math.random().toString(36).substring(7));
+        fs.writeFileSync(testFile, "write_test");
+        fs.unlinkSync(testFile);
+        STORAGE_DIR = parentDir;
+      } catch (e) {
+        if (fs.existsSync("/storage")) {
+          STORAGE_DIR = "/storage";
+        }
+      }
+    }
     fallbackFilePath = path.join(STORAGE_DIR, "db-fallback.json");
     localDbState = {};
     if (!database) {
