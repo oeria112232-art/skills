@@ -44,7 +44,7 @@ export default function CompanyJobsPage() {
   const handleOpen = (job?: Exclude<typeof jobs, undefined> extends (infer T)[] ? T : never) => {
     if (job) {
       setEditing(job.id);
-      setForm({ title: job.title, description: job.description, type: job.type, level: job.level, location: job.location || "", isRemote: job.isRemote, salaryMin: job.salaryMin?.toString() || "", salaryMax: job.salaryMax?.toString() || "", passScore: job.passScore.toString() });
+      setForm({ title: job.title, description: job.description, type: job.type, level: job.level, location: job.location || "", isRemote: job.isRemote, salaryMin: job.salaryMin?.toString() || "", salaryMax: job.salaryMax?.toString() || "", passScore: (job.passScore ?? 70).toString() });
     } else {
       setEditing(null);
       setForm(defaultForm);

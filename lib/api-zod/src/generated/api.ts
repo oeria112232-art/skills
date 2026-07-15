@@ -119,7 +119,7 @@ export const CreateJobBody = zod.object({
   "isRemote": zod.boolean(),
   "salaryMin": zod.number().nullish(),
   "salaryMax": zod.number().nullish(),
-  "passScore": zod.number()
+  "passScore": zod.number().optional()
 })
 
 export const CreateJobResponse = zod.object({

@@ -69723,7 +69723,28 @@ var init_src = __esm({
       ["is_closed", "isClosed"],
       ["option_index", "optionIndex"],
       ["poll_id", "pollId"],
-      ["company_category", "companyCategory"]
+      ["company_category", "companyCategory"],
+      ["company_id", "companyId"],
+      ["pass_score", "passScore"],
+      ["is_remote", "isRemote"],
+      ["salary_min", "salaryMin"],
+      ["salary_max", "salaryMax"],
+      ["application_count", "applicationCount"],
+      ["allowed_pages", "allowedPages"],
+      ["contact_info", "contactInfo"],
+      ["deleted_at", "deletedAt"],
+      ["correct_index", "correctIndex"],
+      ["has_certificate", "hasCertificate"],
+      ["certificate_number", "certificateNumber"],
+      ["verification_code", "verificationCode"],
+      ["issued_at", "issuedAt"],
+      ["workshop_title", "workshopTitle"],
+      ["cover_url", "coverUrl"],
+      ["stream_url", "streamUrl"],
+      ["stream_key", "streamKey"],
+      ["is_live", "isLive"],
+      ["enrolled_students", "enrolledStudents"],
+      ["tags", "tags"]
     ]);
     pool = new esm_default.Pool();
     dbMock = {
@@ -78227,7 +78248,7 @@ var CreateJobBody = objectType({
   "isRemote": booleanType(),
   "salaryMin": numberType().nullish(),
   "salaryMax": numberType().nullish(),
-  "passScore": numberType()
+  "passScore": numberType().optional()
 });
 var CreateJobResponse = objectType({
   "id": numberType(),

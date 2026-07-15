@@ -41,7 +41,7 @@ export default function AdminJobsPage() {
   const handleOpen = (job?: Exclude<typeof jobs, undefined> extends (infer T)[] ? T : never) => {
     if (job) {
       setEditing(job.id);
-      setForm({ title: job.title, company: job.company, description: job.description, type: job.type, level: job.level, location: job.location || "", isRemote: job.isRemote, salaryMin: job.salaryMin?.toString() || "", salaryMax: job.salaryMax?.toString() || "", passScore: job.passScore.toString() });
+      setForm({ title: job.title, company: job.company, description: job.description, type: job.type, level: job.level, location: job.location || "", isRemote: job.isRemote, salaryMin: job.salaryMin?.toString() || "", salaryMax: job.salaryMax?.toString() || "", passScore: (job.passScore ?? 70).toString() });
     } else {
       setEditing(null);
       setForm(defaultForm);
@@ -56,7 +56,7 @@ export default function AdminJobsPage() {
       isRemote: form.isRemote,
       salaryMin: form.salaryMin ? parseInt(form.salaryMin) : undefined,
       salaryMax: form.salaryMax ? parseInt(form.salaryMax) : undefined,
-      passScore: parseInt(form.passScore),
+      passScore: parseInt(form.passScore) || 70,
     };
     if (editing) {
       await updateJob.mutateAsync({ id: editing, data });
