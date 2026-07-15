@@ -45,8 +45,7 @@ const isProduction = process.env.NODE_ENV === "production" || process.env.CI ===
 const allowedOrigins = (process.env.CORS_ORIGINS || "").split(",").map(s => s.trim()).filter(Boolean);
 
 if (isProduction && allowedOrigins.length === 0) {
-  logger.error("FATAL: CORS_ORIGINS environment variable is required in production / يجب تحديد CORS_ORIGINS في بيئة الإنتاج");
-  process.exit(1);
+  logger.warn("WARNING: CORS_ORIGINS is not set in environment variables. Allowing all origins for compatibility.");
 }
 
 app.use(cors({

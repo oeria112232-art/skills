@@ -18924,14 +18924,14 @@ var require_etag = __commonJS({
   "../../node_modules/.pnpm/etag@1.8.1/node_modules/etag/index.js"(exports, module) {
     "use strict";
     module.exports = etag;
-    var crypto8 = __require("crypto");
+    var crypto9 = __require("crypto");
     var Stats = __require("fs").Stats;
     var toString = Object.prototype.toString;
     function entitytag(entity) {
       if (entity.length === 0) {
         return '"0-2jmj7l5rSw0yVb/vlWAYkK/YBwk"';
       }
-      var hash2 = crypto8.createHash("sha1").update(entity, "utf8").digest("base64").substring(0, 27);
+      var hash2 = crypto9.createHash("sha1").update(entity, "utf8").digest("base64").substring(0, 27);
       var len = typeof entity === "string" ? Buffer.byteLength(entity, "utf8") : entity.length;
       return '"' + len.toString(16) + "-" + hash2 + '"';
     }
@@ -22406,17 +22406,17 @@ var require_content_disposition = __commonJS({
 // ../../node_modules/.pnpm/cookie-signature@1.2.2/node_modules/cookie-signature/index.js
 var require_cookie_signature = __commonJS({
   "../../node_modules/.pnpm/cookie-signature@1.2.2/node_modules/cookie-signature/index.js"(exports) {
-    var crypto8 = __require("crypto");
+    var crypto9 = __require("crypto");
     exports.sign = function(val, secret) {
       if ("string" != typeof val) throw new TypeError("Cookie value must be provided as a string.");
       if (null == secret) throw new TypeError("Secret key must be provided.");
-      return val + "." + crypto8.createHmac("sha256", secret).update(val).digest("base64").replace(/\=+$/, "");
+      return val + "." + crypto9.createHmac("sha256", secret).update(val).digest("base64").replace(/\=+$/, "");
     };
     exports.unsign = function(input, secret) {
       if ("string" != typeof input) throw new TypeError("Signed cookie string must be provided.");
       if (null == secret) throw new TypeError("Secret key must be provided.");
       var tentativeValue = input.slice(0, input.lastIndexOf(".")), expectedInput = exports.sign(tentativeValue, secret), expectedBuffer = Buffer.from(expectedInput), inputBuffer = Buffer.from(input);
-      return expectedBuffer.length === inputBuffer.length && crypto8.timingSafeEqual(expectedBuffer, inputBuffer) ? tentativeValue : false;
+      return expectedBuffer.length === inputBuffer.length && crypto9.timingSafeEqual(expectedBuffer, inputBuffer) ? tentativeValue : false;
     };
   }
 });
@@ -29923,7 +29923,7 @@ var require_cert_signatures = __commonJS({
 var require_sasl = __commonJS({
   "../../node_modules/.pnpm/pg@8.22.0/node_modules/pg/lib/crypto/sasl.js"(exports, module) {
     "use strict";
-    var crypto8 = require_utils5();
+    var crypto9 = require_utils5();
     var { signatureAlgorithmHashFromCertificate } = require_cert_signatures();
     function saslprep(password) {
       const nonAsciiSpace = /[\u00A0\u1680\u2000-\u200B\u202F\u205F\u3000]/g;
@@ -29941,7 +29941,7 @@ var require_sasl = __commonJS({
       if (mechanism === "SCRAM-SHA-256-PLUS" && typeof stream.getPeerCertificate !== "function") {
         throw new Error("SASL: Mechanism SCRAM-SHA-256-PLUS requires a certificate");
       }
-      const clientNonce = crypto8.randomBytes(18).toString("base64");
+      const clientNonce = crypto9.randomBytes(18).toString("base64");
       const gs2Header = mechanism === "SCRAM-SHA-256-PLUS" ? "p=tls-server-end-point" : stream ? "y" : "n";
       return {
         mechanism,
@@ -29983,20 +29983,20 @@ var require_sasl = __commonJS({
         const peerCert = stream.getPeerCertificate().raw;
         let hashName = signatureAlgorithmHashFromCertificate(peerCert);
         if (hashName === "MD5" || hashName === "SHA-1") hashName = "SHA-256";
-        const certHash = await crypto8.hashByName(hashName, peerCert);
+        const certHash = await crypto9.hashByName(hashName, peerCert);
         const bindingData = Buffer.concat([Buffer.from("p=tls-server-end-point,,"), Buffer.from(certHash)]);
         channelBinding = bindingData.toString("base64");
       }
       const clientFinalMessageWithoutProof = "c=" + channelBinding + ",r=" + sv.nonce;
       const authMessage = clientFirstMessageBare + "," + serverFirstMessage + "," + clientFinalMessageWithoutProof;
       const saltBytes = Buffer.from(sv.salt, "base64");
-      const saltedPassword = await crypto8.deriveKey(saslprep(password), saltBytes, sv.iteration);
-      const clientKey = await crypto8.hmacSha256(saltedPassword, "Client Key");
-      const storedKey = await crypto8.sha256(clientKey);
-      const clientSignature = await crypto8.hmacSha256(storedKey, authMessage);
+      const saltedPassword = await crypto9.deriveKey(saslprep(password), saltBytes, sv.iteration);
+      const clientKey = await crypto9.hmacSha256(saltedPassword, "Client Key");
+      const storedKey = await crypto9.sha256(clientKey);
+      const clientSignature = await crypto9.hmacSha256(storedKey, authMessage);
       const clientProof = xorBuffers(Buffer.from(clientKey), Buffer.from(clientSignature)).toString("base64");
-      const serverKey = await crypto8.hmacSha256(saltedPassword, "Server Key");
-      const serverSignatureBytes = await crypto8.hmacSha256(serverKey, authMessage);
+      const serverKey = await crypto9.hmacSha256(saltedPassword, "Server Key");
+      const serverSignatureBytes = await crypto9.hmacSha256(serverKey, authMessage);
       session.message = "SASLResponse";
       session.serverSignature = Buffer.from(serverSignatureBytes).toString("base64");
       session.response = clientFinalMessageWithoutProof + ",p=" + clientProof;
@@ -32226,7 +32226,7 @@ var require_client = __commonJS({
     var Query2 = require_query();
     var defaults2 = require_defaults();
     var Connection3 = require_connection();
-    var crypto8 = require_utils5();
+    var crypto9 = require_utils5();
     var activeQueryDeprecationNotice = nodeUtils.deprecate(
       () => {
       },
@@ -32477,7 +32477,7 @@ var require_client = __commonJS({
       _handleAuthMD5Password(msg) {
         this._getPassword(async () => {
           try {
-            const hashedPassword = await crypto8.postgresMd5PasswordHash(this.user, this.password, msg.salt);
+            const hashedPassword = await crypto9.postgresMd5PasswordHash(this.user, this.password, msg.salt);
             this.connection.password(hashedPassword);
           } catch (e) {
             this.emit("error", e);
@@ -37290,7 +37290,7 @@ var require_hybi = __commonJS({
   "../../node_modules/.pnpm/websocket-driver@0.7.5/node_modules/websocket-driver/lib/websocket/driver/hybi.js"(exports, module) {
     "use strict";
     var Buffer2 = require_safe_buffer().Buffer;
-    var crypto8 = __require("crypto");
+    var crypto9 = __require("crypto");
     var util2 = __require("util");
     var Extensions = require_websocket_extensions();
     var Base = require_base();
@@ -37327,7 +37327,7 @@ var require_hybi = __commonJS({
       return payload;
     };
     Hybi.generateAccept = function(key2) {
-      var sha12 = crypto8.createHash("sha1");
+      var sha12 = crypto9.createHash("sha1");
       sha12.update(key2 + Hybi.GUID);
       return sha12.digest("base64");
     };
@@ -37470,7 +37470,7 @@ var require_hybi = __commonJS({
           frame.masked = !!this._masking;
           frame.length = message2.data.length;
           frame.payload = message2.data;
-          if (frame.masked) frame.maskingKey = crypto8.randomBytes(4);
+          if (frame.masked) frame.maskingKey = crypto9.randomBytes(4);
           this._sendFrame(frame);
         };
         if (this.MESSAGE_OPCODES.indexOf(message.opcode) >= 0)
@@ -37748,7 +37748,7 @@ var require_client3 = __commonJS({
   "../../node_modules/.pnpm/websocket-driver@0.7.5/node_modules/websocket-driver/lib/websocket/driver/client.js"(exports, module) {
     "use strict";
     var Buffer2 = require_safe_buffer().Buffer;
-    var crypto8 = __require("crypto");
+    var crypto9 = __require("crypto");
     var url2 = __require("url");
     var util2 = __require("util");
     var HttpParser = require_http_parser2();
@@ -37778,7 +37778,7 @@ var require_client3 = __commonJS({
     };
     util2.inherits(Client2, Hybi);
     Client2.generateKey = function() {
-      return crypto8.randomBytes(16).toString("base64");
+      return crypto9.randomBytes(16).toString("base64");
     };
     var instance = {
       VALID_PROTOCOLS: ["ws:", "wss:"],
@@ -37964,7 +37964,7 @@ var require_draft76 = __commonJS({
     var Buffer2 = require_safe_buffer().Buffer;
     var Base = require_base();
     var Draft75 = require_draft75();
-    var crypto8 = __require("crypto");
+    var crypto9 = __require("crypto");
     var util2 = __require("util");
     var numberFromKey = function(key2) {
       return parseInt((key2.match(/[0-9]/g) || []).join(""), 10);
@@ -38012,7 +38012,7 @@ var require_draft76 = __commonJS({
       },
       _handshakeSignature: function() {
         if (this._body.length < this.BODY_SIZE) return null;
-        var md5 = crypto8.createHash("md5"), buffer = Buffer2.allocUnsafe(8 + this.BODY_SIZE);
+        var md5 = crypto9.createHash("md5"), buffer = Buffer2.allocUnsafe(8 + this.BODY_SIZE);
         buffer.writeUInt32BE(this._keyValues[0], 0);
         buffer.writeUInt32BE(this._keyValues[1], 4);
         Buffer2.from(this._body).copy(buffer, 8, 0, this.BODY_SIZE);
@@ -70106,14 +70106,14 @@ var require_buffer_equal_constant_time = __commonJS({
 var require_jwa = __commonJS({
   "../../node_modules/.pnpm/jwa@2.0.1/node_modules/jwa/index.js"(exports, module) {
     var Buffer2 = require_safe_buffer().Buffer;
-    var crypto8 = __require("crypto");
+    var crypto9 = __require("crypto");
     var formatEcdsa = require_ecdsa_sig_formatter();
     var util2 = __require("util");
     var MSG_INVALID_ALGORITHM = '"%s" is not a valid algorithm.\n  Supported algorithms are:\n  "HS256", "HS384", "HS512", "RS256", "RS384", "RS512", "PS256", "PS384", "PS512", "ES256", "ES384", "ES512" and "none".';
     var MSG_INVALID_SECRET = "secret must be a string or buffer";
     var MSG_INVALID_VERIFIER_KEY = "key must be a string or a buffer";
     var MSG_INVALID_SIGNER_KEY = "key must be a string, a buffer or an object";
-    var supportsKeyObjects = typeof crypto8.createPublicKey === "function";
+    var supportsKeyObjects = typeof crypto9.createPublicKey === "function";
     if (supportsKeyObjects) {
       MSG_INVALID_VERIFIER_KEY += " or a KeyObject";
       MSG_INVALID_SECRET += "or a KeyObject";
@@ -70203,17 +70203,17 @@ var require_jwa = __commonJS({
       return function sign(thing, secret) {
         checkIsSecretKey(secret);
         thing = normalizeInput(thing);
-        var hmac = crypto8.createHmac("sha" + bits, secret);
+        var hmac = crypto9.createHmac("sha" + bits, secret);
         var sig = (hmac.update(thing), hmac.digest("base64"));
         return fromBase64(sig);
       };
     }
     var bufferEqual;
-    var timingSafeEqual = "timingSafeEqual" in crypto8 ? function timingSafeEqual2(a, b) {
+    var timingSafeEqual = "timingSafeEqual" in crypto9 ? function timingSafeEqual2(a, b) {
       if (a.byteLength !== b.byteLength) {
         return false;
       }
-      return crypto8.timingSafeEqual(a, b);
+      return crypto9.timingSafeEqual(a, b);
     } : function timingSafeEqual2(a, b) {
       if (!bufferEqual) {
         bufferEqual = require_buffer_equal_constant_time();
@@ -70230,7 +70230,7 @@ var require_jwa = __commonJS({
       return function sign(thing, privateKey) {
         checkIsPrivateKey(privateKey);
         thing = normalizeInput(thing);
-        var signer = crypto8.createSign("RSA-SHA" + bits);
+        var signer = crypto9.createSign("RSA-SHA" + bits);
         var sig = (signer.update(thing), signer.sign(privateKey, "base64"));
         return fromBase64(sig);
       };
@@ -70240,7 +70240,7 @@ var require_jwa = __commonJS({
         checkIsPublicKey(publicKey);
         thing = normalizeInput(thing);
         signature = toBase64(signature);
-        var verifier = crypto8.createVerify("RSA-SHA" + bits);
+        var verifier = crypto9.createVerify("RSA-SHA" + bits);
         verifier.update(thing);
         return verifier.verify(publicKey, signature, "base64");
       };
@@ -70249,11 +70249,11 @@ var require_jwa = __commonJS({
       return function sign(thing, privateKey) {
         checkIsPrivateKey(privateKey);
         thing = normalizeInput(thing);
-        var signer = crypto8.createSign("RSA-SHA" + bits);
+        var signer = crypto9.createSign("RSA-SHA" + bits);
         var sig = (signer.update(thing), signer.sign({
           key: privateKey,
-          padding: crypto8.constants.RSA_PKCS1_PSS_PADDING,
-          saltLength: crypto8.constants.RSA_PSS_SALTLEN_DIGEST
+          padding: crypto9.constants.RSA_PKCS1_PSS_PADDING,
+          saltLength: crypto9.constants.RSA_PSS_SALTLEN_DIGEST
         }, "base64"));
         return fromBase64(sig);
       };
@@ -70263,12 +70263,12 @@ var require_jwa = __commonJS({
         checkIsPublicKey(publicKey);
         thing = normalizeInput(thing);
         signature = toBase64(signature);
-        var verifier = crypto8.createVerify("RSA-SHA" + bits);
+        var verifier = crypto9.createVerify("RSA-SHA" + bits);
         verifier.update(thing);
         return verifier.verify({
           key: publicKey,
-          padding: crypto8.constants.RSA_PKCS1_PSS_PADDING,
-          saltLength: crypto8.constants.RSA_PSS_SALTLEN_DIGEST
+          padding: crypto9.constants.RSA_PKCS1_PSS_PADDING,
+          saltLength: crypto9.constants.RSA_PSS_SALTLEN_DIGEST
         }, signature, "base64");
       };
     }
@@ -73612,6 +73612,7 @@ var require_jsonwebtoken = __commonJS({
 });
 
 // src/lib/secrets.ts
+import crypto2 from "crypto";
 var JWT_SECRET_ENV, CERT_SIGN_SECRET_ENV, WALLET_SECRET_ENV, isProd, JWT_SECRET, CERT_SIGN_SECRET, WALLET_SECRET;
 var init_secrets = __esm({
   "src/lib/secrets.ts"() {
@@ -73623,17 +73624,15 @@ var init_secrets = __esm({
     isProd = process.env.NODE_ENV === "production" || process.env.CI === "true";
     if (isProd) {
       if (!JWT_SECRET_ENV) {
-        logger3.error("FATAL: JWT_SECRET must be set in environment variables in production.");
-        process.exit(1);
+        logger3.warn("WARNING: JWT_SECRET is not set in environment variables. Generating a random key for session security.");
       }
       if (!CERT_SIGN_SECRET_ENV) {
-        logger3.error("FATAL: CERT_SIGN_SECRET must be set in environment variables in production.");
-        process.exit(1);
+        logger3.warn("WARNING: CERT_SIGN_SECRET is not set in environment variables. Generating a random key for certificates.");
       }
     }
-    JWT_SECRET = JWT_SECRET_ENV || "mharat_secure_default_jwt_secret_key_8829";
-    CERT_SIGN_SECRET = CERT_SIGN_SECRET_ENV || "mharat_secure_session_secret_key_8829";
-    WALLET_SECRET = WALLET_SECRET_ENV || "mharat_secure_wallet_fallback_secret_key_8829";
+    JWT_SECRET = JWT_SECRET_ENV || crypto2.randomBytes(32).toString("hex");
+    CERT_SIGN_SECRET = CERT_SIGN_SECRET_ENV || crypto2.randomBytes(32).toString("hex");
+    WALLET_SECRET = WALLET_SECRET_ENV || crypto2.randomBytes(32).toString("hex");
   }
 });
 
@@ -73745,9 +73744,9 @@ __export(wallet_security_exports, {
   verifyAndHardenUserBalance: () => verifyAndHardenUserBalance,
   verifyTransactionChainIntegrity: () => verifyTransactionChainIntegrity
 });
-import crypto3 from "crypto";
+import crypto4 from "crypto";
 function generateNonce() {
-  return crypto3.randomBytes(16).toString("hex");
+  return crypto4.randomBytes(16).toString("hex");
 }
 function claimNonce(nonce) {
   if (!nonce || typeof nonce !== "string") return false;
@@ -73758,7 +73757,7 @@ function claimNonce(nonce) {
 function generateSecureSignature(userId, action, nonce) {
   const timestamp2 = Date.now();
   const payload = `${userId}:${action}:${nonce}:${timestamp2}:${WALLET_SECRET}`;
-  return crypto3.createHmac("sha256", WALLET_SECRET).update(payload).digest("hex");
+  return crypto4.createHmac("sha256", WALLET_SECRET).update(payload).digest("hex");
 }
 async function checkDuplicateTransaction(userId, type, amount, windowSeconds = 60) {
   const windowMs = windowSeconds * 1e3;
@@ -73776,7 +73775,7 @@ async function checkDuplicateTransaction(userId, type, amount, windowSeconds = 6
   });
 }
 function generatePointsSignature(userId, points) {
-  return crypto3.createHmac("sha256", WALLET_SECRET).update(`${userId}:${points}`).digest("hex");
+  return crypto4.createHmac("sha256", WALLET_SECRET).update(`${userId}:${points}`).digest("hex");
 }
 async function verifyAndHardenUserBalance(user) {
   if (!user) return false;
@@ -73794,7 +73793,7 @@ async function verifyAndHardenUserBalance(user) {
     );
     return false;
   }
-  const isValid2 = crypto3.timingSafeEqual(
+  const isValid2 = crypto4.timingSafeEqual(
     Buffer.from(user.pointsSignature, "hex"),
     Buffer.from(expectedSignature, "hex")
   );
@@ -73811,7 +73810,7 @@ async function updateAndSignUserBalance(userId, newPoints) {
 }
 function generateTransactionSignature(txId, senderId, receiverId, amount, prevSignature) {
   const payload = `${txId}:${senderId ?? "system"}:${receiverId}:${amount}:${prevSignature}`;
-  return crypto3.createHmac("sha256", WALLET_SECRET).update(payload).digest("hex");
+  return crypto4.createHmac("sha256", WALLET_SECRET).update(payload).digest("hex");
 }
 async function insertSecureTransaction(senderId, receiverId, amount, type, notes) {
   const allTxs = await db.select().from(pointsTransactionsTable).orderBy(desc(pointsTransactionsTable.createdAt));
@@ -73905,7 +73904,7 @@ async function verifyTransactionChainIntegrity() {
       tx.amount,
       tx.previousSignature || ""
     );
-    if (!tx.signature || !crypto3.timingSafeEqual(Buffer.from(tx.signature, "hex"), Buffer.from(expectedSig, "hex"))) {
+    if (!tx.signature || !crypto4.timingSafeEqual(Buffer.from(tx.signature, "hex"), Buffer.from(expectedSig, "hex"))) {
       return { valid: false, brokenAtTxId: tx.id, totalChecked: i + 1 };
     }
   }
@@ -74002,7 +74001,7 @@ var import_express17 = __toESM(require_express2(), 1);
 var import_cors = __toESM(require_lib3(), 1);
 var import_pino_http = __toESM(require_logger(), 1);
 import helmet from "helmet";
-import crypto7 from "crypto";
+import crypto8 from "crypto";
 
 // src/routes/index.ts
 var import_express16 = __toESM(require_express2(), 1);
@@ -79366,10 +79365,10 @@ function hashPassword(pw) {
 var import_jsonwebtoken2 = __toESM(require_jsonwebtoken(), 1);
 init_bcryptjs();
 init_secrets();
-import crypto2 from "crypto";
+import crypto3 from "crypto";
 var router2 = (0, import_express2.Router)();
 function makeToken(userId) {
-  return import_jsonwebtoken2.default.sign({ userId, jti: crypto2.randomUUID() }, JWT_SECRET, { expiresIn: "7d" });
+  return import_jsonwebtoken2.default.sign({ userId, jti: crypto3.randomUUID() }, JWT_SECRET, { expiresIn: "7d" });
 }
 router2.post("/auth/register", async (req, res) => {
   const parsed = RegisterBody.safeParse(req.body);
@@ -79908,7 +79907,7 @@ var applications_default = router4;
 var import_express5 = __toESM(require_express2(), 1);
 init_src();
 init_drizzle_orm();
-import crypto4 from "crypto";
+import crypto5 from "crypto";
 import fs2 from "fs";
 import path2 from "path";
 import { fileURLToPath as fileURLToPath2 } from "url";
@@ -80612,7 +80611,7 @@ router5.post("/workshops/:id/certificate/claim", requireAuth, async (req, res) =
     signatureHash: ""
   }).returning();
   const data = `${cert.id}:${cert.userId}:${cert.type}:${cert.score}:${cert.certificateNumber}`;
-  const signature = crypto4.createHmac("sha256", CERT_SIGN_SECRET).update(data).digest("hex");
+  const signature = crypto5.createHmac("sha256", CERT_SIGN_SECRET).update(data).digest("hex");
   await db.update(certificatesTable).set({ signatureHash: signature }).where(eq(certificatesTable.id, cert.id));
   await updateAndSignUserBalance(dbUser.id, 100);
   res.status(201).json({ success: true, certificateId: cert.id, alreadyClaimed: false });
@@ -81145,12 +81144,12 @@ init_src();
 init_drizzle_orm();
 var import_jsonwebtoken3 = __toESM(require_jsonwebtoken(), 1);
 init_secrets();
-import crypto5 from "crypto";
+import crypto6 from "crypto";
 init_wallet_security();
 var router6 = (0, import_express6.Router)();
 function calculateSignature(cert) {
   const data = `${cert.id}:${cert.userId}:${cert.type}:${cert.score}:${cert.certificateNumber}`;
-  return crypto5.createHmac("sha256", CERT_SIGN_SECRET).update(data).digest("hex");
+  return crypto6.createHmac("sha256", CERT_SIGN_SECRET).update(data).digest("hex");
 }
 function serializeCert(c) {
   return {
@@ -81471,7 +81470,7 @@ var certificates_default = router6;
 var import_express7 = __toESM(require_express2(), 1);
 init_src();
 init_drizzle_orm();
-import crypto6 from "crypto";
+import crypto7 from "crypto";
 init_wallet_security();
 var router7 = (0, import_express7.Router)();
 var TrackBodySchema = external_exports2.object({
@@ -81778,7 +81777,7 @@ router7.post("/tracks/:slug/progress", requireAuth, async (req, res) => {
       const [u] = await db.select().from(usersTable).where(eq(usersTable.id, parsed.data.userId));
       if (u) {
         const certNumber = `CERT-TRK-${track.id}-${u.id}-${Date.now()}`;
-        const verificationCode = `MH-VFY-${crypto6.randomBytes(3).toString("hex").toUpperCase()}-${crypto6.randomInt(1e3, 1e4)}`;
+        const verificationCode = `MH-VFY-${crypto7.randomBytes(3).toString("hex").toUpperCase()}-${crypto7.randomInt(1e3, 1e4)}`;
         const trackCertLevel = track.certLevel ?? 3;
         const trackCertCost = track.certCost ?? 250;
         const trackCertType = track.certType ?? "track";
@@ -83564,7 +83563,7 @@ import { fileURLToPath as fileURLToPath6 } from "url";
 var __dirname7 = path7.dirname(fileURLToPath6(import.meta.url));
 var app = (0, import_express17.default)();
 app.use((_req, res, next) => {
-  res.locals.cspNonce = crypto7.randomBytes(16).toString("base64");
+  res.locals.cspNonce = crypto8.randomBytes(16).toString("base64");
   next();
 });
 app.use(helmet({
@@ -83587,8 +83586,7 @@ app.use(helmet({
 var isProduction2 = process.env.NODE_ENV === "production" || process.env.CI === "true";
 var allowedOrigins = (process.env.CORS_ORIGINS || "").split(",").map((s) => s.trim()).filter(Boolean);
 if (isProduction2 && allowedOrigins.length === 0) {
-  logger3.error("FATAL: CORS_ORIGINS environment variable is required in production / \u064A\u062C\u0628 \u062A\u062D\u062F\u064A\u062F CORS_ORIGINS \u0641\u064A \u0628\u064A\u0626\u0629 \u0627\u0644\u0625\u0646\u062A\u0627\u062C");
-  process.exit(1);
+  logger3.warn("WARNING: CORS_ORIGINS is not set in environment variables. Allowing all origins for compatibility.");
 }
 app.use((0, import_cors.default)({
   origin: (origin, callback) => {
@@ -83607,7 +83605,7 @@ app.use((0, import_cors.default)({
 app.use(
   (0, import_pino_http.default)({
     logger: logger3,
-    genReqId: () => crypto7.randomUUID(),
+    genReqId: () => crypto8.randomUUID(),
     serializers: {
       req(req) {
         return {
