@@ -168,8 +168,9 @@ export default function AdminTrackBuilderPage() {
       }
       setTrack(target);
       try {
-        const usersData = await api("/users");
-        setInstructors((usersData ?? []).filter((u: any) => u.role === "instructor"));
+        const usersResponse = await api("/users");
+        const usersList = Array.isArray(usersResponse) ? usersResponse : (usersResponse?.data ?? []);
+        setInstructors(usersList.filter((u: any) => u.role === "instructor"));
       } catch (err) {
         console.error("Failed to load instructors", err);
       }

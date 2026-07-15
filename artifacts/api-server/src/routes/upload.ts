@@ -4,6 +4,8 @@ import { rateLimit } from "../middlewares/rateLimit";
 import { db, platformSettingsTable } from "@workspace/db";
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { compressVideo } from "../services/video-compress";
+import fs from "fs";
+import path from "path";
 
 const router: IRouter = Router();
 
@@ -47,10 +49,7 @@ router.post("/upload/video", requireAuth, requireRole(["admin", "instructor"]), 
     if (!file) { res.status(400).json({ error: "No file data provided" }); return; }
 
     const config = await getR2Config();
-    if (!config.accountId || !config.accessKeyId || !config.secretAccessKey || !config.bucket) {
-      res.status(500).json({ error: "R2 not configured" });
-      return;
-    }
+    const useLocalFallback = !config.accountId || !config.accessKeyId || !config.secretAccessKey || !config.bucket;
 
     const base64Data = file.includes(",") ? file.split(",")[1] : file;
     const inputBuffer = Buffer.from(base64Data, "base64");
@@ -113,7 +112,28 @@ router.post("/upload/video", requireAuth, requireRole(["admin", "instructor"]), 
 
     const ext = uploadMime.includes("webm") ? "webm" : "mp4";
     const safeName = (fileName || `video-${Date.now()}`).replace(/[^a-zA-Z0-9._-]/g, "_").replace(/\.[^.]+$/, "");
-    const key = `${folder || "eduplat/videos"}/${safeName}-${Date.now()}.${ext}`;
+    const finalFileName = `${safeName}-${Date.now()}.${ext}`;
+    const key = `${folder || "eduplat/videos"}/${finalFileName}`;
+
+    if (useLocalFallback) {
+      console.warn("R2 is not configured. Saving uploaded video locally.");
+      const uploadsDir = path.resolve(import.meta.dirname, "../../../uploads/videos");
+      if (!fs.existsSync(uploadsDir)) {
+        fs.mkdirSync(uploadsDir, { recursive: true });
+      }
+      const filePath = path.join(uploadsDir, finalFileName);
+      fs.writeFileSync(filePath, uploadBuffer);
+
+      res.json({
+        url: `/api/uploads/videos/${finalFileName}`,
+        publicId: `uploads/videos/${finalFileName}`,
+        format: ext,
+        bytes: uploadBuffer.byteLength,
+        size: (uploadBuffer.byteLength / (1024 * 1024)).toFixed(2) + " MB",
+        ...(compressionStats ? { compressed: compressionStats } : {}),
+      });
+      return;
+    }
 
     const s3 = getR2Client(config);
 
