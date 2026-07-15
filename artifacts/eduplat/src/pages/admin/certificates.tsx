@@ -64,6 +64,7 @@ export default function AdminCertificatesPage() {
   const [manualEntityType, setManualEntityType] = useState<string>("track");
   const [manualEntityId, setManualEntityId] = useState<string>("");
   const [manualScore, setManualScore] = useState<number>(100);
+  const [manualLevel, setManualLevel] = useState<number>(3); // default to 3 (Professional)
   const [manualIssuing, setManualIssuing] = useState(false);
 
   const selectedWorkshop = workshopsList.find((w: any) => w.id === selectedWorkshopId);
@@ -143,7 +144,8 @@ export default function AdminCertificatesPage() {
         body: JSON.stringify({
           type: manualEntityType,
           entityId: Number(manualEntityId),
-          score: manualScore
+          score: manualScore,
+          level: manualLevel
         })
       });
 
@@ -604,20 +606,20 @@ export default function AdminCertificatesPage() {
             <div className="flex items-center gap-2 mb-4">
               <Layers className="w-5 h-5 text-primary" />
               <h2 className="font-extrabold text-base text-foreground">
-                {isAr ? "هيكلية مستويات الشهادات (4 → 1)" : "Certificate Level Hierarchy (4 → 1)"}
+                {isAr ? "هيكلية مستويات الشهادات (1 → 4)" : "Certificate Level Hierarchy (1 → 4)"}
               </h2>
             </div>
             <p className="text-xs text-muted-foreground font-medium mb-4 leading-relaxed">
               {isAr
-                ? "المستوى 4 هو الأعلى قيمةً ويظهر أولاً في الملف الشخصي وطلبات التوظيف. كل مستوى له سعره وارتباطه بمسار أو ورشة تعليمية."
-                : "Level 4 is the highest-value certificate and appears first in profiles and job applications. Each level has its own price and is linked to a track or workshop."}
+                ? "المستوى 1 هو الأعلى قيمةً ويظهر أولاً في الملف الشخصي وطلبات التوظيف. كل مستوى له سعره وارتباطه بمسار أو ورشة تعليمية."
+                : "Level 1 is the highest-value certificate and appears first in profiles and job applications. Each level has its own price and is linked to a track or workshop."}
             </p>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {[
-                { level: 4, labelAr: "خبير متقدم", labelEn: "Master Expert", color: "from-amber-500/20 to-yellow-500/10 border-amber-500/30", textColor: "text-amber-600", badge: "" },
-                { level: 3, labelAr: "خبير متخصص", labelEn: "Expert Specialist", color: "from-purple-500/20 to-violet-500/10 border-purple-500/30", textColor: "text-purple-600", badge: "" },
-                { level: 2, labelAr: "أخصائي محترف", labelEn: "Professional Specialist", color: "from-blue-500/20 to-cyan-500/10 border-blue-500/30", textColor: "text-blue-600", badge: "" },
-                { level: 1, labelAr: "حضور ومشاركة", labelEn: "Participation", color: "from-slate-500/10 to-gray-500/5 border-slate-500/25", textColor: "text-slate-500", badge: "" },
+                { level: 1, labelAr: "خبير متقدم", labelEn: "Master Expert", color: "from-amber-500/20 to-yellow-500/10 border-amber-500/30", textColor: "text-amber-600", badge: "" },
+                { level: 2, labelAr: "خبير متخصص", labelEn: "Expert Specialist", color: "from-purple-500/20 to-violet-500/10 border-purple-500/30", textColor: "text-purple-600", badge: "" },
+                { level: 3, labelAr: "أخصائي محترف", labelEn: "Professional Specialist", color: "from-blue-500/20 to-cyan-500/10 border-blue-500/30", textColor: "text-blue-600", badge: "" },
+                { level: 4, labelAr: "حضور ومشاركة", labelEn: "Participation", color: "from-slate-500/10 to-gray-500/5 border-slate-500/25", textColor: "text-slate-500", badge: "" },
               ].map(l => (
                 <Link key={l.level} href={`/admin/certificates/level/${l.level}`}>
                   <div className={`p-4 rounded-xl border bg-gradient-to-br ${l.color} flex flex-col gap-1.5 cursor-pointer hover:scale-[1.02] transition-all`}>
@@ -634,12 +636,12 @@ export default function AdminCertificatesPage() {
             </div>
           </div>
 
-          {/* Per-Level Config Cards (4 → 1) */}
+          {/* Per-Level Config Cards (1 → 4) */}
           <div className="space-y-5">
             {[
               {
-                level: 4, badge: "", labelAr: "المستوى 4 — خبير متقدم (Master)",
-                labelEn: "Level 4 — Master Certification",
+                level: 1, badge: "", labelAr: "المستوى 1 — خبير متقدم (Master)",
+                labelEn: "Level 1 — Master Certification",
                 descAr: "أعلى مستوى — يُمنح عند إتمام مسارات متقدمة أو بقرار من الأدمن.",
                 descEn: "Highest tier — awarded upon advanced track completion or admin decision.",
                 borderColor: "border-amber-500/30", bgColor: "bg-amber-500/5",
@@ -647,8 +649,8 @@ export default function AdminCertificatesPage() {
                 badgeColor: "text-amber-600"
               },
               {
-                level: 3, badge: "", labelAr: "المستوى 3 — خبير متخصص (Expert)",
-                labelEn: "Level 3 — Expert Specialist",
+                level: 2, badge: "", labelAr: "المستوى 2 — خبير متخصص (Expert)",
+                labelEn: "Level 2 — Expert Specialist",
                 descAr: "يُمنح عند إتمام مسار تعليمي كامل بنجاح.",
                 descEn: "Awarded upon completing a full learning track with passing score.",
                 borderColor: "border-purple-500/30", bgColor: "bg-purple-500/5",
@@ -656,8 +658,8 @@ export default function AdminCertificatesPage() {
                 badgeColor: "text-purple-600"
               },
               {
-                level: 2, badge: "", labelAr: "المستوى 2 — أخصائي محترف (Professional)",
-                labelEn: "Level 2 — Professional Specialist",
+                level: 3, badge: "", labelAr: "المستوى 3 — أخصائي محترف (Professional)",
+                labelEn: "Level 3 — Professional Specialist",
                 descAr: "يُمنح عند اجتياز اختبار ورشة عمل بدرجة مقبولة.",
                 descEn: "Awarded upon passing a workshop exam with an acceptable score.",
                 borderColor: "border-blue-500/30", bgColor: "bg-blue-500/5",
@@ -665,8 +667,8 @@ export default function AdminCertificatesPage() {
                 badgeColor: "text-blue-600"
               },
               {
-                level: 1, badge: "", labelAr: "المستوى 1 — حضور ومشاركة (Participation)",
-                labelEn: "Level 1 — Participation",
+                level: 4, badge: "", labelAr: "المستوى 4 — حضور ومشاركة (Participation)",
+                labelEn: "Level 4 — Participation",
                 descAr: "يُمنح تلقائياً لكل من يكمل ورشة العمل حتى النهاية دون اختبار.",
                 descEn: "Automatically awarded to every student who completes a workshop attendance.",
                 borderColor: "border-slate-500/25", bgColor: "bg-slate-500/5",
@@ -841,6 +843,23 @@ export default function AdminCertificatesPage() {
                   onChange={e => setManualScore(Number(e.target.value))}
                   className="rounded-xl text-xs font-bold h-10 bg-background/50 border-border/60"
                 />
+              </div>
+
+              {/* Level Selector */}
+              <div className="space-y-1.5">
+                <Label className="font-bold text-[10.5px] text-muted-foreground block">
+                  {isAr ? "نوع ومستوى الشهادة" : "Certificate Level"}
+                </Label>
+                <select
+                  value={manualLevel}
+                  onChange={e => setManualLevel(Number(e.target.value))}
+                  className="w-full h-10 rounded-xl border border-border/60 bg-background/60 px-3 text-xs font-semibold text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+                >
+                  <option value="1">{isAr ? "المستوى 1 — خبير متقدم (Master)" : "Level 1 — Master Expert"}</option>
+                  <option value="2">{isAr ? "المستوى 2 — خبير متخصص (Expert)" : "Level 2 — Expert Specialist"}</option>
+                  <option value="3">{isAr ? "المستوى 3 — أخصائي محترف (Professional)" : "Level 3 — Professional Specialist"}</option>
+                  <option value="4">{isAr ? "المستوى 4 — حضور ومشاركة (Participation)" : "Level 4 — Participation"}</option>
+                </select>
               </div>
 
               <Button

@@ -154,6 +154,58 @@ export default function AdminTrackBuilderPage() {
   const [runLogs, setRunLogs] = useState<string[]>([]);
   const [runningTests, setRunningTests] = useState(false);
 
+  // Auto-sync track estimated hours based on modules
+  const syncTrackEstimatedHours = async (nextModules: TrackModule[]) => {
+    if (!track) return;
+    const totalVideoMinutes = nextModules
+      .filter((m: any) => m.type === "video")
+      .reduce((sum: number, m: any) => sum + (m.estimatedMinutes || 0), 0);
+    const computedHours = Math.ceil(totalVideoMinutes / 60) || 1;
+
+    if (track.estimatedHours !== computedHours) {
+      try {
+        const payload = {
+          title: track.title,
+          slug: track.slug,
+          description: track.description || "",
+          category: track.category || "",
+          level: track.level || "beginner",
+          estimatedHours: computedHours,
+          price: (track as any).price || 0,
+          certType: (track as any).certType || "track",
+          certLevel: (track as any).certLevel || 3,
+          certCost: (track as any).certCost || 250,
+        };
+        const updatedTrack = await api(`/tracks/${track.id}`, "PUT", payload);
+        setTrack(updatedTrack);
+        setTrackForm(prev => ({ ...prev, estimatedHours: String(computedHours) }));
+      } catch (err) {
+        console.error("Failed to auto-update track estimated hours", err);
+      }
+    }
+  };
+
+  useEffect(() => {
+    if (modules.length > 0) {
+      const totalVideoMinutes = modules
+        .filter((m: any) => m.type === "video")
+        .reduce((sum: number, m: any) => sum + (m.estimatedMinutes || 0), 0);
+      const computedHours = Math.ceil(totalVideoMinutes / 60) || 1;
+      setTrackForm(prev => ({ ...prev, estimatedHours: String(computedHours) }));
+    }
+  }, [modules]);
+
+  useEffect(() => {
+    if (modType === "video" && videoConfig.videoUrl && videoConfig.videoUrl.startsWith("http")) {
+      const tempVideo = document.createElement("video");
+      tempVideo.src = videoConfig.videoUrl;
+      tempVideo.onloadedmetadata = () => {
+        const minutes = Math.ceil(tempVideo.duration / 60) || 1;
+        setModMinutes(minutes);
+      };
+    }
+  }, [videoConfig.videoUrl, modType]);
+
   /* ── Fetch Track Data ── */
   const fetchData = async () => {
     if (isNaN(trackId)) return;
@@ -361,7 +413,9 @@ export default function AdminTrackBuilderPage() {
 
       const updated = await api(`/modules/${selectedMod.id}`, "PUT", payload);
       
-      setModules(prev => prev.map(m => m.id === selectedMod.id ? { ...m, ...updated } : m));
+      const nextList = modules.map(m => m.id === selectedMod.id ? { ...m, ...updated } : m);
+      setModules(nextList);
+      syncTrackEstimatedHours(nextList);
       setSelectedMod(prev => prev ? { ...prev, ...updated } : null);
       
       toast({ title: isAr ? "✅ تم حفظ التغييرات بنجاح" : "✅ Module workspace saved" });
@@ -385,7 +439,9 @@ export default function AdminTrackBuilderPage() {
         content: type === "quiz" ? JSON.stringify({ questions: [], passingPercentage: 70, timeLimitSeconds: 600 }) : ""
       };
       const created = await api(`/tracks/${track.id}/modules`, "POST", payload);
-      setModules(prev => [...prev, created]);
+      const nextList = [...modules, created];
+      setModules(nextList);
+      syncTrackEstimatedHours(nextList);
       selectModule(created);
       toast({ title: isAr ? "🎉 تم إنشاء الوحدة بنجاح" : "🎉 Module created" });
     } catch (e: any) {
@@ -398,7 +454,9 @@ export default function AdminTrackBuilderPage() {
     if (!confirm(isAr ? "هل أنت متأكد من حذف هذه الوحدة؟" : "Are you sure you want to delete this module?")) return;
     try {
       await api(`/modules/${id}`, "DELETE");
-      setModules(prev => prev.filter(m => m.id !== id));
+      const nextList = modules.filter(m => m.id !== id);
+      setModules(nextList);
+      syncTrackEstimatedHours(nextList);
       if (selectedModId === id) {
         setSelectedModId(null);
         setSelectedMod(null);
@@ -442,6 +500,16 @@ export default function AdminTrackBuilderPage() {
   const simulateVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    // Detect duration using a temporary video element
+    const tempVideo = document.createElement("video");
+    tempVideo.preload = "metadata";
+    tempVideo.src = URL.createObjectURL(file);
+    tempVideo.onloadedmetadata = () => {
+      URL.revokeObjectURL(tempVideo.src);
+      const minutes = Math.ceil(tempVideo.duration / 60) || 1;
+      setModMinutes(minutes);
+    };
 
     setUploading(true);
     setUploadProgress(0);
@@ -731,7 +799,16 @@ export default function AdminTrackBuilderPage() {
                   </div>
                   <div className="space-y-1">
                     <Label className="text-xs font-semibold">{isAr ? "الساعات التقديرية" : "Estimated Hours"}</Label>
-                    <Input type="number" value={trackForm.estimatedHours} onChange={e => setTrackForm(prev => ({ ...prev, estimatedHours: e.target.value }))} className="rounded-xl text-xs" />
+                    <Input 
+                      type="number" 
+                      value={trackForm.estimatedHours} 
+                      disabled 
+                      className="rounded-xl text-xs bg-muted cursor-not-allowed opacity-80" 
+                      title={isAr ? "محسوب تلقائياً من مقاطع الفيديو" : "Auto-calculated from video modules"}
+                    />
+                    <span className="text-[9px] text-muted-foreground block">
+                      {isAr ? "⚠️ يحسب تلقائياً من فيديوهات المسار" : "⚠️ Auto-calculated from video modules"}
+                    </span>
                   </div>
                   <div className="space-y-1">
                     <Label className="text-xs font-semibold">{isAr ? "السعر (نقاط)" : "Price (points)"}</Label>
@@ -782,10 +859,10 @@ export default function AdminTrackBuilderPage() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="1">{isAr ? "المستوى 1 — حضور ومشاركة" : "Level 1 — Participation"}</SelectItem>
-                          <SelectItem value="2">{isAr ? "المستوى 2 — أخصائي محترف" : "Level 2 — Professional"}</SelectItem>
-                          <SelectItem value="3">{isAr ? "المستوى 3 — خبير متخصص" : "Level 3 — Expert"}</SelectItem>
-                          <SelectItem value="4">{isAr ? "المستوى 4 — خبير متقدم" : "Level 4 — Master"}</SelectItem>
+                          <SelectItem value="1">{isAr ? "المستوى 1 — خبير متقدم" : "Level 1 — Master"}</SelectItem>
+                          <SelectItem value="2">{isAr ? "المستوى 2 — خبير متخصص" : "Level 2 — Expert"}</SelectItem>
+                          <SelectItem value="3">{isAr ? "المستوى 3 — أخصائي محترف" : "Level 3 — Professional"}</SelectItem>
+                          <SelectItem value="4">{isAr ? "المستوى 4 — حضور ومشاركة" : "Level 4 — Participation"}</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -842,7 +919,9 @@ export default function AdminTrackBuilderPage() {
                         min="1"
                         value={modMinutes}
                         onChange={e => setModMinutes(parseInt(e.target.value, 10) || 15)}
-                        className="w-12 h-6 border-0 p-0 text-center font-bold text-xs bg-transparent"
+                        disabled={modType === "video"}
+                        className={`w-12 h-6 border-0 p-0 text-center font-bold text-xs bg-transparent ${modType === "video" ? "cursor-not-allowed opacity-75" : ""}`}
+                        title={modType === "video" ? (isAr ? "محسوب تلقائياً من طول الفيديو" : "Auto-calculated from video length") : undefined}
                       />
                       <span className="text-xs text-muted-foreground">{isAr ? "دقيقة" : "min"}</span>
                     </div>

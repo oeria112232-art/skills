@@ -18,23 +18,23 @@ const getLevelDetails = (level: number, isAr: boolean) => {
   switch (level) {
     case 1:
       return {
-        title: isAr ? "المستوى 1: حضور" : "Lvl 1: Participation",
-        color: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20"
+        title: isAr ? "المستوى 1: ماستر" : "Lvl 1: Master Specialist",
+        color: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20"
       };
     case 2:
       return {
-        title: isAr ? "المستوى 2: محترف" : "Lvl 2: Professional",
-        color: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
+        title: isAr ? "المستوى 2: خبير" : "Lvl 2: Expert",
+        color: "bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20"
       };
     case 3:
       return {
-        title: isAr ? "المستوى 3: خبير" : "Lvl 3: Expert",
-        color: "bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20"
+        title: isAr ? "المستوى 3: محترف" : "Lvl 3: Professional",
+        color: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
       };
     case 4:
       return {
-        title: isAr ? "المستوى 4: ماستر" : "Lvl 4: Master Specialist",
-        color: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20"
+        title: isAr ? "المستوى 4: حضور" : "Lvl 4: Participation",
+        color: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20"
       };
     default:
       return {
@@ -122,33 +122,33 @@ export default function CertificatesPage() {
                   className={`p-6 rounded-2xl border bg-gradient-to-b from-card to-background hover:shadow-lg transition-all duration-300 shadow-sm relative overflow-hidden group text-start flex flex-col justify-between ${
                     isLocked 
                       ? "border-amber-500/20 opacity-90 shadow-inner" 
-                      : cert.level === 4 
+                      : cert.level === 1 
                         ? "border-amber-500/30 hover:border-amber-500/60 shadow-[0_4px_20px_rgba(245,158,11,0.05)]"
-                        : cert.level === 3
+                        : cert.level === 2
                           ? "border-purple-500/30 hover:border-purple-500/60 shadow-[0_4px_20px_rgba(168,85,247,0.05)]"
-                          : cert.level === 2
+                          : cert.level === 3
                             ? "border-blue-500/30 hover:border-blue-500/60 shadow-[0_4px_20px_rgba(59,130,246,0.05)]"
-                            : "border-emerald-500/25 hover:border-emerald-500/50"
+                            : "border-slate-500/25 hover:border-slate-500/50"
                   }`}
                   data-testid={`certificate-card-${cert.id}`}
                 >
                   {/* Background visual accents */}
-                  {!isLocked && cert.level === 4 && <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/4 rounded-full blur-2xl pointer-events-none animate-pulse" />}
-                  {!isLocked && cert.level === 3 && <div className="absolute top-0 right-0 w-24 h-24 bg-purple-500/4 rounded-full blur-2xl pointer-events-none animate-pulse" />}
-                  {!isLocked && cert.level === 2 && <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/4 rounded-full blur-2xl pointer-events-none animate-pulse" />}
+                  {!isLocked && cert.level === 1 && <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/4 rounded-full blur-2xl pointer-events-none animate-pulse" />}
+                  {!isLocked && cert.level === 2 && <div className="absolute top-0 right-0 w-24 h-24 bg-purple-500/4 rounded-full blur-2xl pointer-events-none animate-pulse" />}
+                  {!isLocked && cert.level === 3 && <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/4 rounded-full blur-2xl pointer-events-none animate-pulse" />}
 
                   <div>
                     <div className="flex items-center justify-between mb-4">
                       <div className={`w-10 h-10 rounded-xl flex items-center justify-center border ${
                         isLocked 
                           ? "bg-amber-500/10 border-amber-500/25 text-amber-500" 
-                          : cert.level === 4
+                          : cert.level === 1
                             ? "bg-amber-500/15 border-amber-500/30 text-amber-600"
-                            : cert.level === 3
+                            : cert.level === 2
                               ? "bg-purple-500/15 border-purple-500/30 text-purple-600"
-                              : cert.level === 2
+                              : cert.level === 3
                                 ? "bg-blue-500/15 border-blue-500/30 text-blue-600"
-                                : "bg-emerald-500/10 border-emerald-500/20 text-emerald-500"
+                                : "bg-slate-500/10 border-slate-500/20 text-slate-500"
                       }`}>
                         {isLocked ? <Lock className="w-5 h-5" /> : <Award className="w-5.5 h-5.5" />}
                       </div>
@@ -224,10 +224,10 @@ export default function CertificatesPage() {
 
     return (
       <div className="space-y-8">
-        {renderLevelSection("شهادات خبير متقدم — المستوى 4 (Master)", "Level 4 — Master Expert Certificates", level4, "", "text-amber-600 dark:text-amber-400")}
-        {renderLevelSection("شهادات خبير متخصص — المستوى 3 (Expert)", "Level 3 — Expert Specialist Certificates", level3, "", "text-purple-600 dark:text-purple-400")}
-        {renderLevelSection("شهادات أخصائي محترف — المستوى 2 (Professional)", "Level 2 — Professional Specialist Certificates", level2, "", "text-blue-600 dark:text-blue-400")}
-        {renderLevelSection("شهادات حضور ومشاركة — المستوى 1 (Participation)", "Level 1 — Participation Certificates", level1, "", "text-slate-600 dark:text-slate-400")}
+        {renderLevelSection("شهادات خبير متقدم — المستوى 1 (Master)", "Level 1 — Master Expert Certificates", level1, "", "text-amber-600 dark:text-amber-400")}
+        {renderLevelSection("شهادات خبير متخصص — المستوى 2 (Expert)", "Level 2 — Expert Specialist Certificates", level2, "", "text-purple-600 dark:text-purple-400")}
+        {renderLevelSection("شهادات أخصائي محترف — المستوى 3 (Professional)", "Level 3 — Professional Specialist Certificates", level3, "", "text-blue-600 dark:text-blue-400")}
+        {renderLevelSection("شهادات حضور ومشاركة — المستوى 4 (Participation)", "Level 4 — Participation Certificates", level4, "", "text-slate-600 dark:text-slate-400")}
       </div>
     );
   };

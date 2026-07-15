@@ -224,8 +224,8 @@ export default function UserWalletPage() {
           </Card>
         </div>
 
-        {/* Mid Section: Recharge Form & Transfer Form */}
-        <div className="grid gap-6 md:grid-cols-2">
+        {/* Mid Section: Recharge Form */}
+        <div className="max-w-xl mx-auto w-full">
           {/* Top Up / Recharge Card */}
           <Card className="rounded-2xl border-border/60 bg-card">
             <CardHeader>
@@ -332,98 +332,6 @@ export default function UserWalletPage() {
                 {createDepositMutation.isPending ? "⏳..." : (isAr ? "إرسال طلب الشحن للمراجعة" : "Send Recharge Request")}
               </Button>
             </CardContent>
-          </Card>
-
-          {/* Transfer points to another member */}
-          <Card className="rounded-2xl border-border/60 bg-card flex flex-col justify-between">
-            <div>
-              <CardHeader>
-                <CardTitle className="text-lg font-bold flex items-center gap-2">
-                  <ArrowRightLeft className="w-5 h-5 text-primary" />
-                  {isAr ? "تحويل نقاط لمستخدم" : "Transfer Points"}
-                </CardTitle>
-                <CardDescription>
-                  {isAr ? "يمكنك تحويل رصيد نقاط من محفظتك إلى أي طالب مسجل بالمنصة مجاناً" : "Transfer points from your wallet to any registered student on the platform for free"}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {transferStep === 1 ? (
-                  <>
-                    <div className="space-y-1">
-                      <Label className="text-xs font-bold">{isAr ? "البريد الإلكتروني للمستلم" : "Recipient Email"}</Label>
-                      <Input 
-                        type="email" 
-                        value={transferEmail} 
-                        onChange={e => setTransferEmail(e.target.value)} 
-                        placeholder="user@domain.com"
-                        className="rounded-xl"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <Label className="text-xs font-bold">{isAr ? "عدد النقاط المراد إرسالها" : "Points to transfer"}</Label>
-                      <Input 
-                        type="number" 
-                        min="1" 
-                        max={points} 
-                        value={transferAmount} 
-                        onChange={e => setTransferAmount(e.target.value)} 
-                        placeholder="100"
-                        className="rounded-xl"
-                      />
-                      <span className="text-[10px] text-muted-foreground font-semibold block mt-1">
-                        {isAr ? `الرصيد المتوفر: ${points} نقطة` : `Available balance: ${points} pts`}
-                      </span>
-                    </div>
-                    <Button 
-                      onClick={handleVerifyTransfer} 
-                      disabled={verifyTransferMutation.isPending || !transferEmail || !transferAmount}
-                      className="w-full rounded-xl font-bold h-11"
-                    >
-                      {verifyTransferMutation.isPending ? "⏳..." : (isAr ? "التحقق من حساب المستلم" : "Verify Recipient Account")}
-                    </Button>
-                  </>
-                ) : (
-                  <div className="space-y-4">
-                    <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 space-y-2.5">
-                      <div className="flex justify-between text-xs">
-                        <span className="text-muted-foreground">{isAr ? "اسم المستلم:" : "Recipient Name:"}</span>
-                        <span className="text-foreground font-bold">{verifiedTarget?.recipientName}</span>
-                      </div>
-                      <div className="flex justify-between text-xs">
-                        <span className="text-muted-foreground">{isAr ? "البريد الإلكتروني:" : "Email:"}</span>
-                        <span className="text-muted-foreground font-semibold truncate max-w-[170px]">{verifiedTarget?.recipientEmail}</span>
-                      </div>
-                      <div className="h-px bg-border/60" />
-                      <div className="flex justify-between items-center text-sm font-bold">
-                        <span className="text-muted-foreground">{isAr ? "مجموع التحويل:" : "Points to send:"}</span>
-                        <span className="text-primary">{verifiedTarget?.amount} {isAr ? "نقطة" : "pts"}</span>
-                      </div>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button 
-                        onClick={handleConfirmTransfer} 
-                        disabled={confirmTransferMutation.isPending}
-                        className="flex-1 rounded-xl font-bold h-11"
-                      >
-                        {confirmTransferMutation.isPending ? "⏳..." : (isAr ? "تأكيد التحويل الآن" : "Confirm Transfer")}
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        onClick={() => { setTransferStep(1); setVerifiedTarget(null); }} 
-                        className="rounded-xl font-bold h-11"
-                      >
-                        {isAr ? "تراجع" : "Cancel"}
-                      </Button>
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </div>
-            <div className="p-6 pt-0">
-              <div className="rounded-xl bg-muted/40 p-3.5 border border-border/40 text-[10px] text-muted-foreground leading-relaxed">
-                {isAr ? "تنبيّه: عمليات التحويل نهائية ولا يمكن التراجع عنها بعد تأكيد العملية. يرجى التحقق بدقة من البريد الإلكتروني للمستلم قبل التأكيد." : "Notice: Point transfers are final and irreversible. Please check the recipient email closely before confirming."}
-              </div>
-            </div>
           </Card>
         </div>
 

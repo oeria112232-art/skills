@@ -1,0 +1,5 @@
+{
+  "jwt_secret": "6c9269698604fb9b4b223da694c3402158c2ac7a324cbb32b17d1d5a25530e74",
+  "cert_sign_secret": "9e0db9f6b9d366f8288ddcb22484ef391093f2023b2673b9df83c636db19b09d",
+  "wallet_secret": "a8eff83291f8134fe40b89ec633eaf468422498b3dfcdd6a9dfa1f35395a671e"
+}

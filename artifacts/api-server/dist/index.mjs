@@ -81386,7 +81386,7 @@ router6.delete("/certificates/:id", requireAuth, requireRole(["admin"]), async (
   res.json({ success: true, message: "Certificate revoked successfully" });
 });
 router6.post("/certificates/batch-issue", requireAuth, requireRole(["admin"]), async (req, res) => {
-  const { type, entityId, score } = req.body;
+  const { type, entityId, score, level } = req.body;
   if (!type || !entityId) {
     res.status(400).json({ error: "type and entityId are required" });
     return;
@@ -81430,6 +81430,12 @@ router6.post("/certificates/batch-issue", requireAuth, requireRole(["admin"]), a
       if (!u) continue;
       const certNumber = `CERT-TRK-${track.id}-${u.id}-${Date.now()}`;
       const verificationCode = `MH-VFY-${Math.random().toString(36).substring(2, 8).toUpperCase()}-${Math.floor(1e3 + Math.random() * 9e3)}`;
+      const certLevel = level !== void 0 ? Number(level) : 3;
+      let cost = 250;
+      if (certLevel === 1) cost = 500;
+      else if (certLevel === 2) cost = 250;
+      else if (certLevel === 3) cost = 100;
+      else if (certLevel === 4) cost = 0;
       await db.insert(certificatesTable).values({
         userId: u.id,
         userName: u.name,
@@ -81439,8 +81445,8 @@ router6.post("/certificates/batch-issue", requireAuth, requireRole(["admin"]), a
         score: score !== void 0 ? Number(score) : 100,
         certificateNumber: certNumber,
         verificationCode,
-        level: 3,
-        cost: 250,
+        level: certLevel,
+        cost,
         status: "locked",
         isPaid: 0,
         signatureHash: ""
@@ -81466,6 +81472,12 @@ router6.post("/certificates/batch-issue", requireAuth, requireRole(["admin"]), a
     for (const u of usersToIssue) {
       const certNumber = `CERT-WSH-${workshop.id}-${u.id}-${Date.now()}`;
       const verificationCode = `MH-VFY-${Math.random().toString(36).substring(2, 8).toUpperCase()}-${Math.floor(1e3 + Math.random() * 9e3)}`;
+      const certLevel = level !== void 0 ? Number(level) : 2;
+      let cost = 100;
+      if (certLevel === 1) cost = 500;
+      else if (certLevel === 2) cost = 250;
+      else if (certLevel === 3) cost = 100;
+      else if (certLevel === 4) cost = 0;
       await db.insert(certificatesTable).values({
         userId: u.id,
         userName: u.name,
@@ -81475,8 +81487,8 @@ router6.post("/certificates/batch-issue", requireAuth, requireRole(["admin"]), a
         score: score !== void 0 ? Number(score) : 100,
         certificateNumber: certNumber,
         verificationCode,
-        level: 2,
-        cost: 100,
+        level: certLevel,
+        cost,
         status: "locked",
         isPaid: 0,
         signatureHash: ""
@@ -83555,7 +83567,7 @@ var FIELD_LENGTH_LIMITS = {
   applicantName: 100,
   applicantEmail: 254,
   cashAmount: 50,
-  transferScreenshot: 5e4,
+  transferScreenshot: 1e7,
   userName: 100,
   userEmail: 254
 };

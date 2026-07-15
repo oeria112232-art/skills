@@ -19,7 +19,6 @@ const studentLinks = [
   { href: "/workshops", icon: BookOpen, label: "Workshops", arLabel: "الورش" },
   { href: "/consultations", icon: MessageSquare, label: "Consultations", arLabel: "الاستشارات" },
   { href: "/certificates", icon: Award, label: "Certificates", arLabel: "الشهادات" },
-  { href: "/verify-certificate", icon: ShieldCheck, label: "Verify Certificate", arLabel: "التحقق من الشهادات" },
   { href: "/jobs", icon: Briefcase, label: "Jobs", arLabel: "الوظائف" },
   { href: "/user/applications", icon: Briefcase, label: "My Applications", arLabel: "طلباتي" },
   { href: "/user/wallet", icon: Wallet, label: "My Wallet", arLabel: "المحفظة" },
@@ -35,7 +34,6 @@ const adminLinks = [
   { href: "/admin/tracks", icon: GraduationCap, label: "Learning Tracks", arLabel: "المسارات التعليمية" },
   { href: "/admin/exams", icon: FileText, label: "Manage Exams", arLabel: "إدارة الاختبارات" },
   { href: "/admin/certificates", icon: Award, label: "Manage Certificates", arLabel: "الشهادات" },
-  { href: "/verify-certificate", icon: ShieldCheck, label: "Verify Certificate", arLabel: "التحقق من الشهادات" },
   { href: "/admin/instructors", icon: GraduationCap, label: "Instructors", arLabel: "المعلمين" },
   { href: "/admin/companies", icon: Building2, label: "Companies", arLabel: "الشركات" },
   { href: "/admin/consultations", icon: MessageSquare, label: "Consultations", arLabel: "الاستشارات" },
@@ -361,10 +359,13 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
 
           {/* Mobile Drawer */}
           <aside className={cn(
-            "fixed inset-y-0 left-0 z-50 w-72 bg-sidebar border-r border-sidebar-border/50 transition-all duration-300 ease-[cubic-bezier(0.2,0.8,0.2,1)]",
+            "fixed inset-y-0 z-50 w-72 bg-sidebar border-sidebar-border/50 transition-all duration-300 ease-[cubic-bezier(0.2,0.8,0.2,1)]",
+            isAr ? "right-0 border-l" : "left-0 border-r",
             mobileOpen 
               ? "translate-x-0 shadow-2xl opacity-100 visible" 
-              : "-translate-x-full opacity-0 invisible pointer-events-none"
+              : isAr 
+                ? "translate-x-full opacity-0 invisible pointer-events-none" 
+                : "-translate-x-full opacity-0 invisible pointer-events-none"
           )}>
             <SidebarContent />
           </aside>

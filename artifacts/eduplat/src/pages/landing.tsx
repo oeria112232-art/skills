@@ -54,9 +54,10 @@ function FloatingCertVerifier({ isAr }: { isAr: boolean }) {
 
   const levelLabel = (level: number) => {
     const map: Record<number, { ar: string; en: string }> = {
-      1: { ar: "مشارك", en: "Associate" },
-      2: { ar: "محترف", en: "Professional" },
-      3: { ar: "خبير متخصص", en: "Expert Specialist" },
+      1: { ar: "خبير متقدم", en: "Master" },
+      2: { ar: "خبير متخصص", en: "Expert Specialist" },
+      3: { ar: "أخصائي محترف", en: "Professional" },
+      4: { ar: "حضور ومشاركة", en: "Participation" },
     };
     return map[level] || { ar: "عام", en: "General" };
   };
@@ -254,6 +255,26 @@ function FloatingCertVerifier({ isAr }: { isAr: boolean }) {
 export function HeroInteractiveHub({ isAr }: { isAr: boolean }) {
   const [activeNode, setActiveNode] = useState<string | null>(null);
   const [orbitAngle, setOrbitAngle] = useState(0);
+  const { data: stats } = useGetPlatformStats();
+
+  const getRealNumber = (id: string) => {
+    switch (id) {
+      case "training":
+        const st = stats?.studentsTrained ?? 12840;
+        return st >= 1000 ? (st / 1000).toFixed(1).replace(/\.0$/, "") + "K" : st.toString();
+      case "certs":
+        const ci = stats?.certificatesIssued ?? 5230;
+        return ci >= 1000 ? (ci / 1000).toFixed(1).replace(/\.0$/, "") + "K" : ci.toString();
+      case "careers":
+        const aj = stats?.activeJobs ?? 340;
+        return aj >= 1000 ? (aj / 1000).toFixed(1).replace(/\.0$/, "") + "K" : aj.toString();
+      case "community":
+        const jf = stats?.jobsFilled ?? 1890;
+        return jf >= 1000 ? (jf / 1000).toFixed(1).replace(/\.0$/, "") + "K" : jf.toString();
+      default:
+        return "";
+    }
+  };
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -512,89 +533,130 @@ export function HeroInteractiveHub({ isAr }: { isAr: boolean }) {
       </div>
 
       {/* Interactive Satellite Nodes */}
-      {nodes.map(node => {
-        const IconComponent = node.icon;
-        const isActive = activeNode === node.id;
-        
+      {(() => {
+        const getNodePosition = (id: string) => {
+          switch (id) {
+            case "training": return { left: "22%", top: "22%" };
+            case "certs": return { left: "78%", top: "22%" };
+            case "careers": return { left: "78%", top: "78%" };
+            case "community": return { left: "22%", top: "78%" };
+            default: return {};
+          }
+        };
+
+        const activeNodeData = nodes.find(n => n.id === activeNode);
+
         return (
-          <div 
-            key={node.id}
-            className={`absolute ${node.posClass} z-30 group`}
-            onMouseEnter={() => setActiveNode(node.id)}
-            onMouseLeave={() => setActiveNode(null)}
-          >
-            <div className="relative">
-              {/* Ambient glow behind node */}
-              <div 
-                className="absolute -inset-3 rounded-2xl blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
-                style={{ backgroundColor: node.bgGlow }}
-              />
+          <>
+            {nodes.map(node => {
+              const IconComponent = node.icon;
+              const isActive = activeNode === node.id;
+              const positionStyle = getNodePosition(node.id);
               
-              {/* Node Card - Professional 3D Style */}
-              <motion.div 
-                whileHover={{ scale: 1.12, y: -3 }}
-                transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                className={`w-16 h-16 rounded-2xl border-2 ${node.borderColor} backdrop-blur-xl flex items-center justify-center cursor-pointer relative z-10 overflow-hidden`}
-                style={{
-                  background: `radial-gradient(circle at 35% 35%, rgba(255,255,255,0.08) 0%, rgba(15,23,42,0.85) 100%)`,
-                  boxShadow: `0 0 0 1px rgba(255,255,255,0.05), 0 8px 32px rgba(0,0,0,0.4), 0 0 20px ${node.bgGlow}, inset 0 1px 0 rgba(255,255,255,0.08)`
-                }}
-              >
-                {/* Glass highlight */}
-                <div className="absolute inset-0 rounded-2xl" style={{ background: "linear-gradient(135deg, rgba(255,255,255,0.07) 0%, transparent 50%)" }} />
-                {/* Icon */}
-                <IconComponent className={`w-7 h-7 ${node.iconColor} group-hover:scale-110 transition-transform duration-300 relative z-10 drop-shadow-lg`} />
-                {/* Bottom shimmer */}
-                <div className="absolute bottom-0 left-0 right-0 h-px opacity-40" style={{ background: `linear-gradient(90deg, transparent, ${node.glowColor}, transparent)` }} />
-              </motion.div>
+              return (
+                <div 
+                  key={node.id}
+                  style={positionStyle}
+                  className="absolute ml-[-32px] mt-[-32px] z-30 group"
+                  onMouseEnter={() => setActiveNode(node.id)}
+                  onMouseLeave={() => setActiveNode(null)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setActiveNode(activeNode === node.id ? null : node.id);
+                  }}
+                >
+                  <div className="relative">
+                    {/* Ambient glow behind node */}
+                    <div 
+                      className="absolute -inset-3 rounded-2xl blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+                      style={{ backgroundColor: node.bgGlow }}
+                    />
+                    
+                    {/* Node Card - Professional 3D Style */}
+                    <motion.div 
+                      whileHover={{ scale: 1.12, y: -3 }}
+                      transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                      className={`w-16 h-16 rounded-2xl border-2 ${node.borderColor} backdrop-blur-xl flex flex-col items-center justify-center cursor-pointer relative z-10 overflow-hidden p-1`}
+                      style={{
+                        background: `radial-gradient(circle at 35% 35%, rgba(255,255,255,0.08) 0%, rgba(15,23,42,0.85) 100%)`,
+                        boxShadow: `0 0 0 1px rgba(255,255,255,0.05), 0 8px 32px rgba(0,0,0,0.4), 0 0 20px ${node.bgGlow}, inset 0 1px 0 rgba(255,255,255,0.08)`
+                      }}
+                    >
+                      {/* Glass highlight */}
+                      <div className="absolute inset-0 rounded-2xl" style={{ background: "linear-gradient(135deg, rgba(255,255,255,0.07) 0%, transparent 50%)" }} />
+                      {/* Icon */}
+                      <IconComponent className={`w-5 h-5 ${node.iconColor} group-hover:scale-110 transition-transform duration-300 relative z-10 drop-shadow-lg mb-0.5 opacity-80`} />
+                      {/* Real stat number inside the square card */}
+                      <span className="text-[10px] font-black text-white relative z-10 leading-none tracking-tight">
+                        {getRealNumber(node.id)}
+                      </span>
+                      {/* Bottom shimmer */}
+                      <div className="absolute bottom-0 left-0 right-0 h-px opacity-40" style={{ background: `linear-gradient(90deg, transparent, ${node.glowColor}, transparent)` }} />
+                    </motion.div>
 
-              {/* Active pulse indicator */}
-              <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2">
-                <div className="w-1.5 h-1.5 rounded-full opacity-60" style={{ backgroundColor: node.pulseColor }}>
-                  <div className="w-full h-full rounded-full animate-ping opacity-75" style={{ backgroundColor: node.pulseColor }} />
+                    {/* Active pulse indicator */}
+                    <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2">
+                      <div className="w-1.5 h-1.5 rounded-full opacity-60" style={{ backgroundColor: node.pulseColor }}>
+                        <div className="w-full h-full rounded-full animate-ping opacity-75" style={{ backgroundColor: node.pulseColor }} />
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
+              );
+            })}
 
-            {/* Hover Tooltip Card */}
+            {/* Tooltip card for mobile/desktop */}
             <AnimatePresence>
-              {isActive && (
+              {activeNodeData && (
                 <motion.div
-                  initial={{ opacity: 0, scale: 0.92, y: node.posClass.includes("top") ? 12 : -12 }}
+                  initial={{ opacity: 0, scale: 0.92, y: 10 }}
                   animate={{ opacity: 1, scale: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.92, y: node.posClass.includes("top") ? 12 : -12 }}
+                  exit={{ opacity: 0, scale: 0.92, y: 10 }}
                   transition={{ duration: 0.2, ease: "easeOut" }}
-                  className={`absolute w-[265px] p-4 rounded-2xl border border-border/60 backdrop-blur-2xl shadow-2xl z-40 text-start space-y-2.5 pointer-events-none
-                    ${node.posClass.includes("left") ? "left-[72px]" : "right-[72px]"}
-                    ${node.posClass.includes("top") ? "top-0" : "bottom-0"}
+                  className={`z-50 text-start space-y-2.5 p-4 rounded-2xl border border-border/60 backdrop-blur-2xl shadow-2xl w-[285px] md:w-[265px]
+                    max-md:fixed max-md:bottom-20 max-md:left-4 max-md:right-4 max-md:w-[calc(100%-32px)] max-md:z-[100] max-md:pointer-events-auto
+                    md:absolute
+                    ${activeNodeData.id === "training" ? "md:left-[calc(22%+40px)] md:top-[calc(22%-32px)]" : ""}
+                    ${activeNodeData.id === "certs" ? "md:right-[calc(22%+40px)] md:top-[calc(22%-32px)]" : ""}
+                    ${activeNodeData.id === "careers" ? "md:right-[calc(22%+40px)] md:bottom-[calc(22%-32px)]" : ""}
+                    ${activeNodeData.id === "community" ? "md:left-[calc(22%+40px)] md:bottom-[calc(22%-32px)]" : ""}
                   `}
                   style={{
-                    background: "rgba(10,15,30,0.92)",
-                    boxShadow: `0 20px 60px rgba(0,0,0,0.6), 0 0 1px rgba(255,255,255,0.08), inset 0 1px 0 rgba(255,255,255,0.05), 0 0 30px ${node.bgGlow}`
+                    background: "rgba(10,15,30,0.95)",
+                    boxShadow: `0 20px 60px rgba(0,0,0,0.6), 0 0 1px rgba(255,255,255,0.08), inset 0 1px 0 rgba(255,255,255,0.05), 0 0 30px ${activeNodeData.bgGlow}`
                   }}
                 >
                   {/* Top border gradient accent */}
-                  <div className="absolute top-0 left-4 right-4 h-px rounded-full" style={{ background: `linear-gradient(90deg, transparent, ${node.glowColor}, transparent)` }} />
+                  <div className="absolute top-0 left-4 right-4 h-px rounded-full" style={{ background: `linear-gradient(90deg, transparent, ${activeNodeData.glowColor}, transparent)` }} />
                   
                   <div className="flex items-center justify-between pb-1.5 border-b border-white/8">
-                    <span className="text-xs font-black text-white">{isAr ? node.titleAr : node.titleEn}</span>
-                    <Badge variant="secondary" className="text-[8px] font-bold px-1.5 py-0 bg-white/8 text-white/70 border-white/10">
-                      {isAr ? node.badgeAr : node.badgeEn}
-                    </Badge>
+                    <span className="text-xs font-black text-white">{isAr ? activeNodeData.titleAr : activeNodeData.titleEn}</span>
+                    <div className="flex items-center gap-1.5">
+                      <Badge variant="secondary" className="text-[8px] font-bold px-1.5 py-0 bg-white/8 text-white/70 border-white/10">
+                        {isAr ? activeNodeData.badgeAr : activeNodeData.badgeEn}
+                      </Badge>
+                      {/* Close button for mobile */}
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); setActiveNode(null); }}
+                        className="w-5 h-5 rounded-md bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors md:hidden pointer-events-auto"
+                      >
+                        <X className="w-3 h-3 text-white/60" />
+                      </button>
+                    </div>
                   </div>
                   <p className="text-[10px] text-white/60 leading-relaxed font-medium">
-                    {isAr ? node.descAr : node.descEn}
+                    {isAr ? activeNodeData.descAr : activeNodeData.descEn}
                   </p>
-                  <div className="flex items-center gap-1.5 text-[9px] font-bold" style={{ color: node.pulseColor }}>
-                    <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: node.pulseColor }} />
-                    {isAr ? node.metricAr : node.metricEn}
+                  <div className="flex items-center gap-1.5 text-[9px] font-bold" style={{ color: activeNodeData.pulseColor }}>
+                    <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: activeNodeData.pulseColor }} />
+                    {isAr ? activeNodeData.metricAr : activeNodeData.metricEn}
                   </div>
                 </motion.div>
               )}
             </AnimatePresence>
-          </div>
+          </>
         );
-      })}
+      })()}
 
     </div>
   );
@@ -786,10 +848,6 @@ export default function LandingPage() {
             <Link href="/workshops" className="hover:text-foreground transition-colors">{isAr ? "الورش" : "Workshops"}</Link>
             <Link href="/learn" className="hover:text-foreground transition-colors">{isAr ? "المسارات" : "Learning Paths"}</Link>
             <Link href="/leaderboard" className="hover:text-foreground transition-colors">{isAr ? "لوحة الصدارة" : "Leaderboard"}</Link>
-            <Link href="/verify-certificate" className="flex items-center gap-1.5 hover:text-primary transition-colors text-primary/80 font-bold">
-              <ShieldCheck className="w-4 h-4" />
-              {isAr ? "التحقق من الشهادة" : "Verify Certificate"}
-            </Link>
           </div>
 
           <div className="flex items-center gap-3">
@@ -1164,10 +1222,6 @@ export default function LandingPage() {
             <Link href="/jobs" className="hover:text-foreground transition-colors">{isAr ? "Jobs | الوظائف" : "Jobs"}</Link>
             <Link href="/workshops" className="hover:text-foreground transition-colors">{isAr ? "Workshops | الورش" : "Workshops"}</Link>
             <Link href="/learn" className="hover:text-foreground transition-colors">{isAr ? "Learn | المسارات" : "Learning Paths"}</Link>
-            <Link href="/verify-certificate" className="hover:text-primary transition-colors flex items-center gap-1.5 font-bold text-primary/70">
-              <ShieldCheck className="w-3.5 h-3.5" />
-              {isAr ? "التحقق من الشهادات" : "Verify Certificates"}
-            </Link>
           </div>
         </div>
       </footer>

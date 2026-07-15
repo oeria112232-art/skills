@@ -685,11 +685,11 @@ export default function UserSettingsPage() {
                                   <div className={`w-8 h-8 rounded-lg border flex items-center justify-center shrink-0 ${
                                     isLocked 
                                       ? "bg-amber-500/10 border-amber-500/20 text-amber-500" 
-                                      : c.level === 4
+                                      : c.level === 1
                                         ? "bg-amber-500/15 border-amber-500/25 text-amber-600"
-                                        : c.level === 3
+                                        : c.level === 2
                                           ? "bg-purple-500/15 border-purple-500/25 text-purple-600"
-                                          : c.level === 2
+                                          : c.level === 3
                                             ? "bg-blue-500/15 border-blue-500/25 text-blue-600"
                                             : "bg-slate-500/10 border-slate-500/20 text-slate-500"
                                   }`}>
@@ -732,10 +732,10 @@ export default function UserSettingsPage() {
 
                   return (
                     <div className="space-y-6">
-                      {renderLevelSection("شهادات خبير متقدم — المستوى 4 (Master)", "Level 4 — Master Expert Certificates", level4, "💎", "text-amber-600 dark:text-amber-400", "border-amber-500/35 hover:border-amber-500/60")}
-                      {renderLevelSection("شهادات خبير متخصص — المستوى 3 (Expert)", "Level 3 — Expert Specialist Certificates", level3, "🥇", "text-purple-600 dark:text-purple-400", "border-purple-500/35 hover:border-purple-500/60")}
-                      {renderLevelSection("شهادات أخصائي محترف — المستوى 2 (Professional)", "Level 2 — Professional Specialist Certificates", level2, "🥈", "text-blue-600 dark:text-blue-400", "border-blue-500/35 hover:border-blue-500/60")}
-                      {renderLevelSection("شهادات حضور ومشاركة — المستوى 1 (Participation)", "Level 1 — Participation Certificates", level1, "🎫", "text-slate-500 dark:text-slate-400", "border-slate-500/25 hover:border-slate-500/50")}
+                      {renderLevelSection("شهادات خبير متقدم — المستوى 1 (Master)", "Level 1 — Master Expert Certificates", level1, "💎", "text-amber-600 dark:text-amber-400", "border-amber-500/35 hover:border-amber-500/60")}
+                      {renderLevelSection("شهادات خبير متخصص — المستوى 2 (Expert)", "Level 2 — Expert Specialist Certificates", level2, "🥇", "text-purple-600 dark:text-purple-400", "border-purple-500/35 hover:border-purple-500/60")}
+                      {renderLevelSection("شهادات أخصائي محترف — المستوى 3 (Professional)", "Level 3 — Professional Specialist Certificates", level3, "🥈", "text-blue-600 dark:text-blue-400", "border-blue-500/35 hover:border-blue-500/60")}
+                      {renderLevelSection("شهادات حضور ومشاركة — المستوى 4 (Participation)", "Level 4 — Participation Certificates", level4, "🎫", "text-slate-500 dark:text-slate-400", "border-slate-500/25 hover:border-slate-500/50")}
                     </div>
                   );
                 })()}

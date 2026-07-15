@@ -86,7 +86,7 @@ const FIELD_LENGTH_LIMITS: Record<string, number> = {
   applicantName: 100,
   applicantEmail: 254,
   cashAmount: 50,
-  transferScreenshot: 50000,
+  transferScreenshot: 10000000,
   userName: 100,
   userEmail: 254,
 };

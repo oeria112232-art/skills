@@ -1,6 +1,7 @@
+import { useState } from "react";
 import { Link } from "wouter";
 import { useListTracks } from "@workspace/api-client-react";
-import { GraduationCap, Clock, Users, ChevronRight, Shield, Globe, Code, Cpu, MessageSquare, Smartphone, Sparkles, Coins, RefreshCw } from "lucide-react";
+import { GraduationCap, Clock, Users, ChevronRight, Shield, Globe, Code, Cpu, MessageSquare, Smartphone, Sparkles, Coins, RefreshCw, Search, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -61,9 +62,26 @@ export default function LearnPage() {
   const { language } = useLanguage();
   const isAr = language === "ar";
 
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedLevel, setSelectedLevel] = useState("all");
+  const [selectedCategory, setSelectedCategory] = useState("all");
+
+  const filteredTracks = (tracks || []).filter(track => {
+    const matchesSearch = searchQuery.trim() === "" || (
+      isAr 
+        ? (arTrackTitles[track.slug] || track.title).toLowerCase().includes(searchQuery.toLowerCase())
+        : track.title.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+    
+    const matchesLevel = selectedLevel === "all" || track.level === selectedLevel;
+    const matchesCategory = selectedCategory === "all" || track.slug === selectedCategory;
+
+    return matchesSearch && matchesLevel && matchesCategory;
+  });
+
   return (
     <AppLayout>
-      <div className="mb-10 flex flex-col md:flex-row md:items-center md:justify-between gap-4 text-start">
+      <div className="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4 text-start">
         <div>
           <div className="flex items-center gap-2 mb-1.5">
             <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20 font-bold px-3 py-0.5 rounded-full text-[10px]">
@@ -88,6 +106,82 @@ export default function LearnPage() {
         )}
       </div>
 
+      {/* Premium Filter Section */}
+      {tracks && Array.isArray(tracks) && tracks.length > 0 && (
+        <div className="mb-8 p-4 rounded-2xl border border-border/40 bg-card/25 backdrop-blur-sm space-y-4 shadow-sm text-start">
+          <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
+            {/* Search Box */}
+            <div className="relative w-full md:max-w-sm">
+              <Search className="absolute start-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                placeholder={isAr ? "البحث عن مسار تعليمي..." : "Search learning paths..."}
+                className="w-full h-10 ps-10 pe-4 rounded-xl border border-border/60 bg-background/50 text-xs font-semibold text-foreground focus:outline-none focus:border-primary/60 focus:bg-background transition-all"
+              />
+              {searchQuery && (
+                <button 
+                  onClick={() => setSearchQuery("")} 
+                  className="absolute end-3 top-1/2 -translate-y-1/2 w-5 h-5 rounded-md hover:bg-muted/50 flex items-center justify-center text-muted-foreground hover:text-foreground"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+
+            {/* Level Filter Tabs */}
+            <div className="flex flex-wrap items-center gap-1.5 w-full md:w-auto">
+              <span className="text-[11px] font-bold text-muted-foreground me-2">{isAr ? "المستوى:" : "Level:"}</span>
+              {[
+                { id: "all", labelAr: "الكل", labelEn: "All" },
+                { id: "beginner", labelAr: "مبتدئ", labelEn: "Beginner" },
+                { id: "intermediate", labelAr: "متوسط", labelEn: "Intermediate" },
+                { id: "advanced", labelAr: "متقدم", labelEn: "Advanced" },
+              ].map(lvl => (
+                <button
+                  key={lvl.id}
+                  onClick={() => setSelectedLevel(lvl.id)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border ${
+                    selectedLevel === lvl.id
+                      ? "bg-primary text-primary-foreground border-primary shadow-sm shadow-primary/10"
+                      : "bg-background/40 text-muted-foreground border-border/50 hover:text-foreground hover:bg-background/60"
+                  }`}
+                >
+                  {isAr ? lvl.labelAr : lvl.labelEn}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Category Filters */}
+          <div className="flex flex-wrap items-center gap-1.5 pt-3 border-t border-border/20">
+            <span className="text-[11px] font-bold text-muted-foreground me-2">{isAr ? "التخصص:" : "Field:"}</span>
+            {[
+              { id: "all", labelAr: "جميع التخصصات", labelEn: "All Fields" },
+              { id: "tot", labelAr: "إعداد المدربين TOT", labelEn: "TOT Instructors" },
+              { id: "networking", labelAr: "شبكات سيسكو CCNA", labelEn: "Networking" },
+              { id: "cybersecurity", labelAr: "الأمن السيبراني", labelEn: "Cybersecurity" },
+              { id: "fullstack", labelAr: "تطوير الويب", labelEn: "Fullstack Web" },
+              { id: "computer-basics", labelAr: "أساسيات الحاسوب", labelEn: "Computer Basics" },
+              { id: "mobile", labelAr: "تطبيقات الموبايل", labelEn: "Mobile Development" },
+            ].map(cat => (
+              <button
+                key={cat.id}
+                onClick={() => setSelectedCategory(cat.id)}
+                className={`px-3 py-1 rounded-full text-[10.5px] font-bold transition-all border ${
+                  selectedCategory === cat.id
+                    ? "bg-secondary text-secondary-foreground border-secondary shadow-sm shadow-secondary/5"
+                    : "bg-background/30 text-muted-foreground border-border/30 hover:text-foreground hover:bg-background/50"
+                }`}
+              >
+                {isAr ? cat.labelAr : cat.labelEn}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {isLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[1, 2, 3, 4, 5, 6].map(i => (
@@ -110,6 +204,23 @@ export default function LearnPage() {
           <h3 className="font-extrabold text-lg">{isAr ? "لا توجد مسارات تعلم متاحة حالياً" : "No learning paths available yet"}</h3>
           <p className="text-xs text-muted-foreground mt-1">{isAr ? "ترقب إطلاق مسارات جديدة قريباً." : "New pathways will be launched soon."}</p>
         </div>
+      ) : filteredTracks.length === 0 ? (
+        <div className="text-center py-16 rounded-2xl border border-dashed border-border/60 bg-card/30 text-start px-6">
+          <Search className="w-12 h-12 mb-3 opacity-25 text-primary" />
+          <h3 className="font-extrabold text-base">{isAr ? "لم نجد أي مسارات تطابق خيارات البحث" : "No matching learning paths found"}</h3>
+          <p className="text-xs text-muted-foreground mt-1 mb-4">{isAr ? "جرب تعديل خيارات التصفية أو كتابة كلمة أخرى." : "Try adjusting your filters or search query."}</p>
+          <Button 
+            onClick={() => {
+              setSearchQuery("");
+              setSelectedLevel("all");
+              setSelectedCategory("all");
+            }} 
+            variant="outline" 
+            className="rounded-xl font-bold text-xs"
+          >
+            {isAr ? "إعادة تعيين الفلاتر" : "Reset Filters"}
+          </Button>
+        </div>
       ) : (
         <motion.div 
           initial="hidden"
@@ -125,7 +236,7 @@ export default function LearnPage() {
           }}
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
         >
-          {tracks.map(track => {
+          {filteredTracks.map(track => {
             const Icon = trackIcons[track.slug] || GraduationCap;
             const style = trackColors[track.slug] || { 
               border: "border-border/60", 

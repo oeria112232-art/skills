@@ -543,10 +543,10 @@ export default function AdminTracksPage() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="1">{isAr ? "المستوى 1 — حضور ومشاركة" : "Level 1 — Participation"}</SelectItem>
-                      <SelectItem value="2">{isAr ? "المستوى 2 — أخصائي محترف" : "Level 2 — Professional"}</SelectItem>
-                      <SelectItem value="3">{isAr ? "المستوى 3 — خبير متخصص" : "Level 3 — Expert"}</SelectItem>
-                      <SelectItem value="4">{isAr ? "المستوى 4 — خبير متقدم" : "Level 4 — Master"}</SelectItem>
+                      <SelectItem value="1">{isAr ? "المستوى 1 — خبير متقدم" : "Level 1 — Master"}</SelectItem>
+                      <SelectItem value="2">{isAr ? "المستوى 2 — خبير متخصص" : "Level 2 — Expert"}</SelectItem>
+                      <SelectItem value="3">{isAr ? "المستوى 3 — أخصائي محترف" : "Level 3 — Professional"}</SelectItem>
+                      <SelectItem value="4">{isAr ? "المستوى 4 — حضور ومشاركة" : "Level 4 — Participation"}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

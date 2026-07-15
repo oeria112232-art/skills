@@ -14,23 +14,23 @@ const getLevelDetails = (level: number, isAr: boolean) => {
   switch (level) {
     case 1:
       return {
-        title: isAr ? "المستوى 1: حضور ومشاركة" : "Lvl 1: Participation",
-        color: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20"
+        title: isAr ? "المستوى 1: خبير متقدم" : "Lvl 1: Master Certification",
+        color: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20"
       };
     case 2:
       return {
-        title: isAr ? "المستوى 2: أخصائي محترف" : "Lvl 2: Professional Specialist",
-        color: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
+        title: isAr ? "المستوى 2: خبير متخصص" : "Lvl 2: Expert Specialist",
+        color: "bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20"
       };
     case 3:
       return {
-        title: isAr ? "المستوى 3: خبير متخصص" : "Lvl 3: Expert Specialist",
-        color: "bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20"
+        title: isAr ? "المستوى 3: أخصائي محترف" : "Lvl 3: Professional Specialist",
+        color: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
       };
     case 4:
       return {
-        title: isAr ? "المستوى 4: شهادة خبير متقدم" : "Lvl 4: Master Certification",
-        color: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20"
+        title: isAr ? "المستوى 4: حضور ومشاركة" : "Lvl 4: Participation",
+        color: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20"
       };
     default:
       return {

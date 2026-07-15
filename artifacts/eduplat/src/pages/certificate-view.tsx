@@ -12,20 +12,20 @@ import { useSearch } from "wouter";
 // Level-based styling configurations
 const getThemeDetails = (level: number) => {
   switch (level) {
-    case 4: // Master Expert
+    case 1: // Master Expert
       return {
-        bg: "radial-gradient(circle at 50% 50%, #FCF8F2 0%, #F6ECE5 100%)",
-        borderColor: "border-amber-600",
-        stoneColor: "text-amber-900",
+        bg: "radial-gradient(circle at 50% 50%, #FCFAF5 0%, #FAF0DF 100%)",
+        borderColor: "border-amber-500",
+        stoneColor: "text-amber-950",
         flourishColor: "text-amber-700",
         frameColor: "border-amber-600/70",
         doubleFrameColor: "border-amber-800/50",
         stampColor: "text-amber-600",
         accentLine: "bg-amber-600",
-        badge: "Level 4: Master Expert",
-        badgeAr: "المستوى 4: خبير متقدم (Master)"
+        badge: "Level 1: Master Expert",
+        badgeAr: "المستوى 1: خبير متقدم (Master)"
       };
-    case 3: // Expert Specialist
+    case 2: // Expert Specialist
       return {
         bg: "radial-gradient(circle at 50% 50%, #FAF5FC 0%, #F1E5F7 100%)",
         borderColor: "border-purple-600",
@@ -35,10 +35,10 @@ const getThemeDetails = (level: number) => {
         doubleFrameColor: "border-purple-800/50",
         stampColor: "text-purple-600",
         accentLine: "bg-purple-600",
-        badge: "Level 3: Expert Specialist",
-        badgeAr: "المستوى 3: خبير متخصص (Expert)"
+        badge: "Level 2: Expert Specialist",
+        badgeAr: "المستوى 2: خبير متخصص (Expert)"
       };
-    case 2: // Professional Specialist
+    case 3: // Professional Specialist
       return {
         bg: "radial-gradient(circle at 50% 50%, #F4F8FD 0%, #E6EEFA 100%)",
         borderColor: "border-blue-600",
@@ -48,10 +48,10 @@ const getThemeDetails = (level: number) => {
         doubleFrameColor: "border-blue-800/50",
         stampColor: "text-blue-600",
         accentLine: "bg-blue-600",
-        badge: "Level 2: Professional Specialist",
-        badgeAr: "المستوى 2: أخصائي محترف (Professional)"
+        badge: "Level 3: Professional Specialist",
+        badgeAr: "المستوى 3: أخصائي محترف (Professional)"
       };
-    case 1: // Participation
+    case 4: // Participation
     default:
       return {
         bg: "radial-gradient(circle at 50% 50%, #FAF8F5 0%, #F5F1EC 100%)",
@@ -59,11 +59,11 @@ const getThemeDetails = (level: number) => {
         stoneColor: "text-stone-850",
         flourishColor: "text-stone-850",
         frameColor: "border-stone-800",
-        doubleFrameColor: "border-stone-850",
+        doubleFrameColor: "border-stone-855",
         stampColor: "text-stone-750",
         accentLine: "bg-stone-600",
-        badge: "Level 1: Participation",
-        badgeAr: "المستوى 1: حضور ومشاركة"
+        badge: "Level 4: Participation",
+        badgeAr: "المستوى 4: حضور ومشاركة"
       };
   }
 };
