@@ -69634,7 +69634,7 @@ function makeQuery(promise2) {
   };
   return p;
 }
-var __dirname2, firebaseConfig, firebaseApp, database, fbCache, FB_CACHE_TTL_MS, fallbackFilePath, localDbState, SAFE_PATH_REGEX, jsKeyMap, pool, dbMock, db;
+var __dirname2, firebaseConfig, firebaseApp, database, fbCache, FB_CACHE_TTL_MS, STORAGE_DIR, fallbackFilePath, localDbState, SAFE_PATH_REGEX, jsKeyMap, pool, dbMock, db;
 var init_src = __esm({
   "../../lib/db/src/index.ts"() {
     "use strict";
@@ -69673,7 +69673,8 @@ var init_src = __esm({
     }
     fbCache = /* @__PURE__ */ new Map();
     FB_CACHE_TTL_MS = 15e3;
-    fallbackFilePath = path.join(os.homedir(), "db-fallback.json");
+    STORAGE_DIR = process.env.STORAGE_PATH || (fs.existsSync("/storage") ? "/storage" : os.homedir());
+    fallbackFilePath = path.join(STORAGE_DIR, "db-fallback.json");
     localDbState = {};
     if (!database) {
       loadLocalDb();
@@ -69751,9 +69752,13 @@ var init_src = __esm({
       // Execute TRUNCATE command mock
       execute: async (sqlQuery) => {
         const sqlStr = String(sqlQuery).toLowerCase();
-        if (sqlStr.includes("truncate")) {
-          await set(ref(database, "/"), null);
-          console.log("Firebase Realtime Database cleared for seeding.");
+        if (sqlStr.includes("truncate") && database) {
+          try {
+            await set(ref(database, "/"), null);
+            console.log("Firebase Realtime Database cleared for seeding.");
+          } catch (err) {
+            console.error("Execute truncate error:", err);
+          }
         }
         return [];
       },
@@ -69776,7 +69781,8 @@ var init_src = __esm({
             const promise2 = (async () => {
               const results = [];
               const current = await fbGet(tableName);
-              let maxId = current.length > 0 ? Math.max(...current.map((r) => r.id)) : 0;
+              const validIds = current.map((r) => Number(r.id)).filter((n) => !isNaN(n) && n > 0);
+              let maxId = validIds.length > 0 ? Math.max(...validIds) : 0;
               for (const item of records) {
                 let id = item.id;
                 if (!id) {
@@ -69792,8 +69798,8 @@ var init_src = __esm({
                 const record2 = {
                   ...cleaned,
                   id,
-                  createdAt: cleaned.createdAt || /* @__PURE__ */ new Date(),
-                  issuedAt: cleaned.issuedAt || /* @__PURE__ */ new Date()
+                  createdAt: cleaned.createdAt || (/* @__PURE__ */ new Date()).toISOString(),
+                  ...tableName === "certificates" ? { issuedAt: cleaned.issuedAt || (/* @__PURE__ */ new Date()).toISOString() } : {}
                 };
                 await fbPut(`${tableName}/${id}`, record2);
                 fbInvalidate(tableName);
@@ -79839,7 +79845,7 @@ router4.get("/applications", requireAuth, async (req, res) => {
       cvSnapshot,
       contactInfoSnapshot,
       jobTitle: a.jobTitle,
-      createdAt: a.app.createdAt.toISOString()
+      createdAt: a.app.createdAt ? typeof a.app.createdAt === "string" ? a.app.createdAt : new Date(a.app.createdAt).toISOString() : (/* @__PURE__ */ new Date()).toISOString()
     };
   }));
   res.json(resolved);
@@ -79908,8 +79914,13 @@ router4.post("/applications", requireAuth, async (req, res) => {
     cvSnapshot: cleanCvSnapshot,
     contactInfoSnapshot: cleanContactInfoSnapshot
   }).returning();
-  await db.update(jobsTable).set({ applicationCount: sql`${jobsTable.applicationCount} + 1` }).where(eq(jobsTable.id, parsed.data.jobId));
-  res.status(201).json({ ...app2, jobTitle: null, createdAt: app2.createdAt.toISOString() });
+  try {
+    const [currentJob] = await db.select().from(jobsTable).where(eq(jobsTable.id, parsed.data.jobId));
+    const newCount = (currentJob?.applicationCount ?? 0) + 1;
+    await db.update(jobsTable).set({ applicationCount: newCount }).where(eq(jobsTable.id, parsed.data.jobId));
+  } catch (_e) {
+  }
+  res.status(201).json({ ...app2, jobTitle: null, createdAt: app2.createdAt ? typeof app2.createdAt === "string" ? app2.createdAt : new Date(app2.createdAt).toISOString() : (/* @__PURE__ */ new Date()).toISOString() });
 });
 router4.get("/applications/:id", requireAuth, async (req, res) => {
   const params = GetApplicationParams.safeParse(req.params);
@@ -79935,7 +79946,7 @@ router4.get("/applications/:id", requireAuth, async (req, res) => {
     cvSnapshot,
     contactInfoSnapshot,
     jobTitle: job ? job.title : null,
-    createdAt: app2.createdAt.toISOString()
+    createdAt: app2.createdAt ? typeof app2.createdAt === "string" ? app2.createdAt : new Date(app2.createdAt).toISOString() : (/* @__PURE__ */ new Date()).toISOString()
   });
 });
 router4.patch("/applications/:id", requireAuth, async (req, res) => {
@@ -79977,7 +79988,7 @@ router4.patch("/applications/:id", requireAuth, async (req, res) => {
   }
   const [app2] = await db.update(applicationsTable).set(updateData).where(eq(applicationsTable.id, params.data.id)).returning();
   await logAuditEvent({ action: "application_update", userId: req.user.id, targetType: "application", targetId: params.data.id, details: { fields: Object.keys(updateData) }, req });
-  res.json({ ...app2, jobTitle: null, createdAt: app2.createdAt.toISOString() });
+  res.json({ ...app2, jobTitle: null, createdAt: app2.createdAt ? typeof app2.createdAt === "string" ? app2.createdAt : new Date(app2.createdAt).toISOString() : (/* @__PURE__ */ new Date()).toISOString() });
 });
 router4.post("/applications/:id/screening", requireAuth, async (req, res) => {
   const params = SubmitScreeningParams.safeParse(req.params);

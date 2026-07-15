@@ -107,7 +107,10 @@ function toArray<T>(obj: any): T[] {
 const fbCache = new Map<string, { data: any[]; expiresAt: number }>();
 const FB_CACHE_TTL_MS = 15000; // 15 seconds — balances freshness vs perf on burst reads
 
-const fallbackFilePath = path.join(os.homedir(), "db-fallback.json");
+// Use /storage for persistent data on Hostinger, fall back to homedir
+const STORAGE_DIR = process.env.STORAGE_PATH ||
+  (fs.existsSync("/storage") ? "/storage" : os.homedir());
+const fallbackFilePath = path.join(STORAGE_DIR, "db-fallback.json");
 let localDbState: Record<string, any[]> = {};
 
 function loadLocalDb() {
@@ -570,9 +573,13 @@ const dbMock = {
   // Execute TRUNCATE command mock
   execute: async (sqlQuery: any) => {
     const sqlStr = String(sqlQuery).toLowerCase();
-    if (sqlStr.includes("truncate")) {
-      await set(ref(database, "/"), null);
-      console.log("Firebase Realtime Database cleared for seeding.");
+    if (sqlStr.includes("truncate") && database) {
+      try {
+        await set(ref(database, "/"), null);
+        console.log("Firebase Realtime Database cleared for seeding.");
+      } catch (err) {
+        console.error("Execute truncate error:", err);
+      }
     }
     return [];
   },
@@ -597,7 +604,8 @@ const dbMock = {
         const promise = (async () => {
           const results = [];
           const current = await fbGet(tableName);
-          let maxId = current.length > 0 ? Math.max(...current.map((r: any) => r.id)) : 0;
+          const validIds = current.map((r: any) => Number(r.id)).filter(n => !isNaN(n) && n > 0);
+          let maxId = validIds.length > 0 ? Math.max(...validIds) : 0;
           
           for (const item of records) {
             let id = item.id;
@@ -614,8 +622,8 @@ const dbMock = {
             const record = { 
               ...cleaned, 
               id, 
-              createdAt: cleaned.createdAt || new Date(), 
-              issuedAt: cleaned.issuedAt || new Date() 
+              createdAt: cleaned.createdAt || new Date().toISOString(),
+              ...(tableName === "certificates" ? { issuedAt: cleaned.issuedAt || new Date().toISOString() } : {})
             };
             
             await fbPut(`${tableName}/${id}`, record);
