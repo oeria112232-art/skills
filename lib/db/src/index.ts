@@ -5,8 +5,10 @@ import { getDatabase, ref, get, set, remove } from "firebase/database";
 import * as schema from "./schema";
 import fs from "fs";
 import path from "path";
+import { fileURLToPath } from "url";
 import bcrypt from "bcryptjs";
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // Firebase Configuration — read from environment variables (never hardcode secrets)
 const firebaseConfig = {
   apiKey: process.env.FIREBASE_API_KEY || "",
@@ -104,7 +106,7 @@ function toArray<T>(obj: any): T[] {
 const fbCache = new Map<string, { data: any[]; expiresAt: number }>();
 const FB_CACHE_TTL_MS = 15000; // 15 seconds — balances freshness vs perf on burst reads
 
-const fallbackFilePath = path.resolve(import.meta.dirname, "../../../db-fallback.json");
+const fallbackFilePath = path.resolve(__dirname, "../../../db-fallback.json");
 let localDbState: Record<string, any[]> = {};
 
 function loadLocalDb() {

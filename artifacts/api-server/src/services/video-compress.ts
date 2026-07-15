@@ -6,11 +6,15 @@ import os from "node:os";
 
 const execFileAsync = promisify(execFile);
 
+import { fileURLToPath } from "url";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
 let FFMPEG_PATH = process.env.FFMPEG_PATH || "";
 
 if (!FFMPEG_PATH) {
   if (process.platform === "win32") {
-    FFMPEG_PATH = path.resolve(import.meta.dirname, "../../../ffmpeg/ffmpeg.exe");
+    FFMPEG_PATH = path.resolve(__dirname, "../../../ffmpeg/ffmpeg.exe");
   } else {
     FFMPEG_PATH = "ffmpeg";
   }

@@ -6,6 +6,9 @@ import jwt from "jsonwebtoken";
 import { Readable } from "node:stream";
 import fs from "fs";
 import path from "path";
+import { fileURLToPath } from "url";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const router: IRouter = Router();
 
@@ -89,13 +92,13 @@ router.get("/video-stream", async (req: any, res): Promise<void> => {
     if (isLocalPath || !isR2Configured) {
       console.warn("Serving video locally for key:", key);
       const filename = path.basename(key);
-      const localFilePath = path.resolve(import.meta.dirname, "../../../uploads/videos", filename);
+      const localFilePath = path.resolve(__dirname, "../../../uploads/videos", filename);
       if (fs.existsSync(localFilePath)) {
         res.sendFile(localFilePath);
         return;
       }
 
-      const altLocalFilePath = path.resolve(import.meta.dirname, "../../../uploads", filename);
+      const altLocalFilePath = path.resolve(__dirname, "../../../uploads", filename);
       if (fs.existsSync(altLocalFilePath)) {
         res.sendFile(altLocalFilePath);
         return;

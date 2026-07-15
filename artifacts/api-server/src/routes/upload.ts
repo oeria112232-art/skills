@@ -6,6 +6,9 @@ import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { compressVideo } from "../services/video-compress";
 import fs from "fs";
 import path from "path";
+import { fileURLToPath } from "url";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const router: IRouter = Router();
 
@@ -117,7 +120,7 @@ router.post("/upload/video", requireAuth, requireRole(["admin", "instructor"]), 
 
     if (useLocalFallback) {
       console.warn("R2 is not configured. Saving uploaded video locally.");
-      const uploadsDir = path.resolve(import.meta.dirname, "../../../uploads/videos");
+      const uploadsDir = path.resolve(__dirname, "../../../uploads/videos");
       if (!fs.existsSync(uploadsDir)) {
         fs.mkdirSync(uploadsDir, { recursive: true });
       }

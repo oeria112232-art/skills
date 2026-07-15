@@ -69253,6 +69253,7 @@ __export(src_exports, {
 });
 import fs from "fs";
 import path from "path";
+import { fileURLToPath } from "url";
 function parseDates(obj) {
   if (!obj) return obj;
   if (obj instanceof Date) return obj;
@@ -69628,7 +69629,7 @@ function makeQuery(promise2) {
   };
   return p;
 }
-var firebaseConfig, firebaseApp, database, fbCache, FB_CACHE_TTL_MS, fallbackFilePath, localDbState, SAFE_PATH_REGEX, jsKeyMap, pool, dbMock, db;
+var __dirname2, firebaseConfig, firebaseApp, database, fbCache, FB_CACHE_TTL_MS, fallbackFilePath, localDbState, SAFE_PATH_REGEX, jsKeyMap, pool, dbMock, db;
 var init_src = __esm({
   "../../lib/db/src/index.ts"() {
     "use strict";
@@ -69637,6 +69638,7 @@ var init_src = __esm({
     init_dist2();
     init_bcryptjs();
     init_schema2();
+    __dirname2 = path.dirname(fileURLToPath(import.meta.url));
     firebaseConfig = {
       apiKey: process.env.FIREBASE_API_KEY || "",
       authDomain: process.env.FIREBASE_AUTH_DOMAIN || "",
@@ -69666,7 +69668,7 @@ var init_src = __esm({
     }
     fbCache = /* @__PURE__ */ new Map();
     FB_CACHE_TTL_MS = 15e3;
-    fallbackFilePath = path.resolve(import.meta.dirname, "../../../db-fallback.json");
+    fallbackFilePath = path.resolve(__dirname2, "../../../db-fallback.json");
     localDbState = {};
     if (!database) {
       loadLocalDb();
@@ -79909,6 +79911,7 @@ init_drizzle_orm();
 import crypto4 from "crypto";
 import fs2 from "fs";
 import path2 from "path";
+import { fileURLToPath as fileURLToPath2 } from "url";
 
 // src/services/daily.ts
 init_logger2();
@@ -80140,6 +80143,7 @@ var certVerifyRateLimit = rateLimit({
 
 // src/routes/workshops.ts
 init_secrets();
+var __dirname3 = path2.dirname(fileURLToPath2(import.meta.url));
 var workshopUploadRateLimit = rateLimit({
   windowMs: 60 * 1e3,
   max: 10,
@@ -80648,7 +80652,7 @@ router5.post("/workshops/:id/template", requireAuth, requireRole(["admin", "inst
       res.status(400).json({ error: "Template file too large. Maximum 10MB allowed" });
       return;
     }
-    const uploadsDir = path2.resolve(import.meta.dirname, "../../../uploads/templates");
+    const uploadsDir = path2.resolve(__dirname3, "../../../uploads/templates");
     if (!fs2.existsSync(uploadsDir)) {
       fs2.mkdirSync(uploadsDir, { recursive: true });
     }
@@ -80702,7 +80706,7 @@ router5.post("/workshops/:id/image", requireAuth, requireRole(["admin", "instruc
       res.status(400).json({ error: "Image file too large. Maximum 5MB allowed" });
       return;
     }
-    const uploadsDir = path2.resolve(import.meta.dirname, "../../../uploads/covers");
+    const uploadsDir = path2.resolve(__dirname3, "../../../uploads/covers");
     if (!fs2.existsSync(uploadsDir)) {
       fs2.mkdirSync(uploadsDir, { recursive: true });
     }
@@ -83034,11 +83038,13 @@ import { promisify } from "node:util";
 import fs3 from "node:fs";
 import path4 from "node:path";
 import os from "node:os";
+import { fileURLToPath as fileURLToPath3 } from "url";
 var execFileAsync = promisify(execFile);
+var __dirname4 = path4.dirname(fileURLToPath3(import.meta.url));
 var FFMPEG_PATH = process.env.FFMPEG_PATH || "";
 if (!FFMPEG_PATH) {
   if (process.platform === "win32") {
-    FFMPEG_PATH = path4.resolve(import.meta.dirname, "../../../ffmpeg/ffmpeg.exe");
+    FFMPEG_PATH = path4.resolve(__dirname4, "../../../ffmpeg/ffmpeg.exe");
   } else {
     FFMPEG_PATH = "ffmpeg";
   }
@@ -83142,6 +83148,8 @@ async function compressVideo(inputBuffer, inputMime, options = {}) {
 // src/routes/upload.ts
 import fs4 from "fs";
 import path5 from "path";
+import { fileURLToPath as fileURLToPath4 } from "url";
+var __dirname5 = path5.dirname(fileURLToPath4(import.meta.url));
 var router14 = (0, import_express14.Router)();
 var uploadRateLimit = rateLimit({
   windowMs: 60 * 1e3,
@@ -83237,7 +83245,7 @@ router14.post("/upload/video", requireAuth, requireRole(["admin", "instructor"])
     const key = `${folder || "eduplat/videos"}/${finalFileName}`;
     if (useLocalFallback) {
       console.warn("R2 is not configured. Saving uploaded video locally.");
-      const uploadsDir = path5.resolve(import.meta.dirname, "../../../uploads/videos");
+      const uploadsDir = path5.resolve(__dirname5, "../../../uploads/videos");
       if (!fs4.existsSync(uploadsDir)) {
         fs4.mkdirSync(uploadsDir, { recursive: true });
       }
@@ -83284,6 +83292,8 @@ init_secrets();
 import { S3Client as S3Client2, GetObjectCommand, HeadObjectCommand } from "@aws-sdk/client-s3";
 import fs5 from "fs";
 import path6 from "path";
+import { fileURLToPath as fileURLToPath5 } from "url";
+var __dirname6 = path6.dirname(fileURLToPath5(import.meta.url));
 var router15 = (0, import_express15.Router)();
 async function getR2Config2() {
   const settings = await db.select().from(platformSettingsTable);
@@ -83354,12 +83364,12 @@ router15.get("/video-stream", async (req, res) => {
     if (isLocalPath || !isR2Configured) {
       console.warn("Serving video locally for key:", key);
       const filename = path6.basename(key);
-      const localFilePath = path6.resolve(import.meta.dirname, "../../../uploads/videos", filename);
+      const localFilePath = path6.resolve(__dirname6, "../../../uploads/videos", filename);
       if (fs5.existsSync(localFilePath)) {
         res.sendFile(localFilePath);
         return;
       }
-      const altLocalFilePath = path6.resolve(import.meta.dirname, "../../../uploads", filename);
+      const altLocalFilePath = path6.resolve(__dirname6, "../../../uploads", filename);
       if (fs5.existsSync(altLocalFilePath)) {
         res.sendFile(altLocalFilePath);
         return;
@@ -83550,6 +83560,8 @@ function validateInputLimits(req, res, next) {
 
 // src/app.ts
 import path7 from "path";
+import { fileURLToPath as fileURLToPath6 } from "url";
+var __dirname7 = path7.dirname(fileURLToPath6(import.meta.url));
 var app = (0, import_express17.default)();
 app.use((_req, res, next) => {
   res.locals.cspNonce = crypto7.randomBytes(16).toString("base64");
@@ -83619,11 +83631,11 @@ app.use(validateInputLimits);
 app.use(validateBase64Payload(5));
 app.use("/api", generalRateLimit);
 app.use("/api/auth", authRateLimit);
-app.use("/api/uploads/covers", import_express17.default.static(path7.resolve(import.meta.dirname, "../../../uploads/covers")));
-app.use("/api/uploads", requireAuth, import_express17.default.static(path7.resolve(import.meta.dirname, "../../../uploads")));
+app.use("/api/uploads/covers", import_express17.default.static(path7.resolve(__dirname7, "../../../uploads/covers")));
+app.use("/api/uploads", requireAuth, import_express17.default.static(path7.resolve(__dirname7, "../../../uploads")));
 app.use("/api", routes_default);
 if (isProduction2) {
-  const publicPath = path7.resolve(import.meta.dirname, "../../eduplat/dist/public");
+  const publicPath = path7.resolve(__dirname7, "../../eduplat/dist/public");
   app.use(import_express17.default.static(publicPath));
   app.get(/^(?!\/api\/).*/, (req, res, next) => {
     if (req.path.includes(".")) {

@@ -9,6 +9,9 @@ import { sanitizeInput, validateBase64Payload, validateInputLimits } from "./mid
 import { generalRateLimit, authRateLimit } from "./middlewares/rateLimit";
 import { requireAuth } from "./middlewares/auth";
 import path from "path";
+import { fileURLToPath } from "url";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const app: Express = express();
 
@@ -98,13 +101,13 @@ app.use("/api", generalRateLimit);
 app.use("/api/auth", authRateLimit);
 
 // Static uploads serving - allow public covers, authenticate other folders
-app.use("/api/uploads/covers", express.static(path.resolve(import.meta.dirname, "../../../uploads/covers")));
-app.use("/api/uploads", requireAuth, express.static(path.resolve(import.meta.dirname, "../../../uploads")));
+app.use("/api/uploads/covers", express.static(path.resolve(__dirname, "../../../uploads/covers")));
+app.use("/api/uploads", requireAuth, express.static(path.resolve(__dirname, "../../../uploads")));
 
 app.use("/api", router);
 
 if (isProduction) {
-  const publicPath = path.resolve(import.meta.dirname, "../../eduplat/dist/public");
+  const publicPath = path.resolve(__dirname, "../../eduplat/dist/public");
   app.use(express.static(publicPath));
   
   // SPA routing fallback

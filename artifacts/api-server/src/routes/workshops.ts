@@ -9,6 +9,9 @@ import { eq, sql, and } from "drizzle-orm";
 import crypto from "crypto";
 import fs from "fs";
 import path from "path";
+import { fileURLToPath } from "url";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 import {
   ListWorkshopsQueryParams, CreateWorkshopBody,
   GetWorkshopParams, UpdateWorkshopParams, UpdateWorkshopBody, DeleteWorkshopParams,
@@ -574,7 +577,7 @@ router.post("/workshops/:id/template", requireAuth, requireRole(["admin", "instr
     }
     
     // Create templates directory
-    const uploadsDir = path.resolve(import.meta.dirname, "../../../uploads/templates");
+    const uploadsDir = path.resolve(__dirname, "../../../uploads/templates");
     if (!fs.existsSync(uploadsDir)) {
       fs.mkdirSync(uploadsDir, { recursive: true });
     }
@@ -646,7 +649,7 @@ router.post("/workshops/:id/image", requireAuth, requireRole(["admin", "instruct
       return;
     }
     
-    const uploadsDir = path.resolve(import.meta.dirname, "../../../uploads/covers");
+    const uploadsDir = path.resolve(__dirname, "../../../uploads/covers");
     if (!fs.existsSync(uploadsDir)) {
       fs.mkdirSync(uploadsDir, { recursive: true });
     }

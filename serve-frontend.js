@@ -1,8 +1,10 @@
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'url';
 
-const FRONTEND_DIR = path.resolve(import.meta.dirname, 'artifacts/eduplat/dist/public');
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const FRONTEND_DIR = path.resolve(__dirname, 'artifacts/eduplat/dist/public');
 const API_HOST = 'localhost';
 const API_PORT = 8080;
 const PORT = 3000;
