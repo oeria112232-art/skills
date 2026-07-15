@@ -27,12 +27,16 @@ if (firebaseConfig.apiKey && firebaseConfig.databaseURL && firebaseConfig.databa
   try {
     firebaseApp = initializeApp(firebaseConfig);
     database = getDatabase(firebaseApp);
-    console.log("Firebase Database initialized successfully.");
+    if (!process.env.SILENT_DB_LOGS) {
+      console.log("Firebase Database initialized successfully.");
+    }
   } catch (err) {
-    console.error("Failed to initialize Firebase SDK:", err);
+    console.warn("Failed to initialize Firebase SDK:", err);
   }
 } else {
-  console.error("FIREBASE_API_KEY and FIREBASE_DATABASE_URL must be set in environment variables. Firebase operations will be disabled.");
+  if (!process.env.SILENT_DB_LOGS) {
+    console.info("Info: Firebase database not configured. Local JSON storage (db-fallback.json) is active.");
+  }
 }
 
 
@@ -108,19 +112,18 @@ function loadLocalDb() {
     if (fs.existsSync(fallbackFilePath)) {
       const content = fs.readFileSync(fallbackFilePath, "utf8");
       localDbState = JSON.parse(content);
-      console.log(`Loaded fallback database from: ${fallbackFilePath}`);
     } else {
       localDbState = {};
-      console.log(`Initialized empty fallback database.`);
     }
   } catch (err) {
-    console.error("Failed to load local fallback DB:", err);
     localDbState = {};
   }
 
   // Ensure default seeds are present dynamically
   if (!localDbState.users || localDbState.users.length === 0) {
-    console.log("Seeding default user accounts dynamically in local DB fallback...");
+    if (process.env.DEBUG_DB_LOGS) {
+      console.log("Seeding default user accounts dynamically in local DB fallback...");
+    }
     
     const adminEmail = process.env.DEFAULT_ADMIN_EMAIL || "aliop@app.com";
     const adminPassword = process.env.DEFAULT_ADMIN_PASSWORD || "ppooqqaa001122334455!@#$%";
@@ -181,7 +184,7 @@ function saveLocalDb() {
   try {
     fs.writeFileSync(fallbackFilePath, JSON.stringify(localDbState, null, 2), "utf8");
   } catch (err) {
-    console.error("Failed to save local fallback DB:", err);
+    // Silent fallback
   }
 }
 
