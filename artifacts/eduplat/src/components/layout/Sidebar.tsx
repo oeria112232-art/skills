@@ -28,7 +28,7 @@ const studentLinks = [
 const adminLinks = [
   { href: "/admin", icon: LayoutDashboard, label: "Dashboard", arLabel: "لوحة التحكم" },
   { href: "/admin/jobs", icon: Briefcase, label: "Jobs", arLabel: "الوظائف" },
-  { href: "/admin/applications", icon: Users, label: "Applications", arLabel: "التقديمات" },
+  { href: "/admin/applications", icon: Users, label: "Applications", arLabel: "طلبات الوظائف" },
   { href: "/admin/workshops", icon: BookOpen, label: "Workshops", arLabel: "الورش" },
   { href: "/admin/streams", icon: Video, label: "Live Streaming", arLabel: "البث المباشر" },
   { href: "/admin/tracks", icon: GraduationCap, label: "Learning Tracks", arLabel: "المسارات التعليمية" },

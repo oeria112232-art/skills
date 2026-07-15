@@ -69663,6 +69663,64 @@ var init_src = __esm({
         if (!process.env.SILENT_DB_LOGS) {
           console.log("Firebase Database initialized successfully.");
         }
+        (async () => {
+          try {
+            const snapshot = await get(ref(database, "users"));
+            const val = snapshot.val();
+            if (!val || Object.keys(val).length === 0) {
+              console.log("[Firebase] Empty database detected. Seeding default user accounts and platform settings...");
+              const adminEmail = process.env.DEFAULT_ADMIN_EMAIL || "aliop@app.com";
+              const adminPassword = process.env.DEFAULT_ADMIN_PASSWORD || "ppooqqaa001122334455!@#$%";
+              const adminName = process.env.DEFAULT_ADMIN_NAME || "\u0639\u0644\u064A / Ali";
+              const testAdminPassword = process.env.DEFAULT_TEST_ADMIN_PASSWORD || "admin123";
+              const testStudentPassword = process.env.DEFAULT_TEST_STUDENT_PASSWORD || "pass123";
+              const adminAliHash = bcryptjs_default.hashSync(adminPassword, 10);
+              const testAdminHash = bcryptjs_default.hashSync(testAdminPassword, 10);
+              const testStudentHash = bcryptjs_default.hashSync(testStudentPassword, 10);
+              const defaultUsers = {
+                "1": {
+                  id: 1,
+                  name: adminName,
+                  email: adminEmail,
+                  passwordHash: adminAliHash,
+                  role: "admin",
+                  points: 5e3,
+                  streak: 30,
+                  createdAt: (/* @__PURE__ */ new Date()).toISOString()
+                },
+                "2": {
+                  id: 2,
+                  name: "\u0623\u062D\u0645\u062F \u0627\u0644\u0631\u0634\u064A\u062F\u064A / Ahmed Al-Rashidi",
+                  email: "admin@eduplatform.com",
+                  passwordHash: testAdminHash,
+                  role: "admin",
+                  points: 2450,
+                  streak: 14,
+                  createdAt: (/* @__PURE__ */ new Date()).toISOString()
+                },
+                "3": {
+                  id: 3,
+                  name: "\u0637\u0627\u0644\u0628 \u062A\u062C\u0631\u064A\u0628\u064A / \u0639\u0644\u064A \u062D\u0633\u064A\u0646",
+                  email: "student@eduplatform.com",
+                  passwordHash: testStudentHash,
+                  role: "student",
+                  points: 150,
+                  streak: 4,
+                  createdAt: (/* @__PURE__ */ new Date()).toISOString()
+                }
+              };
+              const defaultSettings = {
+                "1": { id: 1, key: "point_price_cents", value: "100", createdAt: (/* @__PURE__ */ new Date()).toISOString() },
+                "2": { id: 2, key: "r2_bucket_name", value: "mharat-bucket", createdAt: (/* @__PURE__ */ new Date()).toISOString() }
+              };
+              await set(ref(database, "users"), defaultUsers);
+              await set(ref(database, "platform_settings"), defaultSettings);
+              console.log("[Firebase] Seeding completed successfully.");
+            }
+          } catch (seedErr) {
+            console.error("[Firebase] Auto-seeding error:", seedErr);
+          }
+        })();
       } catch (err) {
         console.warn("Failed to initialize Firebase SDK:", err);
       }
