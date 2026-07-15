@@ -119,6 +119,8 @@ export default function UserSettingsPage() {
   const { data: certs } = useListCertificates();
   const { data: applications } = useListApplications({ userId: user?.id });
   const { data: jobs } = useListJobs();
+  const appsList = Array.isArray(applications) ? applications : (applications && Array.isArray((applications as any).data) ? (applications as any).data : []);
+  const jobsList = Array.isArray(jobs) ? jobs : (jobs && Array.isArray((jobs as any).data) ? (jobs as any).data : []);
 
   const [form, setForm] = useState({
     name: "",
@@ -744,7 +746,7 @@ export default function UserSettingsPage() {
           {/* Applications Tab */}
           <TabsContent value="apps" className="space-y-6">
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {!applications?.length ? (
+              {appsList.length === 0 ? (
                 <div className="col-span-full text-center py-12 border-2 border-dashed rounded-2xl bg-card/30">
                   <Briefcase className="h-12 w-12 mx-auto text-muted-foreground/35 mb-3" />
                   <p className="font-semibold text-muted-foreground mb-4">{isAr ? "لم تقدم على أي وظائف بعد" : "You haven't applied to any jobs yet"}</p>
@@ -753,8 +755,8 @@ export default function UserSettingsPage() {
                   </Link>
                 </div>
               ) : (
-                applications.map((app: any) => {
-                  const job = jobs?.find(j => j.id === app.jobId);
+                appsList.map((app: any) => {
+                  const job = jobsList?.find((j: any) => j.id === app.jobId);
                   const statusColors: Record<string, string> = {
                     pending: "bg-yellow-500/10 text-yellow-600 border-yellow-500/20",
                     approved: "bg-green-500/10 text-green-600 border-green-500/20",

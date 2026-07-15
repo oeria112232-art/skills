@@ -27,6 +27,7 @@ export default function AdminJobsPage() {
   const { language } = useLanguage();
   const isAr = language === "ar";
   const { data: jobs, isLoading } = useListJobs();
+  const jobsList = Array.isArray(jobs) ? jobs : (jobs && Array.isArray((jobs as any).data) ? (jobs as any).data : []);
   const createJob = useCreateJob();
   const updateJob = useUpdateJob();
   const deleteJob = useDeleteJob();
@@ -105,9 +106,9 @@ export default function AdminJobsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {!jobs || jobs.length === 0 ? (
+              {jobsList.length === 0 ? (
                 <tr><td colSpan={5} className="text-center py-12 text-muted-foreground"><Briefcase className="w-8 h-8 mx-auto mb-2 opacity-20" /><p>{isAr ? "لا توجد وظائف بعد" : "No jobs yet"}</p></td></tr>
-              ) : jobs.map(job => (
+              ) : jobsList.map((job: any) => (
                 <tr key={job.id} className="hover:bg-muted/30 transition-colors" data-testid={`admin-job-row-${job.id}`}>
                   <td className="px-4 py-3">
                     <p className="font-medium text-sm">{job.title}</p>

@@ -1,4 +1,4 @@
-﻿import { useState } from "react";
+import { useState } from "react";
 import { useListApplications, useListJobs, getListApplicationsQueryKey } from "@workspace/api-client-react";
 import { Briefcase, Clock, CheckCircle, XCircle, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,8 @@ export default function UserApplicationsPage() {
   const { user } = useAuth();
   const { data: applications, isLoading } = useListApplications({ userId: user?.id });
   const { data: jobs } = useListJobs();
+  const appsList = Array.isArray(applications) ? applications : (applications && Array.isArray((applications as any).data) ? (applications as any).data : []);
+  const jobsList = Array.isArray(jobs) ? jobs : (jobs && Array.isArray((jobs as any).data) ? (jobs as any).data : []);
 
   const getStatusBadge = (status: string) => {
     switch(status) {
@@ -42,7 +44,7 @@ export default function UserApplicationsPage() {
             Array.from({ length: 6 }).map((_, i) => (
               <Skeleton key={i} className="h-48 rounded-2xl" />
             ))
-          ) : !applications?.length ? (
+          ) : appsList.length === 0 ? (
             <div className="col-span-full flex flex-col items-center justify-center p-12 text-center border-2 border-dashed rounded-2xl">
               <FileText className="h-12 w-12 text-muted-foreground/50 mb-4" />
               <p className="text-lg font-medium text-muted-foreground mb-4">{isAr ? "لم تقم بالتقديم على أي وظيفة بعد" : "You haven't applied to any jobs yet"}</p>
@@ -51,8 +53,8 @@ export default function UserApplicationsPage() {
               </Link>
             </div>
           ) : (
-            applications.map((app: any) => {
-              const job = jobs?.find(j => j.id === app.jobId);
+            appsList.map((app: any) => {
+              const job = jobsList?.find((j: any) => j.id === app.jobId);
               return (
                 <div key={app.id} className="group p-6 rounded-2xl border bg-card hover:shadow-xl hover:border-primary/50 transition-all duration-300 flex flex-col h-full">
                   <div className="flex items-start justify-between mb-4">

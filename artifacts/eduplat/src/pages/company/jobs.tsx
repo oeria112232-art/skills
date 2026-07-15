@@ -1,4 +1,4 @@
-﻿import { useState } from "react";
+import { useState } from "react";
 import { useListJobs, useCreateJob, useUpdateJob, useDeleteJob, getListJobsQueryKey } from "@workspace/api-client-react";
 import { Plus, Pencil, Trash2, Briefcase } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -30,6 +30,7 @@ export default function CompanyJobsPage() {
   const { user } = useAuth();
   
   const { data: jobs, isLoading } = useListJobs({ companyId: user?.id });
+  const jobsList = Array.isArray(jobs) ? jobs : (jobs && Array.isArray((jobs as any).data) ? (jobs as any).data : []);
   const createJob = useCreateJob();
   const updateJob = useUpdateJob();
   const deleteJob = useDeleteJob();
@@ -187,13 +188,13 @@ export default function CompanyJobsPage() {
             Array.from({ length: 6 }).map((_, i) => (
               <Skeleton key={i} className="h-48 rounded-2xl" />
             ))
-          ) : !jobs?.length ? (
+          ) : jobsList.length === 0 ? (
             <div className="col-span-full flex flex-col items-center justify-center p-12 text-center border-2 border-dashed rounded-2xl">
               <Briefcase className="h-12 w-12 text-muted-foreground/50 mb-4" />
               <p className="text-lg font-medium text-muted-foreground">{isAr ? "لم تقم بإضافة أي وظائف بعد" : "You haven't posted any jobs yet"}</p>
             </div>
           ) : (
-            jobs.map(job => (
+            jobsList.map((job: any) => (
               <div key={job.id} className="group p-6 rounded-2xl border bg-card hover:shadow-xl hover:border-primary/50 transition-all duration-300 flex flex-col h-full relative">
                 <div className="absolute top-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
                   <Button variant="ghost" size="icon" onClick={() => handleOpen(job)}>

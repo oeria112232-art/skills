@@ -23,6 +23,7 @@ export default function AdminApplicationsPage() {
   const isAr = language === "ar";
   const [statusFilter, setStatusFilter] = useState("all");
   const { data: applications, isLoading } = useListApplications(statusFilter !== "all" ? { status: statusFilter } : undefined);
+  const appsList = Array.isArray(applications) ? applications : (applications && Array.isArray((applications as any).data) ? (applications as any).data : []);
   const updateStatus = useUpdateApplicationStatus();
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -74,9 +75,9 @@ export default function AdminApplicationsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {!Array.isArray(applications) || applications.length === 0 ? (
+              {appsList.length === 0 ? (
                 <tr><td colSpan={5} className="text-center py-12 text-muted-foreground"><Users className="w-8 h-8 mx-auto mb-2 opacity-20" /><p>{isAr ? "لا توجد طلبات تقديم" : "No applications"}</p></td></tr>
-              ) : applications.map(app => (
+              ) : appsList.map((app: any) => (
                 <tr key={app.id} className="hover:bg-muted/30 transition-colors" data-testid={`application-row-${app.id}`}>
                   <td className="px-4 py-3">
                     <p className="font-medium text-sm">{app.applicantName}</p>

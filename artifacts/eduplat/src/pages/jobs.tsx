@@ -26,6 +26,7 @@ export default function JobsPage() {
   if (remote !== "all") params.isRemote = remote === "remote";
 
   const { data: jobs, isLoading } = useListJobs(Object.keys(params).length > 0 ? params : undefined);
+  const jobsList = Array.isArray(jobs) ? jobs : (jobs && Array.isArray((jobs as any).data) ? (jobs as any).data : []);
 
   return (
     <AppLayout>
@@ -106,7 +107,7 @@ export default function JobsPage() {
         <div className="space-y-4">
           {[1, 2, 3].map(i => <Skeleton key={i} className="h-40 w-full rounded-2xl bg-card border border-border/50" />)}
         </div>
-      ) : !Array.isArray(jobs) || jobs.length === 0 ? (
+      ) : jobsList.length === 0 ? (
         <div className="text-center py-20 rounded-2xl border border-dashed border-border/60 bg-card/30 max-w-md mx-auto">
           <Briefcase className="w-14 h-14 mx-auto mb-3 opacity-25 text-primary" />
           <h4 className="font-extrabold text-lg">{isAr ? "لم يتم العثور على وظائف" : "No jobs found"}</h4>
@@ -114,7 +115,7 @@ export default function JobsPage() {
         </div>
       ) : (
         <div className="space-y-4">
-          {jobs.map(job => (
+          {jobsList.map((job: any) => (
             <motion.div
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}

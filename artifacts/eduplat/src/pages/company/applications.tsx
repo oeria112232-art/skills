@@ -22,6 +22,7 @@ export default function CompanyApplicationsPage() {
   const { user } = useAuth();
   const { data: applications, isLoading } = useListApplications({ companyId: user?.id });
   const { data: jobs } = useListJobs({ companyId: user?.id });
+  const appsList = Array.isArray(applications) ? applications : (applications && Array.isArray((applications as any).data) ? (applications as any).data : []);
   
   const updateStatus = useUpdateApplicationStatus();
   const queryClient = useQueryClient();
@@ -766,13 +767,13 @@ export default function CompanyApplicationsPage() {
             Array.from({ length: 6 }).map((_, i) => (
               <Skeleton key={i} className="h-64 rounded-2xl" />
             ))
-          ) : !applications?.length ? (
+          ) : appsList.length === 0 ? (
             <div className="col-span-full flex flex-col items-center justify-center p-12 text-center border-2 border-dashed rounded-2xl">
               <Users className="h-12 w-12 text-muted-foreground/50 mb-4" />
               <p className="text-lg font-medium text-muted-foreground">{isAr ? "لا توجد طلبات توظيف بعد" : "No applications yet"}</p>
             </div>
           ) : (
-            applications.map((app: any) => {
+            appsList.map((app: any) => {
               const certsCount = app.cvSnapshot?.certificates?.length || 0;
               const tracksCount = app.cvSnapshot?.tracks?.length || 0;
               const workshopsCount = app.cvSnapshot?.workshops?.length || 0;
