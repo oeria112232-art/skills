@@ -42,8 +42,7 @@ process.on("unhandledRejection", (reason) => {
   logger.error({ reason }, "Unhandled promise rejection");
 });
 
-// Handle uncaught exceptions
+// Handle uncaught exceptions - log them and keep the server running
 process.on("uncaughtException", (err) => {
-  logger.error({ err }, "Uncaught exception");
-  process.exit(1);
+  logger.error({ err }, "Uncaught exception - Server kept alive");
 });

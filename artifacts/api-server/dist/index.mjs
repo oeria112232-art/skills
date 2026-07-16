@@ -83936,8 +83936,7 @@ process.on("unhandledRejection", (reason) => {
   logger3.error({ reason }, "Unhandled promise rejection");
 });
 process.on("uncaughtException", (err) => {
-  logger3.error({ err }, "Uncaught exception");
-  process.exit(1);
+  logger3.error({ err }, "Uncaught exception - Server kept alive");
 });
 /*! Bundled license information:
 
