@@ -74,106 +74,165 @@ export function CertificatePreviewModal({
         `}</style>
 
         {/* Certificate Frame Container */}
-        <div className="relative w-full overflow-hidden bg-white text-slate-800 p-6 sm:p-10 rounded-xl border-[12px] border-double border-amber-600/35 shadow-inner font-serif select-none max-w-full mx-auto print:border-none print:shadow-none certificate-print-container">
-          {/* Background watermark seal */}
-          <div className="absolute inset-0 flex items-center justify-center opacity-[0.03] pointer-events-none">
-            <Award className="w-[300px] h-[300px] text-amber-700" />
+        <div 
+          className="relative w-full overflow-hidden bg-[#FAF8F5] text-slate-800 p-8 sm:p-14 border-2 shadow-2xl aspect-[1.414/1] flex flex-col justify-between select-none rounded-none certificate-print-container"
+          style={{ 
+            fontFamily: "'Lora', 'Georgia', serif", 
+            backgroundImage: "radial-gradient(circle at 50% 50%, #FCFAF5 0%, #FAF0DF 100%)",
+            borderColor: "#d6d3d1"
+          }}
+        >
+          {/* Double Border Frame with Sharp Corners */}
+          <div className="absolute inset-4 border border-stone-800/70 pointer-events-none rounded-none" />
+          <div className="absolute inset-5 border-2 border-double border-stone-800/50 pointer-events-none rounded-none" />
+
+          {/* Victorian Corner flourishes */}
+          {/* Top-Left */}
+          <div className="absolute top-7 left-7 pointer-events-none opacity-95 text-stone-850">
+            <svg viewBox="0 0 100 100" className="w-14 h-14 text-current">
+              <path d="M5,5 C35,5 45,12 55,25 C45,35 30,30 20,20 C35,35 25,55 5,55" fill="none" stroke="currentColor" strokeWidth="1.2" />
+              <path d="M5,5 C5,25 12,45 25,55 C35,45 30,30 20,20 C35,35 55,25 55,5" fill="none" stroke="currentColor" strokeWidth="1.2" />
+              <path d="M15,15 C35,15 40,30 30,35 C20,40 15,30 25,20 C35,10 45,25 40,35" fill="none" stroke="currentColor" strokeWidth="0.8" />
+              <circle cx="50" cy="20" r="1.5" fill="currentColor" />
+              <circle cx="20" cy="50" r="1.5" fill="currentColor" />
+            </svg>
+          </div>
+          {/* Top-Right */}
+          <div className="absolute top-7 right-7 pointer-events-none scale-x-[-1] opacity-90 text-stone-850">
+            <svg viewBox="0 0 100 100" className="w-14 h-14 text-current">
+              <path d="M5,5 C35,5 45,12 55,25 C45,35 30,30 20,20 C35,35 25,55 5,55" fill="none" stroke="currentColor" strokeWidth="1.2" />
+              <path d="M5,5 C5,25 12,45 25,55 C35,45 30,30 20,20 C35,35 55,25 55,5" fill="none" stroke="currentColor" strokeWidth="1.2" />
+              <path d="M15,15 C35,15 40,30 30,35 C20,40 15,30 25,20 C35,10 45,25 40,35" fill="none" stroke="currentColor" strokeWidth="0.8" />
+              <circle cx="50" cy="20" r="1.5" fill="currentColor" />
+              <circle cx="20" cy="50" r="1.5" fill="currentColor" />
+            </svg>
+          </div>
+          {/* Bottom-Left */}
+          <div className="absolute bottom-7 left-7 pointer-events-none scale-y-[-1] opacity-90 text-stone-850">
+            <svg viewBox="0 0 100 100" className="w-14 h-14 text-current">
+              <path d="M5,5 C35,5 45,12 55,25 C45,35 30,30 20,20 C35,35 25,55 5,55" fill="none" stroke="currentColor" strokeWidth="1.2" />
+              <path d="M5,5 C5,25 12,45 25,55 C35,45 30,30 20,20 C35,35 55,25 55,5" fill="none" stroke="currentColor" strokeWidth="1.2" />
+              <path d="M15,15 C35,15 40,30 30,35 C20,40 15,30 25,20 C35,10 45,25 40,35" fill="none" stroke="currentColor" strokeWidth="0.8" />
+              <circle cx="50" cy="20" r="1.5" fill="currentColor" />
+              <circle cx="20" cy="50" r="1.5" fill="currentColor" />
+            </svg>
+          </div>
+          {/* Bottom-Right */}
+          <div className="absolute bottom-7 right-7 pointer-events-none scale-x-[-1] scale-y-[-1] opacity-90 text-stone-850">
+            <svg viewBox="0 0 100 100" className="w-14 h-14 text-current">
+              <path d="M5,5 C35,5 45,12 55,25 C45,35 30,30 20,20 C35,35 25,55 5,55" fill="none" stroke="currentColor" strokeWidth="1.2" />
+              <path d="M5,5 C5,25 12,45 25,55 C35,45 30,30 20,20 C35,35 55,25 55,5" fill="none" stroke="currentColor" strokeWidth="1.2" />
+              <path d="M15,15 C35,15 40,30 30,35 C20,40 15,30 25,20 C35,10 45,25 40,35" fill="none" stroke="currentColor" strokeWidth="0.8" />
+              <circle cx="50" cy="20" r="1.5" fill="currentColor" />
+              <circle cx="20" cy="50" r="1.5" fill="currentColor" />
+            </svg>
           </div>
 
           {/* Top Header Section */}
-          <div className="flex items-start justify-between border-b-2 border-amber-600/20 pb-4 mb-6 text-[10px] sm:text-xs">
-            <div className="text-left leading-relaxed">
-              <p className="font-bold text-amber-800 uppercase tracking-wider">Skills Project</p>
-              <p className="text-[9px] text-slate-500">Ministry of Labor & Social Affairs</p>
-              <p className="text-[8px] font-mono text-slate-400">Ref: CERT-PREVIEW-XXXX</p>
-            </div>
-            
-            <div className="flex flex-col items-center">
-              <div className="w-10 h-10 rounded-full bg-amber-500/10 flex items-center justify-center border border-amber-500/20 mb-1">
-                <Award className="w-5.5 h-5.5 text-amber-600" />
-              </div>
-              <span className="text-[9px] font-bold text-amber-700 uppercase tracking-widest">مهارات</span>
-            </div>
-            
-            <div className="text-right leading-relaxed font-sans">
-              <p className="font-bold text-amber-800">مشروع مهارات</p>
-              <p className="text-[9px] text-slate-500">وزارة العمل والشؤون الاجتماعية</p>
-              <p className="text-[8px] font-mono text-slate-400">تاريخ المعاينة: {new Date().toLocaleDateString(isAr ? "ar-EG" : "en-US")}</p>
-            </div>
-          </div>
-
-          {/* Certificate Main Text */}
-          <div className="text-center my-6 space-y-5">
-            <h1 className="text-xl sm:text-3xl font-black text-slate-800 tracking-widest font-serif uppercase">
-              {isAr ? "شهادة تخرج واجتياز" : "Certificate of Completion"}
-            </h1>
-            
-            <p className="text-xs sm:text-sm text-slate-500 italic max-w-lg mx-auto font-sans leading-relaxed">
-              {isAr 
-                ? "تشهد إدارة مشروع مهارات الوطنية للتدريب والتأهيل المهني بأن المتدرب:"
-                : "The administration of the Skills Project certifies that:"}
-            </p>
-            
-            <div className="my-4">
-              <h2 className="text-lg sm:text-2xl font-extrabold text-amber-700 underline decoration-double decoration-1 underline-offset-8" data-testid="certificate-recipient-name">
-                {recipientName || (isAr ? "اسم المتدرب (نموذج)" : "Student Name (Sample)")}
-              </h2>
-              <p className="text-[8px] sm:text-[9px] text-slate-400 font-mono mt-2 uppercase">VERIFIED STUDENT ID: #00000</p>
-            </div>
-            
-            <p className="text-xs sm:text-sm text-slate-600 max-w-xl mx-auto leading-relaxed font-sans">
-              {isAr
-                ? `قد أكمل بنجاح المسار التدريبي المكثف واجتاز كافة الاختبارات والورش العملية المقررة لـ:`
-                : `has successfully completed the intensive career development path and passed all screening tests and practical workshops prescribed for:`}
-            </p>
-            
-            <h3 className="text-sm sm:text-lg font-bold text-slate-800 tracking-wide font-sans bg-amber-50/50 py-1.5 px-4 rounded-lg border border-amber-500/10 inline-block">
-              {workshopTitle || (isAr ? "[عنوان الورشة التدريبية]" : "[Workshop Title]")}
+          <div className="text-center mt-2 z-10 flex flex-col items-center">
+            <h3 className="text-lg sm:text-[24px] font-bold font-serif border-b-2 pb-0.5 px-6 tracking-wide text-stone-900 leading-tight border-stone-800">
+              Skills of youth
             </h3>
+            <p className="text-[9px] sm:text-[11px] text-stone-600 font-serif mt-1.5 tracking-wide text-center">
+              For educational and<br />pedagogical services
+            </p>
           </div>
 
-          {/* Signatures & Security Lock Row */}
-          <div className="mt-8 pt-6 border-t border-amber-600/10 grid grid-cols-1 sm:grid-cols-3 gap-6 items-end text-xs">
-            {/* Signature Authority */}
-            <div className="text-center sm:text-left space-y-1.5">
-              <p className="text-[10px] text-slate-400 font-bold uppercase">{isAr ? "جهة التوقيع" : "Authorized Signature"}</p>
-              <div className="h-10 flex items-center justify-center sm:justify-start">
-                <span className="font-serif italic text-amber-700/80 text-sm font-semibold tracking-wider">
-                  {certSignName.split(" / ")[0]}
-                </span>
+          {/* Certificate title */}
+          <div className="text-center my-0.5 z-10">
+            <h1 className="text-xl sm:text-[28px] font-medium text-stone-800 tracking-wide font-serif leading-none">
+              {isAr ? "شهادة مشاركة وحضور" : "Certificate of participation"}
+            </h1>
+          </div>
+
+          {/* Body content */}
+          <div className="text-center max-w-xl mx-auto space-y-3 z-10">
+            <p className="text-[10px] sm:text-[11px] text-stone-700 font-sans font-bold uppercase tracking-wider">
+              {isAr ? "نشهد أن المتدرب(ة):" : "This is to certify that"}
+            </p>
+
+            {/* Student Name */}
+            <h2 className="text-base sm:text-[22px] font-bold text-stone-800 font-sans my-0.5 tracking-wide">
+              ({recipientName || (isAr ? "اسم المتدرب (نموذج)" : "Student Name (Sample)")})
+            </h2>
+
+            <p className="text-[10px] sm:text-[11px] text-stone-700 font-sans font-bold leading-relaxed">
+              {isAr
+                ? "قد حضر وشارك بنجاح في الورشة التدريبية بعنوان:"
+                : "Has successfully participated in the training webinar entitled"}
+            </p>
+
+            {/* Course/Workshop title */}
+            <h3 className="text-xs sm:text-[15px] font-bold text-stone-900 font-serif max-w-md mx-auto my-1 leading-normal">
+              "{workshopTitle || (isAr ? "[عنوان الورشة التدريبية]" : "[Workshop Title]")}"
+            </h3>
+
+            {/* Issue date */}
+            <p className="text-xs sm:text-[12px] font-bold text-stone-900 font-sans tracking-wide mt-2">
+              {isAr ? "6 حزيران 2026" : "6 June. 2026"}
+            </p>
+          </div>
+
+          {/* Footer Signature Blocks */}
+          <div className="grid grid-cols-3 gap-4 items-end text-center z-10 pt-2 px-4 sm:px-10">
+            {/* Left Signatory - CEO */}
+            <div className="space-y-0.5">
+              <div className="h-8 flex items-center justify-center">
+                <svg viewBox="0 0 100 40" className="w-20 h-8 text-stone-800">
+                  <path d="M 5,30 Q 30,28 65,32 T 95,28" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+                  <path d="M 10,25 C 25,20 30,10 40,8 C 50,6 55,12 50,18 C 45,24 35,28 32,25 C 28,20 42,12 60,18 C 75,22 80,12 78,8 C 75,4 70,8 72,15 C 75,25 90,20 85,25" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
               </div>
-              <div className="border-t border-slate-300 pt-1.5">
-                <p className="font-bold text-slate-700 text-[10px]">{certSignName}</p>
-                <p className="text-[9px] text-slate-400 font-medium">{certSignTitle}</p>
+              <div className="border-t border-stone-800 pt-0.5 font-sans">
+                <p className="font-extrabold text-[7px] uppercase tracking-wider text-stone-500">
+                  CEO OF SKILLS
+                </p>
+                <p className="text-[8px] font-bold text-stone-700 mt-0.5">
+                  Ahmed Joudah Ghafil
+                </p>
               </div>
             </div>
 
-            {/* Official Stamps / Security Lock */}
-            <div className="flex flex-col items-center justify-center space-y-2">
-              <div className="relative w-16 h-16 rounded-full border-2 border-double border-amber-600/30 flex items-center justify-center bg-amber-50/20 shadow-sm">
-                <ShieldCheck className="w-8 h-8 text-amber-600" />
-                <span className="absolute text-[6px] font-bold text-amber-700 uppercase tracking-widest animate-spin-slow">
-                  MHARAT * IRAQ * SECURE *
-                </span>
+            {/* Central Logo Stamp */}
+            <div className="flex flex-col items-center justify-center pb-0.5">
+              <div className="relative group flex items-center justify-center">
+                <svg viewBox="0 0 100 100" className="w-12 h-12 drop-shadow-md text-stone-750">
+                  <path d="M50,4 C55,4 58,10 63,12 C68,14 74,12 77,16 C80,20 78,26 80,31 C82,36 88,38 88,43 C88,48 82,50 80,55 C78,60 80,66 77,70 C74,74 68,72 63,74 C58,76 55,82 50,82 C45,82 42,76 37,74 C32,72 26,74 23,70 C20,66 22,60 20,55 C18,50 12,48 12,43 C12,38 18,36 20,31 C22,26 20,20 23,16 C26,12 32,14 37,12 C42,10 45,4 50,4 Z" fill="currentColor" />
+                  <circle cx="50" cy="43" r="32" fill="none" stroke="white" strokeWidth="1" opacity="0.15" />
+                  <rect x="33" y="24" width="34" height="6" rx="3" fill="white" />
+                  <rect x="33" y="34" width="34" height="6" rx="3" fill="white" />
+                  <rect x="33" y="44" width="34" height="6" rx="3" fill="white" />
+                  <text x="50" y="65" textAnchor="middle" fill="white" fontSize="9.5" fontWeight="900" letterSpacing="1" fontFamily="sans-serif">SKILLS</text>
+                </svg>
               </div>
-              <span className="text-[9px] font-extrabold text-amber-700 uppercase tracking-widest">{isAr ? "معتمد رسمياً" : "Verified Official"}</span>
             </div>
 
-            {/* Electronic Verification Cryptographic signature */}
-            <div className="text-center sm:text-right space-y-1">
-              <div className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-800 border border-emerald-200/50 rounded px-1.5 py-0.5 text-[8px] font-mono font-bold uppercase tracking-wider mb-1 shadow-sm">
-                <ShieldCheck className="w-3 h-3 text-emerald-600" />
-                <span>{isAr ? "توقيع إلكتروني موثق" : "Verified E-Signature"}</span>
+            {/* Right Signatory - Trainer */}
+            <div className="space-y-0.5">
+              <div className="h-8 flex items-center justify-center">
+                <svg viewBox="0 0 100 40" className="w-20 h-8 text-stone-800">
+                  <path d="M 5,30 Q 30,28 65,32 T 95,28" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+                  <path d="M 10,25 C 25,20 30,10 40,8 C 50,6 55,12 50,18 C 45,24 35,28 32,25 C 28,20 42,12 60,18 C 75,22 80,12 78,8 C 75,4 70,8 72,15 C 75,25 90,20 85,25" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
               </div>
-              <p className="text-[9px] text-slate-400 font-bold uppercase">{isAr ? "بصمة التحقق الإلكترونية" : "Cryptographic Signature Hash"}</p>
-              <p className="text-[8px] font-mono text-slate-500 break-all leading-tight max-w-[200px] sm:ml-auto">
-                {certEkey || "MHARAT-SECURE-ESIGN-88192-VERIFIED"}
-              </p>
-              <p className="text-[7.5px] text-slate-400 italic">
-                {isAr 
-                  ? "يضمن هذا التوقيع الرقمي مصداقية الشهادة وحقوق مشروعنا التقنية." 
-                  : "This digital block secures certificate authenticity and project technical copyrights."}
-              </p>
+              <div className="border-t border-stone-800 pt-0.5 font-sans">
+                <p className="font-extrabold text-[7px] uppercase tracking-wider text-stone-500">
+                  TRAINER
+                </p>
+                <p className="text-[8px] font-bold text-stone-700 mt-0.5">
+                  {certSignName || "Ahmed Joudah Ghafil"}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Cryptographic verification seal block footer */}
+          <div className="text-center font-mono text-[6.5px] sm:text-[7.5px] text-stone-400 z-10 border-t border-dashed border-stone-200/50 pt-2 mt-2 select-all leading-normal no-print">
+            <p className="font-bold uppercase tracking-wider">Mharat Iraq Cryptographic Seal E-Verification Signature</p>
+            <div className="flex gap-4 justify-center items-center mt-0.5">
+              <span>YOUR VERIFICATION CODE: {certEkey || "MHARAT-EVAL-XXXX"}</span>
+              <span>•</span>
+              <span>HASH: {certEkey || "MHARAT-SECURE-ESIGN-88192-VERIFIED"}</span>
             </div>
           </div>
         </div>

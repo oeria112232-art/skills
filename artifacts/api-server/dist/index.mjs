@@ -69450,7 +69450,11 @@ function loadLocalDb() {
     if (!localDbState.platform_settings || localDbState.platform_settings.length === 0) {
       localDbState.platform_settings = [
         { id: 1, key: "point_price_cents", value: "100", createdAt: (/* @__PURE__ */ new Date()).toISOString() },
-        { id: 2, key: "r2_bucket_name", value: "mharat-bucket", createdAt: (/* @__PURE__ */ new Date()).toISOString() }
+        { id: 2, key: "r2_bucket_name", value: "mharat-bucket", createdAt: (/* @__PURE__ */ new Date()).toISOString() },
+        { id: 3, key: "stats_students_trained", value: "12840", createdAt: (/* @__PURE__ */ new Date()).toISOString() },
+        { id: 4, key: "stats_certificates_issued", value: "5230", createdAt: (/* @__PURE__ */ new Date()).toISOString() },
+        { id: 5, key: "stats_jobs_filled", value: "1890", createdAt: (/* @__PURE__ */ new Date()).toISOString() },
+        { id: 6, key: "stats_active_jobs", value: "340", createdAt: (/* @__PURE__ */ new Date()).toISOString() }
       ];
     }
     saveLocalDb();
@@ -69793,7 +69797,11 @@ var init_src = __esm({
               };
               const defaultSettings = {
                 "1": { id: 1, key: "point_price_cents", value: "100", createdAt: (/* @__PURE__ */ new Date()).toISOString() },
-                "2": { id: 2, key: "r2_bucket_name", value: "mharat-bucket", createdAt: (/* @__PURE__ */ new Date()).toISOString() }
+                "2": { id: 2, key: "r2_bucket_name", value: "mharat-bucket", createdAt: (/* @__PURE__ */ new Date()).toISOString() },
+                "3": { id: 3, key: "stats_students_trained", value: "12840", createdAt: (/* @__PURE__ */ new Date()).toISOString() },
+                "4": { id: 4, key: "stats_certificates_issued", value: "5230", createdAt: (/* @__PURE__ */ new Date()).toISOString() },
+                "5": { id: 5, key: "stats_jobs_filled", value: "1890", createdAt: (/* @__PURE__ */ new Date()).toISOString() },
+                "6": { id: 6, key: "stats_active_jobs", value: "340", createdAt: (/* @__PURE__ */ new Date()).toISOString() }
               };
               await set(ref(database, "users"), defaultUsers);
               await set(ref(database, "platform_settings"), defaultSettings);
@@ -82380,16 +82388,16 @@ init_drizzle_orm();
 var router9 = (0, import_express9.Router)();
 router9.get("/stats/platform", async (_req, res) => {
   try {
-    const [{ count: studentsCount }] = await db.select({ count: sql`count(*)` }).from(usersTable).where(eq(usersTable.role, "student"));
-    const [{ count: certificatesCount }] = await db.select({ count: sql`count(*)` }).from(certificatesTable);
-    const [{ count: jobsFilledCount }] = await db.select({ count: sql`count(*)` }).from(jobsTable).where(eq(jobsTable.status, "filled"));
-    const [{ count: workshopsHeldCount }] = await db.select({ count: sql`count(*)` }).from(workshopsTable).where(eq(workshopsTable.status, "completed"));
-    const [{ count: activeJobsCount }] = await db.select({ count: sql`count(*)` }).from(jobsTable).where(eq(jobsTable.status, "open"));
-    const studentsTrained = 12840 + (Number(studentsCount) > 3 ? Number(studentsCount) - 3 : 0);
-    const certificatesIssued = 5230 + Number(certificatesCount || 0);
-    const jobsFilled = 1890 + Number(jobsFilledCount || 0);
-    const workshopsHeld = 150 + Number(workshopsHeldCount || 0);
-    const activeJobs = 340 + Number(activeJobsCount || 0);
+    const settings = await db.select().from(platformSettingsTable);
+    const getSettingVal = (key, fallback) => {
+      const s = settings.find((x) => x.key === key);
+      return s ? Number(s.value) : fallback;
+    };
+    const studentsTrained = getSettingVal("stats_students_trained", 12840);
+    const certificatesIssued = getSettingVal("stats_certificates_issued", 5230);
+    const jobsFilled = getSettingVal("stats_jobs_filled", 1890);
+    const activeJobs = getSettingVal("stats_active_jobs", 340);
+    const workshopsHeld = getSettingVal("stats_workshops_held", 150);
     res.json({
       studentsTrained,
       certificatesIssued,

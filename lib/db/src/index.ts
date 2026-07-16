@@ -89,7 +89,11 @@ if (firebaseConfig.apiKey && firebaseConfig.databaseURL && firebaseConfig.databa
 
           const defaultSettings = {
             "1": { id: 1, key: "point_price_cents", value: "100", createdAt: new Date().toISOString() },
-            "2": { id: 2, key: "r2_bucket_name", value: "mharat-bucket", createdAt: new Date().toISOString() }
+            "2": { id: 2, key: "r2_bucket_name", value: "mharat-bucket", createdAt: new Date().toISOString() },
+            "3": { id: 3, key: "stats_students_trained", value: "12840", createdAt: new Date().toISOString() },
+            "4": { id: 4, key: "stats_certificates_issued", value: "5230", createdAt: new Date().toISOString() },
+            "5": { id: 5, key: "stats_jobs_filled", value: "1890", createdAt: new Date().toISOString() },
+            "6": { id: 6, key: "stats_active_jobs", value: "340", createdAt: new Date().toISOString() }
           };
 
           await set(ref(database, "users"), defaultUsers);
@@ -265,7 +269,11 @@ function loadLocalDb() {
     if (!localDbState.platform_settings || localDbState.platform_settings.length === 0) {
       localDbState.platform_settings = [
         { id: 1, key: "point_price_cents", value: "100", createdAt: new Date().toISOString() },
-        { id: 2, key: "r2_bucket_name", value: "mharat-bucket", createdAt: new Date().toISOString() }
+        { id: 2, key: "r2_bucket_name", value: "mharat-bucket", createdAt: new Date().toISOString() },
+        { id: 3, key: "stats_students_trained", value: "12840", createdAt: new Date().toISOString() },
+        { id: 4, key: "stats_certificates_issued", value: "5230", createdAt: new Date().toISOString() },
+        { id: 5, key: "stats_jobs_filled", value: "1890", createdAt: new Date().toISOString() },
+        { id: 6, key: "stats_active_jobs", value: "340", createdAt: new Date().toISOString() }
       ];
     }
 

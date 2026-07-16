@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { db, usersTable, jobsTable, applicationsTable, workshopsTable, certificatesTable } from "@workspace/db";
+import { db, usersTable, jobsTable, applicationsTable, workshopsTable, certificatesTable, platformSettingsTable } from "@workspace/db";
 import { eq, desc, sql } from "drizzle-orm";
 import { requireAuth, requireRole } from "../middlewares/auth";
 
@@ -7,18 +7,17 @@ const router = Router();
 
 router.get("/stats/platform", async (_req, res): Promise<void> => {
   try {
-    const [{ count: studentsCount }] = await db.select({ count: sql<number>`count(*)` }).from(usersTable).where(eq(usersTable.role, "student"));
-    const [{ count: certificatesCount }] = await db.select({ count: sql<number>`count(*)` }).from(certificatesTable);
-    const [{ count: jobsFilledCount }] = await db.select({ count: sql<number>`count(*)` }).from(jobsTable).where(eq(jobsTable.status, "filled"));
-    const [{ count: workshopsHeldCount }] = await db.select({ count: sql<number>`count(*)` }).from(workshopsTable).where(eq(workshopsTable.status, "completed"));
-    const [{ count: activeJobsCount }] = await db.select({ count: sql<number>`count(*)` }).from(jobsTable).where(eq(jobsTable.status, "open"));
+    const settings = await db.select().from(platformSettingsTable);
+    const getSettingVal = (key: string, fallback: number) => {
+      const s = settings.find(x => x.key === key);
+      return s ? Number(s.value) : fallback;
+    };
 
-    // Add base official values to database counts to guarantee persistence and correctness
-    const studentsTrained = 12840 + (Number(studentsCount) > 3 ? Number(studentsCount) - 3 : 0); // subtract the 3 seed users
-    const certificatesIssued = 5230 + Number(certificatesCount || 0);
-    const jobsFilled = 1890 + Number(jobsFilledCount || 0);
-    const workshopsHeld = 150 + Number(workshopsHeldCount || 0);
-    const activeJobs = 340 + Number(activeJobsCount || 0);
+    const studentsTrained = getSettingVal("stats_students_trained", 12840);
+    const certificatesIssued = getSettingVal("stats_certificates_issued", 5230);
+    const jobsFilled = getSettingVal("stats_jobs_filled", 1890);
+    const activeJobs = getSettingVal("stats_active_jobs", 340);
+    const workshopsHeld = getSettingVal("stats_workshops_held", 150);
 
     res.json({
       studentsTrained,
