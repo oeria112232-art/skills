@@ -43,7 +43,13 @@ export default function WorkshopDetailPage() {
     });
   };
 
-  const { data: workshop, isLoading } = useGetWorkshop(workshopId, { query: { enabled: !!workshopId, queryKey: getGetWorkshopQueryKey(workshopId) } });
+  const { data: workshop, isLoading } = useGetWorkshop(workshopId, {
+    query: {
+      enabled: !!workshopId,
+      queryKey: getGetWorkshopQueryKey(workshopId),
+      refetchInterval: (query: any) => query.state.data?.status === "completed" ? false : 5000
+    }
+  });
   const { data: exam } = useGetWorkshopExam(workshopId, { query: { enabled: !!workshopId, queryKey: getGetWorkshopExamQueryKey(workshopId) } });
 
   const enroll = useEnrollWorkshop();

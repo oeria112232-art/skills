@@ -69687,36 +69687,108 @@ function parseCondition(cond) {
   console.error("parseCondition: unrecognized condition format, returning match-none filter");
   return () => false;
 }
-function makeQuery(promise2) {
-  const p = promise2;
-  p.where = (cond) => {
-    const nextPromise = promise2.then(async (data) => {
-      const arr = Array.isArray(data) ? data : [data];
-      const filterFn = parseCondition(cond);
-      return arr.filter(filterFn);
-    });
-    return makeQuery(nextPromise);
+function makeQuery(promise2, selectFields) {
+  const thenable = {
+    then(onfulfilled, onrejected) {
+      return promise2.then((data) => {
+        let formattedData = data;
+        if (Array.isArray(data) && selectFields) {
+          if ("count" in selectFields) {
+            formattedData = [{ count: data.length }];
+          } else {
+            formattedData = data.map((item) => {
+              const projected = {};
+              for (const key of Object.keys(selectFields)) {
+                const colObj = selectFields[key];
+                const dbKey = colObj?.name || key;
+                const jsKey = getJsKey(dbKey);
+                projected[key] = item[jsKey] !== void 0 ? item[jsKey] : item[key];
+              }
+              return projected;
+            });
+          }
+        }
+        return onfulfilled ? onfulfilled(formattedData) : formattedData;
+      }, onrejected);
+    },
+    catch(onrejected) {
+      return promise2.catch(onrejected);
+    },
+    finally(onfinally) {
+      return promise2.finally(onfinally);
+    },
+    where(cond) {
+      const nextPromise = promise2.then(async (data) => {
+        const arr = Array.isArray(data) ? data : [data];
+        const filterFn = parseCondition(cond);
+        return arr.filter(filterFn);
+      });
+      return makeQuery(nextPromise, selectFields);
+    },
+    leftJoin(otherTable, cond) {
+      const otherTableName = getTableName2(otherTable);
+      const nextPromise = promise2.then(async (leftData) => {
+        const leftArr = Array.isArray(leftData) ? leftData : [leftData];
+        const rightArr = await fbGet(otherTableName);
+        if (otherTableName === "certificates") {
+          return leftArr.map((user) => {
+            const userCerts = rightArr.filter((c) => Number(c.userId) === Number(user.id));
+            return {
+              ...user,
+              certCount: userCerts.length
+            };
+          });
+        } else if (otherTableName === "jobs") {
+          return leftArr.map((app2) => {
+            const job = rightArr.find((j) => Number(j.id) === Number(app2.jobId));
+            return {
+              ...app2,
+              jobTitle: job ? job.title : "Unknown Job"
+            };
+          });
+        }
+        return leftArr;
+      });
+      return makeQuery(nextPromise, selectFields);
+    },
+    groupBy(col) {
+      return makeQuery(promise2, selectFields);
+    },
+    limit(n) {
+      const nextPromise = promise2.then(async (data) => {
+        const arr = Array.isArray(data) ? data : [data];
+        return arr.slice(0, n);
+      });
+      return makeQuery(nextPromise, selectFields);
+    },
+    offset(n) {
+      const nextPromise = promise2.then(async (data) => {
+        const arr = Array.isArray(data) ? data : [data];
+        return arr.slice(n);
+      });
+      return makeQuery(nextPromise, selectFields);
+    },
+    orderBy(order) {
+      const nextPromise = promise2.then(async (data) => {
+        const arr = Array.isArray(data) ? data : [data];
+        const colName = order?.name || (order && typeof order === "object" && "column" in order ? order.column?.name : null);
+        if (colName) {
+          const isDesc = String(order).includes("desc");
+          return [...arr].sort((a, b) => {
+            if (a[colName] < b[colName]) return isDesc ? 1 : -1;
+            if (a[colName] > b[colName]) return isDesc ? -1 : 1;
+            return 0;
+          });
+        }
+        return arr;
+      });
+      return makeQuery(nextPromise, selectFields);
+    },
+    returning() {
+      return this;
+    }
   };
-  p.orderBy = (order) => {
-    const nextPromise = promise2.then(async (data) => {
-      const arr = Array.isArray(data) ? data : [data];
-      const colName = order?.name || (order && typeof order === "object" && "column" in order ? order.column?.name : null);
-      if (colName) {
-        const isDesc = String(order).includes("desc");
-        return [...arr].sort((a, b) => {
-          if (a[colName] < b[colName]) return isDesc ? 1 : -1;
-          if (a[colName] > b[colName]) return isDesc ? -1 : 1;
-          return 0;
-        });
-      }
-      return arr;
-    });
-    return makeQuery(nextPromise);
-  };
-  p.returning = () => {
-    return p;
-  };
-  return p;
+  return thenable;
 }
 var __dirname2, firebaseConfig, firebaseApp, database, fbCache, FB_CACHE_TTL_MS, STORAGE_DIR, fallbackFilePath, localDbState, SAFE_PATH_REGEX, jsKeyMap, pool, dbMock, db;
 var init_src = __esm({
@@ -69928,11 +70000,12 @@ var init_src = __esm({
       },
       // SELECT mock
       select: (...args) => {
+        const selectFields = args[0];
         return {
           from: (table) => {
             const tableName = getTableName2(table);
             const promise2 = fbGet(tableName);
-            return makeQuery(promise2);
+            return makeQuery(promise2, selectFields);
           }
         };
       },
@@ -82388,16 +82461,17 @@ init_drizzle_orm();
 var router9 = (0, import_express9.Router)();
 router9.get("/stats/platform", async (_req, res) => {
   try {
-    const settings = await db.select().from(platformSettingsTable);
-    const getSettingVal = (key, fallback) => {
-      const s = settings.find((x) => x.key === key);
-      return s ? Number(s.value) : fallback;
-    };
-    const studentsTrained = getSettingVal("stats_students_trained", 12840);
-    const certificatesIssued = getSettingVal("stats_certificates_issued", 5230);
-    const jobsFilled = getSettingVal("stats_jobs_filled", 1890);
-    const activeJobs = getSettingVal("stats_active_jobs", 340);
-    const workshopsHeld = getSettingVal("stats_workshops_held", 150);
+    const enrolls = await db.select().from(enrollmentsTable);
+    const uniqueStudents = new Set(enrolls.map((e) => e.userId));
+    const studentsTrained = uniqueStudents.size;
+    const certs = await db.select().from(certificatesTable);
+    const certificatesIssued = certs.filter((c) => c.status === "issued").length;
+    const apps = await db.select().from(applicationsTable);
+    const jobsFilled = apps.filter((a) => a.status === "accepted").length;
+    const jobs = await db.select().from(jobsTable);
+    const activeJobs = jobs.filter((j) => j.status === "open").length;
+    const workshops = await db.select().from(workshopsTable);
+    const workshopsHeld = workshops.filter((w) => w.status === "completed").length;
     res.json({
       studentsTrained,
       certificatesIssued,
@@ -82407,11 +82481,11 @@ router9.get("/stats/platform", async (_req, res) => {
     });
   } catch (err) {
     res.json({
-      studentsTrained: 12840,
-      certificatesIssued: 5230,
-      jobsFilled: 1890,
-      workshopsHeld: 150,
-      activeJobs: 340
+      studentsTrained: 0,
+      certificatesIssued: 0,
+      jobsFilled: 0,
+      workshopsHeld: 0,
+      activeJobs: 0
     });
   }
 });

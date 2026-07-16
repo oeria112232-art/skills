@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { useListWorkshops } from "@workspace/api-client-react";
+import { useListWorkshops, getListWorkshopsQueryKey } from "@workspace/api-client-react";
 import { BookOpen, Calendar, Clock, Users, ChevronRight, CheckCircle, Award, Coins } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -31,7 +31,15 @@ const arFilterNames: Record<string, string> = {
 
 export default function WorkshopsPage() {
   const [filter, setFilter] = useState("all");
-  const { data: workshopsData, isLoading } = useListWorkshops(filter !== "all" ? { status: filter } : undefined);
+  const { data: workshopsData, isLoading } = useListWorkshops(
+    filter !== "all" ? { status: filter } : undefined,
+    {
+      query: {
+        queryKey: getListWorkshopsQueryKey(filter !== "all" ? { status: filter } : undefined),
+        refetchInterval: 5000
+      }
+    }
+  );
   const workshops = Array.isArray(workshopsData) ? workshopsData : (workshopsData && Array.isArray((workshopsData as any).data) ? (workshopsData as any).data : []);
   const { language } = useLanguage();
   const isAr = language === "ar";

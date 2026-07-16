@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { db, usersTable, jobsTable, applicationsTable, workshopsTable, certificatesTable, platformSettingsTable } from "@workspace/db";
+import { db, usersTable, jobsTable, applicationsTable, workshopsTable, certificatesTable, enrollmentsTable, platformSettingsTable } from "@workspace/db";
 import { eq, desc, sql } from "drizzle-orm";
 import { requireAuth, requireRole } from "../middlewares/auth";
 
@@ -7,17 +7,21 @@ const router = Router();
 
 router.get("/stats/platform", async (_req, res): Promise<void> => {
   try {
-    const settings = await db.select().from(platformSettingsTable);
-    const getSettingVal = (key: string, fallback: number) => {
-      const s = settings.find(x => x.key === key);
-      return s ? Number(s.value) : fallback;
-    };
+    const enrolls = await db.select().from(enrollmentsTable);
+    const uniqueStudents = new Set(enrolls.map(e => e.userId));
+    const studentsTrained = uniqueStudents.size;
 
-    const studentsTrained = getSettingVal("stats_students_trained", 12840);
-    const certificatesIssued = getSettingVal("stats_certificates_issued", 5230);
-    const jobsFilled = getSettingVal("stats_jobs_filled", 1890);
-    const activeJobs = getSettingVal("stats_active_jobs", 340);
-    const workshopsHeld = getSettingVal("stats_workshops_held", 150);
+    const certs = await db.select().from(certificatesTable);
+    const certificatesIssued = certs.filter(c => c.status === "issued").length;
+
+    const apps = await db.select().from(applicationsTable);
+    const jobsFilled = apps.filter(a => a.status === "accepted").length;
+
+    const jobs = await db.select().from(jobsTable);
+    const activeJobs = jobs.filter(j => j.status === "open").length;
+
+    const workshops = await db.select().from(workshopsTable);
+    const workshopsHeld = workshops.filter(w => w.status === "completed").length;
 
     res.json({
       studentsTrained,
@@ -28,11 +32,11 @@ router.get("/stats/platform", async (_req, res): Promise<void> => {
     });
   } catch (err) {
     res.json({
-      studentsTrained: 12840,
-      certificatesIssued: 5230,
-      jobsFilled: 1890,
-      workshopsHeld: 150,
-      activeJobs: 340,
+      studentsTrained: 0,
+      certificatesIssued: 0,
+      jobsFilled: 0,
+      workshopsHeld: 0,
+      activeJobs: 0,
     });
   }
 });

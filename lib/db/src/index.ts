@@ -622,40 +622,117 @@ function parseCondition(cond: any): (item: any) => boolean {
 }
 
 // Helper to wrap a promise in a Drizzle-compatible chain builder
-function makeQuery<T>(promise: Promise<T>): any {
-  const p = promise as any;
+function makeQuery<T>(promise: Promise<T>, selectFields?: any): any {
+  const thenable = {
+    then(onfulfilled?: any, onrejected?: any) {
+      return promise.then((data: any) => {
+        let formattedData = data;
+        if (Array.isArray(data) && selectFields) {
+          if ("count" in selectFields) {
+            formattedData = [{ count: data.length }];
+          } else {
+            formattedData = data.map(item => {
+              const projected: any = {};
+              for (const key of Object.keys(selectFields)) {
+                const colObj = selectFields[key];
+                const dbKey = colObj?.name || key;
+                const jsKey = getJsKey(dbKey);
+                projected[key] = item[jsKey] !== undefined ? item[jsKey] : item[key];
+              }
+              return projected;
+            });
+          }
+        }
+        return onfulfilled ? onfulfilled(formattedData) : formattedData;
+      }, onrejected);
+    },
+    catch(onrejected?: any) {
+      return promise.catch(onrejected);
+    },
+    finally(onfinally?: any) {
+      return promise.finally(onfinally);
+    },
+    
+    where(cond: any) {
+      const nextPromise = promise.then(async (data: any) => {
+        const arr = Array.isArray(data) ? data : [data];
+        const filterFn = parseCondition(cond);
+        return arr.filter(filterFn);
+      });
+      return makeQuery(nextPromise, selectFields);
+    },
+    
+    leftJoin(otherTable: any, cond: any) {
+      const otherTableName = getTableName(otherTable);
+      const nextPromise = promise.then(async (leftData: any) => {
+        const leftArr = Array.isArray(leftData) ? leftData : [leftData];
+        const rightArr = await fbGet(otherTableName);
+        
+        if (otherTableName === "certificates") {
+          return leftArr.map(user => {
+            const userCerts = rightArr.filter(c => Number(c.userId) === Number(user.id));
+            return {
+              ...user,
+              certCount: userCerts.length,
+            };
+          });
+        } else if (otherTableName === "jobs") {
+          return leftArr.map(app => {
+            const job = rightArr.find(j => Number(j.id) === Number(app.jobId));
+            return {
+              ...app,
+              jobTitle: job ? job.title : "Unknown Job",
+            };
+          });
+        }
+        return leftArr;
+      });
+      return makeQuery(nextPromise, selectFields);
+    },
+    
+    groupBy(col: any) {
+      return makeQuery(promise, selectFields);
+    },
+    
+    limit(n: number) {
+      const nextPromise = promise.then(async (data: any) => {
+        const arr = Array.isArray(data) ? data : [data];
+        return arr.slice(0, n);
+      });
+      return makeQuery(nextPromise, selectFields);
+    },
+    
+    offset(n: number) {
+      const nextPromise = promise.then(async (data: any) => {
+        const arr = Array.isArray(data) ? data : [data];
+        return arr.slice(n);
+      });
+      return makeQuery(nextPromise, selectFields);
+    },
+    
+    orderBy(order: any) {
+      const nextPromise = promise.then(async (data: any) => {
+        const arr = Array.isArray(data) ? data : [data];
+        const colName = order?.name || (order && typeof order === "object" && "column" in order ? (order as any).column?.name : null);
+        if (colName) {
+          const isDesc = String(order).includes("desc");
+          return [...arr].sort((a, b) => {
+            if (a[colName] < b[colName]) return isDesc ? 1 : -1;
+            if (a[colName] > b[colName]) return isDesc ? -1 : 1;
+            return 0;
+          });
+        }
+        return arr;
+      });
+      return makeQuery(nextPromise, selectFields);
+    },
+    
+    returning() {
+      return this;
+    }
+  };
   
-  p.where = (cond: any) => {
-    const nextPromise = promise.then(async (data: any) => {
-      const arr = Array.isArray(data) ? data : [data];
-      const filterFn = parseCondition(cond);
-      return arr.filter(filterFn);
-    });
-    return makeQuery(nextPromise);
-  };
-
-  p.orderBy = (order: any) => {
-    const nextPromise = promise.then(async (data: any) => {
-      const arr = Array.isArray(data) ? data : [data];
-      const colName = order?.name || (order && typeof order === "object" && "column" in order ? (order as any).column?.name : null);
-      if (colName) {
-        const isDesc = String(order).includes("desc");
-        return [...arr].sort((a, b) => {
-          if (a[colName] < b[colName]) return isDesc ? 1 : -1;
-          if (a[colName] > b[colName]) return isDesc ? -1 : 1;
-          return 0;
-        });
-      }
-      return arr;
-    });
-    return makeQuery(nextPromise);
-  };
-
-  p.returning = () => {
-    return p;
-  };
-
-  return p;
+  return thenable;
 }
 
 // Mock PostgreSQL pool for compatibility
@@ -679,11 +756,12 @@ const dbMock = {
 
   // SELECT mock
   select: (...args: any[]) => {
+    const selectFields = args[0];
     return {
       from: (table: any) => {
         const tableName = getTableName(table);
         const promise = fbGet(tableName);
-        return makeQuery(promise);
+        return makeQuery(promise, selectFields);
       }
     };
   },
