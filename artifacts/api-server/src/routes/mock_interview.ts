@@ -1,9 +1,29 @@
 import { Router } from "express";
 import { db, mockInterviewSessionsTable, mockInterviewMessagesTable } from "@workspace/db";
-import { eq, and } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 import { requireAuth, requireRole, type AuthenticatedRequest } from "../middlewares/auth";
+import { rateLimit } from "../middlewares/rateLimit";
+import { z } from "zod";
 
 const router = Router();
+
+const mockInterviewRateLimit = rateLimit({
+  windowMs: 60 * 1000,
+  max: 10, // 10 requests per minute
+  keyPrefix: "rl:mock-interview",
+  message: "تم تجاوز حد رسائل المقابلة التجريبية. يرجى المحاولة بعد دقيقة."
+});
+
+const CreateMockSessionBody = z.object({
+  track: z.string().min(1).max(50),
+  title: z.string().min(1).max(200).optional(),
+});
+
+const SendMockMessageBody = z.object({
+  sessionId: z.union([z.number(), z.string().regex(/^\d+$/).transform(val => parseInt(val, 10))]),
+  message: z.string().min(1).max(10000),
+  role: z.string().optional(),
+});
 
 // Simple AI responses based on track for demo
 const aiResponses: Record<string, string[]> = {
@@ -52,12 +72,13 @@ router.get("/mock-interview/sessions", requireAuth, async (req: AuthenticatedReq
   res.json(sessions.map(s => ({ ...s, createdAt: s.createdAt.toISOString() })));
 });
 
-router.post("/mock-interview/sessions", requireAuth, async (req: AuthenticatedRequest, res): Promise<void> => {
-  const { track, title } = req.body;
-  if (!track) {
-    res.status(400).json({ error: "track required" });
+router.post("/mock-interview/sessions", requireAuth, mockInterviewRateLimit, async (req: AuthenticatedRequest, res): Promise<void> => {
+  const parsed = CreateMockSessionBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
     return;
   }
+  const { track, title } = parsed.data;
   const user = req.user!;
   const [session] = await db.insert(mockInterviewSessionsTable).values({
     userId: user.id,
@@ -67,17 +88,18 @@ router.post("/mock-interview/sessions", requireAuth, async (req: AuthenticatedRe
   res.status(201).json({ ...session, createdAt: session.createdAt.toISOString() });
 });
 
-router.post("/mock-interview/message", requireAuth, async (req: AuthenticatedRequest, res): Promise<void> => {
-  const { sessionId, message, role } = req.body;
-  if (!sessionId || !message || !role) {
-    res.status(400).json({ error: "sessionId, message and role required" });
+router.post("/mock-interview/message", requireAuth, mockInterviewRateLimit, async (req: AuthenticatedRequest, res): Promise<void> => {
+  const parsed = SendMockMessageBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
     return;
   }
+  const { sessionId, message } = parsed.data;
 
   const user = req.user!;
   // Get session to check authorization
   const [session] = await db.select().from(mockInterviewSessionsTable)
-    .where(eq(mockInterviewSessionsTable.id, parseInt(sessionId, 10)));
+    .where(eq(mockInterviewSessionsTable.id, sessionId));
 
   if (!session) {
     res.status(404).json({ error: "Session not found" });
@@ -91,17 +113,18 @@ router.post("/mock-interview/message", requireAuth, async (req: AuthenticatedReq
 
   // Save the user message (force role to "user")
   await db.insert(mockInterviewMessagesTable).values({
-    sessionId: parseInt(sessionId, 10),
+    sessionId,
     role: "user",
     message,
   });
 
-  // Count messages for response index
-  const messages = await db.select().from(mockInterviewMessagesTable)
-    .where(eq(mockInterviewMessagesTable.sessionId, parseInt(sessionId, 10)));
+  // Count messages for response index using SQL COUNT(*)
+  const [{ count }] = await db.select({ count: sql<number>`count(*)` })
+    .from(mockInterviewMessagesTable)
+    .where(eq(mockInterviewMessagesTable.sessionId, sessionId));
 
-  const track = session?.track || "default";
-  const reply = getAIResponse(track, Math.floor(messages.length / 2));
+  const trackName = session?.track || "default";
+  const reply = getAIResponse(trackName, Math.floor(Number(count) / 2));
   const feedback = getFeedback(message);
 
   res.json({ reply, feedback, score: null });

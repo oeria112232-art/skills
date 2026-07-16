@@ -6,7 +6,7 @@ import {
   UpdateJobParams, UpdateJobBody, DeleteJobParams,
   GetJobScreeningQuestionsParams, AddJobScreeningQuestionParams, AddJobScreeningQuestionBody,
 } from "@workspace/api-zod";
-import { requireAuth, requireRole } from "../middlewares/auth";
+import { requireAuth, requireRole, type AuthenticatedRequest } from "../middlewares/auth";
 
 const router = Router();
 
@@ -113,9 +113,22 @@ router.patch("/jobs/:id", requireAuth, requireRole(["admin", "company"]), async 
   });
 });
 
-router.delete("/jobs/:id", requireAuth, requireRole(["admin", "company"]), async (req, res): Promise<void> => {
+router.delete("/jobs/:id", requireAuth, requireRole(["admin", "company"]), async (req: AuthenticatedRequest, res): Promise<void> => {
   const params = DeleteJobParams.safeParse(req.params);
   if (!params.success) { res.status(400).json({ error: "Invalid id" }); return; }
+  
+  const [job] = await db.select().from(jobsTable).where(eq(jobsTable.id, params.data.id));
+  if (!job) {
+    res.status(404).json({ error: "Job not found" });
+    return;
+  }
+
+  const user = req.user!;
+  if (user.role === "company" && job.companyId !== user.id) {
+    res.status(403).json({ error: "Forbidden: You do not own this job listing" });
+    return;
+  }
+
   await db.delete(jobsTable).where(eq(jobsTable.id, params.data.id));
   res.sendStatus(204);
 });

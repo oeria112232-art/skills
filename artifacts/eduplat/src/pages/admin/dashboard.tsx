@@ -20,7 +20,7 @@ export default function AdminDashboard() {
   const { data: stats, isLoading } = useGetAdminStats();
 
   const statCards = stats ? [
-    { label: isAr ? "إجمالي المستخدمين" : "Total Users", value: stats.totalUsers, icon: Users, color: "text-blue-500", link: "/admin/users" },
+    { label: isAr ? "إجمالي المستخدمين" : "Total Users", value: stats.totalUsers, icon: Users, color: "text-blue-500", link: "/admin/instructors" },
     { label: isAr ? "الوظائف المفتوحة" : "Open Jobs", value: stats.openJobs, sub: isAr ? `من إجمالي ${stats.totalJobs}` : `of ${stats.totalJobs} total`, icon: Briefcase, color: "text-green-500", link: "/admin/jobs" },
     { label: isAr ? "طلبات التقديم المعلقة" : "Pending Applications", value: stats.pendingApplications, sub: isAr ? `من إجمالي ${stats.totalApplications}` : `of ${stats.totalApplications} total`, icon: TrendingUp, color: "text-orange-500", link: "/admin/applications" },
     { label: isAr ? "ورش العمل القادمة" : "Upcoming Workshops", value: stats.upcomingWorkshops, sub: isAr ? `من إجمالي ${stats.totalWorkshops}` : `of ${stats.totalWorkshops} total`, icon: BookOpen, color: "text-violet-500", link: "/admin/workshops" },

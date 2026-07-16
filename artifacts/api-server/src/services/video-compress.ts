@@ -65,6 +65,42 @@ export async function compressVideo(
 ): Promise<{ buffer: Buffer; mime: string; stats: CompressResult }> {
   const opts = { ...DEFAULT_OPTIONS, ...options };
 
+  if (opts.maxWidth !== undefined) {
+    const val = Number(opts.maxWidth);
+    if (!Number.isInteger(val) || val < 120 || val > 7680) {
+      throw new Error("Invalid maxWidth: must be an integer between 120 and 7680");
+    }
+    opts.maxWidth = val;
+  }
+  if (opts.maxHeight !== undefined) {
+    const val = Number(opts.maxHeight);
+    if (!Number.isInteger(val) || val < 120 || val > 7680) {
+      throw new Error("Invalid maxHeight: must be an integer between 120 and 7680");
+    }
+    opts.maxHeight = val;
+  }
+  if (opts.crf !== undefined) {
+    const val = Number(opts.crf);
+    if (!Number.isInteger(val) || val < 0 || val > 51) {
+      throw new Error("Invalid crf: must be an integer between 0 and 51");
+    }
+    opts.crf = val;
+  }
+  if (opts.fps !== undefined) {
+    const val = Number(opts.fps);
+    if (!Number.isInteger(val) || val < 1 || val > 120) {
+      throw new Error("Invalid fps: must be an integer between 1 and 120");
+    }
+    opts.fps = val;
+  }
+  const validPresets = new Set(["ultrafast", "superfast", "veryfast", "faster", "fast", "medium", "slow", "slower", "veryslow", "placebo"]);
+  if (opts.preset !== undefined && !validPresets.has(opts.preset)) {
+    throw new Error("Invalid preset value");
+  }
+  if (opts.audioBitrate !== undefined && !/^\d+k$/.test(opts.audioBitrate)) {
+    throw new Error("Invalid audioBitrate: must match pattern e.g., '128k'");
+  }
+
   if (!isFfmpegAvailable()) {
     throw new Error("FFmpeg not available at " + FFMPEG_PATH);
   }

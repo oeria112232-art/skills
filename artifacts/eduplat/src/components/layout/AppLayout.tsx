@@ -56,6 +56,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               osc.type = "sine";
               osc.frequency.setValueAtTime(587.33, audioCtx.currentTime); // D5 note for bright alert
               gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+              osc.onended = () => {
+                audioCtx.close().catch(() => {});
+              };
               osc.start();
               osc.stop(audioCtx.currentTime + 0.2);
             } catch (soundErr) {

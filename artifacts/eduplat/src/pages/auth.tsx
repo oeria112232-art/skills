@@ -80,6 +80,24 @@ export default function AuthPage() {
           return;
         }
 
+        const minLength = 8;
+        const hasUppercase = /[A-Z]/.test(password);
+        const hasLowercase = /[a-z]/.test(password);
+        const hasNumber = /[0-9]/.test(password);
+        const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+
+        if (password.length < minLength || !hasUppercase || !hasLowercase || !hasNumber || !hasSpecial) {
+          toast({
+            variant: "destructive",
+            title: isAr ? "كلمة المرور ضعيفة" : "Weak Password",
+            description: isAr 
+              ? "يجب أن تكون كلمة المرور مكونة من 8 أحرف على الأقل، وتحتوي على حرف كبير وحرف صغير ورقم ورمز خاص." 
+              : "Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character.",
+          });
+          setIsLoading(false);
+          return;
+        }
+
         const res = await fetch("/api/auth/register", {
           method: "POST",
           headers: {
@@ -250,7 +268,7 @@ export default function AuthPage() {
           </form>
 
           {/* Quick info credentials guide */}
-          {mode === "login" && (
+          {mode === "login" && import.meta.env.DEV && (
             <div className="mt-6 pt-4 border-t border-dashed border-border/50 text-[10px] text-muted-foreground leading-relaxed">
               <span className="font-bold text-foreground block mb-1">🔑 {isAr ? "بيانات الدخول التجريبية السريعة:" : "Demo Login Credentials:"}</span>
               <p>• {isAr ? "حساب المسؤول:" : "Admin Account:"} <code className="text-primary font-bold">admin@eduplatform.com</code> / <code className="font-mono font-bold text-foreground">admin123</code></p>

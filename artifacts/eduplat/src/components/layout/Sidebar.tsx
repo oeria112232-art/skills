@@ -81,7 +81,7 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
   const { language, setLanguage } = useLanguage();
   const [location, setLocation] = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 1024);
+  const [isDesktop, setIsDesktop] = useState(() => typeof window !== "undefined" ? window.innerWidth >= 1024 : true);
 
   useEffect(() => {
     const handleResize = () => {

@@ -18,14 +18,14 @@ import { z } from "zod";
 const router = Router();
 
 const ConsultationBodySchema = z.object({
-  category: z.string().min(1),
+  category: z.string().min(1).max(100),
   title: z.string().min(1).max(200),
-  message: z.string().min(1),
+  message: z.string().min(1).max(5000),
   assignedTo: z.string().optional().nullable(),
 });
 
 const ConsultationReplyBodySchema = z.object({
-  response: z.string().min(1),
+  response: z.string().min(1).max(5000),
 });
 
 // 1. GET /consultations
@@ -79,6 +79,19 @@ router.post("/consultations", requireAuth, consultationRateLimit, async (req: Au
     return;
   }
   const { category, title, message, assignedTo } = parsed.data;
+
+  if (assignedTo) {
+    const assignedId = parseInt(assignedTo, 10);
+    if (isNaN(assignedId)) {
+      res.status(400).json({ error: "Invalid assignedTo ID" });
+      return;
+    }
+    const [assignedUser] = await db.select().from(usersTable).where(eq(usersTable.id, assignedId));
+    if (!assignedUser || (assignedUser.role !== "admin" && assignedUser.role !== "instructor")) {
+      res.status(400).json({ error: "Consultation can only be assigned to a valid admin or instructor" });
+      return;
+    }
+  }
 
   const cost = CONSULTATION_COST;
   const userId = req.user!.id;

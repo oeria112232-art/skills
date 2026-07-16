@@ -8,6 +8,7 @@ import {
 } from "@workspace/api-zod";
 import { requireAuth, type AuthenticatedRequest } from "../middlewares/auth";
 import { logAuditEvent } from "../services/audit-log";
+import { acquireUserLock } from "../services/wallet-security";
 
 const router = Router();
 
@@ -247,12 +248,17 @@ router.post("/applications", requireAuth, async (req: AuthenticatedRequest, res)
     contactInfoSnapshot: cleanContactInfoSnapshot
   }).returning();
   
-  // Increment applicationCount safely without raw SQL (for mock DB compatibility)
+  // Increment applicationCount safely using a lock to prevent race conditions
+  const releaseLock = await acquireUserLock(parsed.data.jobId);
   try {
     const [currentJob] = await db.select().from(jobsTable).where(eq(jobsTable.id, parsed.data.jobId));
     const newCount = (currentJob?.applicationCount ?? 0) + 1;
     await db.update(jobsTable).set({ applicationCount: newCount }).where(eq(jobsTable.id, parsed.data.jobId));
-  } catch (_e) { /* non-critical, ignore */ }
+  } catch (_e) {
+    /* non-critical, ignore */
+  } finally {
+    releaseLock();
+  }
 
   res.status(201).json({ ...app, jobTitle: null, createdAt: app.createdAt ? (typeof app.createdAt === "string" ? app.createdAt : new Date(app.createdAt).toISOString()) : new Date().toISOString() });
 });

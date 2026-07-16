@@ -105,7 +105,12 @@ export default function ConsultationsPage() {
     }
   }, [draftKey, consultCategory, consultTitle, consultMessage, consultAssignedTo]);
 
-  useEffect(() => { saveDraft(); }, [saveDraft]);
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      saveDraft();
+    }, 1000); // 1-second debounce
+    return () => clearTimeout(timer);
+  }, [saveDraft]);
 
   const loadDraft = useCallback(() => {
     const raw = localStorage.getItem(draftKey);

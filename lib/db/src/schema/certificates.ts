@@ -1,6 +1,7 @@
-import { pgTable, text, serial, timestamp, integer } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, timestamp, integer, index, check } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
+import { sql } from "drizzle-orm";
 import { usersTable } from "./users";
 import { workshopsTable } from "./workshops";
 import { tracksTable } from "./tracks";
@@ -23,7 +24,16 @@ export const certificatesTable = pgTable("certificates", {
   signatureHash: text("signature_hash"), // HMAC cryptographic seal
   isPaid: integer("is_paid").notNull().default(0), // 1 if paid/free, 0 if pending
   issuedAt: timestamp("issued_at", { withTimezone: true }).notNull().defaultNow(),
-});
+}, (table) => ({
+  userIdIdx: index("certificates_user_idx").on(table.userId),
+  workshopIdIdx: index("certificates_workshop_idx").on(table.workshopId),
+  trackIdIdx: index("certificates_track_idx").on(table.trackId),
+  statusIdx: index("certificates_status_idx").on(table.status),
+  levelCheck: check("certificates_level_check", sql`${table.level} IN (1, 2, 3, 4)`),
+  scoreCheck: check("certificates_score_check", sql`${table.score} >= 0`),
+  statusCheck: check("certificates_status_check", sql`${table.status} IN ('locked', 'issued')`),
+  isPaidCheck: check("certificates_is_paid_check", sql`${table.isPaid} IN (0, 1)`),
+}));
 
 export const insertCertificateSchema = createInsertSchema(certificatesTable, {
   level: z.number().int().min(1).max(5)

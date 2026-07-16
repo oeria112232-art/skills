@@ -67,7 +67,7 @@ router.post("/certificates", requireAuth, requireRole(["admin"]), async (req: Au
 
   const idSuffix = type === "track" ? `TRK-${trackId}` : `WSH-${workshopId}`;
   const certNumber = `CERT-${idSuffix}-${userId}-${Date.now()}`;
-  const verificationCode = `MH-VFY-${Math.random().toString(36).substring(2, 8).toUpperCase()}-${Math.floor(1000 + Math.random() * 9000)}`;
+  const verificationCode = `MH-VFY-${crypto.randomBytes(3).toString("hex").toUpperCase()}-${crypto.randomInt(1000, 10000)}`;
 
   // Default cost and level based on type if not provided
   const lvl = level !== undefined ? Number(level) : (type === "participation" ? 1 : type === "track" ? 3 : 2);
@@ -269,7 +269,9 @@ router.get("/certificates/:id", async (req, res): Promise<void> => {
     }
   }
 
-  res.json(serializeCert(cert));
+  // Exclude sensitive user/internal fields from public response
+  const { userId, cost, signatureHash, isPaid, ...publicCert } = serializeCert(cert);
+  res.json(publicCert);
 });
 
 // 6. DELETE /certificates/:id - Revoke/Delete certificate (Admin only)
@@ -353,7 +355,7 @@ router.post("/certificates/batch-issue", requireAuth, requireRole(["admin"]), as
       if (!u) continue;
 
       const certNumber = `CERT-TRK-${track.id}-${u.id}-${Date.now()}`;
-      const verificationCode = `MH-VFY-${Math.random().toString(36).substring(2, 8).toUpperCase()}-${Math.floor(1000 + Math.random() * 9000)}`;
+      const verificationCode = `MH-VFY-${crypto.randomBytes(3).toString("hex").toUpperCase()}-${crypto.randomInt(1000, 10000)}`;
 
       const certLevel = level !== undefined ? Number(level) : 3;
       let cost = 250;
@@ -400,7 +402,7 @@ router.post("/certificates/batch-issue", requireAuth, requireRole(["admin"]), as
 
     for (const u of usersToIssue) {
       const certNumber = `CERT-WSH-${workshop.id}-${u.id}-${Date.now()}`;
-      const verificationCode = `MH-VFY-${Math.random().toString(36).substring(2, 8).toUpperCase()}-${Math.floor(1000 + Math.random() * 9000)}`;
+      const verificationCode = `MH-VFY-${crypto.randomBytes(3).toString("hex").toUpperCase()}-${crypto.randomInt(1000, 10000)}`;
 
       const certLevel = level !== undefined ? Number(level) : 2;
       let cost = 100;

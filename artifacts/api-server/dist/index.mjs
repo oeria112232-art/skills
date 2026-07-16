@@ -25971,7 +25971,7 @@ var require_wait = __commonJS({
         return;
       }
       let prior = current;
-      const check2 = (backoff) => {
+      const check3 = (backoff) => {
         if (Date.now() > max) {
           done(null, "timed-out");
         } else {
@@ -25979,7 +25979,7 @@ var require_wait = __commonJS({
             prior = current;
             current = Atomics.load(state, index2);
             if (current === prior) {
-              check2(backoff >= MAX_TIMEOUT ? MAX_TIMEOUT : backoff * 2);
+              check3(backoff >= MAX_TIMEOUT ? MAX_TIMEOUT : backoff * 2);
             } else {
               if (current === expected) done(null, "ok");
               else done(null, "not-equal");
@@ -25987,7 +25987,7 @@ var require_wait = __commonJS({
           }, backoff);
         }
       };
-      check2(1);
+      check3(1);
     }
     function waitDiff(state, index2, expected, timeout, done) {
       const max = Date.now() + timeout;
@@ -25996,7 +25996,7 @@ var require_wait = __commonJS({
         done(null, "ok");
         return;
       }
-      const check2 = (backoff) => {
+      const check3 = (backoff) => {
         if (Date.now() > max) {
           done(null, "timed-out");
         } else {
@@ -26005,12 +26005,12 @@ var require_wait = __commonJS({
             if (current !== expected) {
               done(null, "ok");
             } else {
-              check2(backoff >= MAX_TIMEOUT ? MAX_TIMEOUT : backoff * 2);
+              check3(backoff >= MAX_TIMEOUT ? MAX_TIMEOUT : backoff * 2);
             }
           }, backoff);
         }
       };
-      check2(1);
+      check3(1);
     }
     module.exports = { wait, waitDiff };
   }
@@ -49232,6 +49232,9 @@ var init_tracing_utils = __esm({
 });
 
 // ../../node_modules/.pnpm/drizzle-orm@0.45.2_@types+pg@8.20.0_pg@8.22.0/node_modules/drizzle-orm/pg-core/unique-constraint.js
+function unique(name4) {
+  return new UniqueOnConstraintBuilder(name4);
+}
 function uniqueKeyName(table, columns) {
   return `${table[TableName]}_${columns.join("_")}_unique`;
 }
@@ -50313,6 +50316,9 @@ var init_alias2 = __esm({
 });
 
 // ../../node_modules/.pnpm/drizzle-orm@0.45.2_@types+pg@8.20.0_pg@8.22.0/node_modules/drizzle-orm/pg-core/checks.js
+function check(name4, value) {
+  return new CheckBuilder(name4, value);
+}
 var CheckBuilder, Check;
 var init_checks = __esm({
   "../../node_modules/.pnpm/drizzle-orm@0.45.2_@types+pg@8.20.0_pg@8.22.0/node_modules/drizzle-orm/pg-core/checks.js"() {
@@ -52311,8 +52317,8 @@ var init_indexes = __esm({
     init_entity();
     init_columns();
     IndexBuilderOn = class {
-      constructor(unique, name4) {
-        this.unique = unique;
+      constructor(unique2, name4) {
+        this.unique = unique2;
         this.name = name4;
       }
       static [entityKind] = "PgIndexBuilderOn";
@@ -52381,11 +52387,11 @@ var init_indexes = __esm({
       static [entityKind] = "PgIndexBuilder";
       /** @internal */
       config;
-      constructor(columns, unique, only, name4, method = "btree") {
+      constructor(columns, unique2, only, name4, method = "btree") {
         this.config = {
           name: name4,
           columns,
-          unique,
+          unique: unique2,
           only,
           method
         };
@@ -67480,7 +67486,7 @@ function promise(innerType) {
     innerType
   });
 }
-function check(fn) {
+function check2(fn) {
   const ch = new $ZodCheck({
     check: "custom"
     // ...util.normalizeParams(params),
@@ -67495,7 +67501,7 @@ function refine(fn, _params = {}) {
   return _refine(ZodCustom, fn, _params);
 }
 function superRefine(fn) {
-  const ch = check((payload) => {
+  const ch = check2((payload) => {
     payload.addIssue = (issue2) => {
       if (typeof issue2 === "string") {
         payload.issues.push(util_exports.issue(issue2, payload.value, ch._zod.def));
@@ -67571,7 +67577,7 @@ var init_schemas2 = __esm({
       inst.parseAsync = async (data, params) => parseAsync2(inst, data, params, { callee: inst.parseAsync });
       inst.safeParseAsync = async (data, params) => safeParseAsync2(inst, data, params);
       inst.spa = inst.safeParseAsync;
-      inst.refine = (check2, params) => inst.check(refine(check2, params));
+      inst.refine = (check3, params) => inst.check(refine(check3, params));
       inst.superRefine = (refinement) => inst.check(superRefine(refinement));
       inst.overwrite = (fn) => inst.check(_overwrite(fn));
       inst.optional = () => optional(inst);
@@ -68223,7 +68229,7 @@ __export(external_exports, {
   bigint: () => bigint3,
   boolean: () => boolean3,
   catch: () => _catch2,
-  check: () => check,
+  check: () => check2,
   cidrv4: () => cidrv42,
   cidrv6: () => cidrv62,
   clone: () => clone,
@@ -68705,6 +68711,7 @@ var init_users = __esm({
     "use strict";
     init_pg_core();
     init_drizzle_zod();
+    init_drizzle_orm();
     usersTable = pgTable("users", {
       id: serial("id").primaryKey(),
       name: text("name").notNull(),
@@ -68725,7 +68732,13 @@ var init_users = __esm({
       companyCategory: text("company_category").default("general"),
       updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => /* @__PURE__ */ new Date()),
       deletedAt: timestamp("deleted_at", { withTimezone: true })
-    });
+    }, (table) => ({
+      roleIdx: index("users_role_idx").on(table.role),
+      deletedAtIdx: index("users_deleted_at_idx").on(table.deletedAt),
+      roleCheck: check("users_role_check", sql`${table.role} IN ('admin', 'instructor', 'student', 'company')`),
+      pointsCheck: check("users_points_check", sql`${table.points} >= 0`),
+      streakCheck: check("users_streak_check", sql`${table.streak} >= 0`)
+    }));
     insertUserSchema = createInsertSchema(usersTable).omit({ id: true, createdAt: true, updatedAt: true, deletedAt: true });
   }
 });
@@ -68781,6 +68794,7 @@ var init_applications = __esm({
     "use strict";
     init_pg_core();
     init_drizzle_zod();
+    init_drizzle_orm();
     init_jobs();
     init_users();
     applicationsTable = pgTable("applications", {
@@ -68798,7 +68812,12 @@ var init_applications = __esm({
       screeningPassed: boolean("screening_passed"),
       createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
       updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => /* @__PURE__ */ new Date())
-    });
+    }, (table) => ({
+      jobIdIdx: index("applications_job_id_idx").on(table.jobId),
+      userIdIdx: index("applications_user_id_idx").on(table.userId),
+      statusIdx: index("applications_status_idx").on(table.status),
+      statusCheck: check("applications_status_check", sql`${table.status} IN ('pending', 'reviewed', 'shortlisted', 'accepted', 'rejected')`)
+    }));
     insertApplicationSchema = createInsertSchema(applicationsTable).omit({ id: true, createdAt: true, updatedAt: true, screeningScore: true, screeningPassed: true });
   }
 });
@@ -68810,12 +68829,13 @@ var init_workshops = __esm({
     "use strict";
     init_pg_core();
     init_drizzle_zod();
+    init_drizzle_orm();
     init_users();
     workshopsTable = pgTable("workshops", {
       id: serial("id").primaryKey(),
       title: text("title").notNull(),
       description: text("description").notNull(),
-      date: text("date").notNull(),
+      date: timestamp("date", { withTimezone: true }).notNull(),
       duration: integer("duration").notNull().default(60),
       instructor: text("instructor").notNull(),
       tags: text("tags").array().notNull().default([]),
@@ -68842,7 +68862,14 @@ var init_workshops = __esm({
       isClosed: integer("is_closed").notNull().default(0),
       createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
       updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => /* @__PURE__ */ new Date())
-    });
+    }, (table) => ({
+      statusIdx: index("workshops_status_idx").on(table.status),
+      durationCheck: check("workshops_duration_check", sql`${table.duration} > 0`),
+      capacityCheck: check("workshops_capacity_check", sql`${table.capacity} > 0`),
+      enrolledCountCheck: check("workshops_enrolled_count_check", sql`${table.enrolledCount} >= 0`),
+      priceCheck: check("workshops_price_check", sql`${table.price} >= 0`),
+      statusCheck: check("workshops_status_check", sql`${table.status} IN ('upcoming', 'ongoing', 'completed')`)
+    }));
     enrollmentsTable = pgTable("enrollments", {
       id: serial("id").primaryKey(),
       workshopId: integer("workshop_id").notNull().references(() => workshopsTable.id, { onDelete: "cascade" }),
@@ -68854,7 +68881,9 @@ var init_workshops = __esm({
     }, (table) => ({
       workshopIdx: index("enrollments_workshop_idx").on(table.workshopId),
       userIdx: index("enrollments_user_idx").on(table.userId),
-      workshopUserIdx: index("enrollments_workshop_user_idx").on(table.workshopId, table.userId)
+      workshopUserIdx: index("enrollments_workshop_user_idx").on(table.workshopId, table.userId),
+      unq: unique("enrollments_workshop_user_unq").on(table.workshopId, table.userId),
+      attendedMinutesCheck: check("enrollments_attended_minutes_check", sql`${table.attendedMinutes} >= 0`)
     }));
     examQuestionsTable = pgTable("exam_questions", {
       id: serial("id").primaryKey(),
@@ -68912,7 +68941,8 @@ var init_workshops = __esm({
     }, (table) => ({
       workshopIdx: index("workshop_subscriptions_workshop_idx").on(table.workshopId),
       userIdx: index("workshop_subscriptions_user_idx").on(table.userId),
-      workshopUserIdx: index("workshop_subscriptions_workshop_user_idx").on(table.workshopId, table.userId)
+      workshopUserIdx: index("workshop_subscriptions_workshop_user_idx").on(table.workshopId, table.userId),
+      unq: unique("workshop_subscriptions_workshop_user_unq").on(table.workshopId, table.userId)
     }));
     insertWorkshopSchema = createInsertSchema(workshopsTable).omit({ id: true, createdAt: true, updatedAt: true, enrolledCount: true });
   }
@@ -68925,6 +68955,7 @@ var init_tracks = __esm({
     "use strict";
     init_pg_core();
     init_drizzle_zod();
+    init_drizzle_orm();
     init_users();
     tracksTable = pgTable("tracks", {
       id: serial("id").primaryKey(),
@@ -68939,7 +68970,7 @@ var init_tracks = __esm({
       enrolledCount: integer("enrolled_count").notNull().default(0),
       price: integer("price").notNull().default(0),
       // Points cost to enroll (0 = free)
-      instructorId: integer("instructor_id"),
+      instructorId: integer("instructor_id").references(() => usersTable.id, { onDelete: "set null" }),
       certType: text("cert_type").notNull().default("track"),
       // "track" or "participation"
       certLevel: integer("cert_level").notNull().default(3),
@@ -68947,7 +68978,12 @@ var init_tracks = __esm({
       certCost: integer("cert_cost").notNull().default(250),
       // Points to claim the certificate
       createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
-    });
+    }, (table) => ({
+      instructorIdx: index("tracks_instructor_idx").on(table.instructorId),
+      priceCheck: check("tracks_price_check", sql`${table.price} >= 0`),
+      certCostCheck: check("tracks_cert_cost_check", sql`${table.certCost} >= 0`),
+      certLevelCheck: check("tracks_cert_level_check", sql`${table.certLevel} IN (1, 2, 3, 4)`)
+    }));
     trackModulesTable = pgTable("track_modules", {
       id: serial("id").primaryKey(),
       trackId: integer("track_id").notNull().references(() => tracksTable.id, { onDelete: "cascade" }),
@@ -68958,7 +68994,9 @@ var init_tracks = __esm({
       order: integer("order").notNull().default(0),
       estimatedMinutes: integer("estimated_minutes").notNull().default(15),
       createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
-    });
+    }, (table) => ({
+      trackIdx: index("track_modules_track_idx").on(table.trackId)
+    }));
     userProgressTable = pgTable("user_progress", {
       id: serial("id").primaryKey(),
       userId: integer("user_id").notNull().references(() => usersTable.id, { onDelete: "cascade" }),
@@ -68967,7 +69005,13 @@ var init_tracks = __esm({
       completed: integer("completed").notNull().default(0),
       completedAt: timestamp("completed_at", { withTimezone: true }),
       createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
-    });
+    }, (table) => ({
+      userIdx: index("user_progress_user_idx").on(table.userId),
+      trackIdx: index("user_progress_track_idx").on(table.trackId),
+      moduleIdx: index("user_progress_module_idx").on(table.moduleId),
+      unq: unique("user_progress_user_track_module_unq").on(table.userId, table.trackId, table.moduleId),
+      completedCheck: check("user_progress_completed_check", sql`${table.completed} IN (0, 1)`)
+    }));
     insertTrackSchema = createInsertSchema(tracksTable).omit({ id: true, createdAt: true });
   }
 });
@@ -68980,6 +69024,7 @@ var init_certificates = __esm({
     init_pg_core();
     init_drizzle_zod();
     init_v4();
+    init_drizzle_orm();
     init_users();
     init_workshops();
     init_tracks();
@@ -69006,7 +69051,16 @@ var init_certificates = __esm({
       isPaid: integer("is_paid").notNull().default(0),
       // 1 if paid/free, 0 if pending
       issuedAt: timestamp("issued_at", { withTimezone: true }).notNull().defaultNow()
-    });
+    }, (table) => ({
+      userIdIdx: index("certificates_user_idx").on(table.userId),
+      workshopIdIdx: index("certificates_workshop_idx").on(table.workshopId),
+      trackIdIdx: index("certificates_track_idx").on(table.trackId),
+      statusIdx: index("certificates_status_idx").on(table.status),
+      levelCheck: check("certificates_level_check", sql`${table.level} IN (1, 2, 3, 4)`),
+      scoreCheck: check("certificates_score_check", sql`${table.score} >= 0`),
+      statusCheck: check("certificates_status_check", sql`${table.status} IN ('locked', 'issued')`),
+      isPaidCheck: check("certificates_is_paid_check", sql`${table.isPaid} IN (0, 1)`)
+    }));
     insertCertificateSchema = createInsertSchema(certificatesTable, {
       level: external_exports.number().int().min(1).max(5)
     }).omit({ id: true, issuedAt: true });
@@ -69020,6 +69074,7 @@ var init_mock_interviews = __esm({
     "use strict";
     init_pg_core();
     init_drizzle_zod();
+    init_drizzle_orm();
     init_users();
     mockInterviewSessionsTable = pgTable("mock_interview_sessions", {
       id: serial("id").primaryKey(),
@@ -69027,7 +69082,9 @@ var init_mock_interviews = __esm({
       track: text("track").notNull(),
       title: text("title").notNull().default("Mock Interview"),
       createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
-    });
+    }, (table) => ({
+      userIdIdx: index("mock_interview_sessions_user_idx").on(table.userId)
+    }));
     mockInterviewMessagesTable = pgTable("mock_interview_messages", {
       id: serial("id").primaryKey(),
       sessionId: integer("session_id").notNull().references(() => mockInterviewSessionsTable.id, { onDelete: "cascade" }),
@@ -69035,7 +69092,10 @@ var init_mock_interviews = __esm({
       message: text("message").notNull(),
       feedback: text("feedback"),
       createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
-    });
+    }, (table) => ({
+      sessionIdx: index("mock_interview_messages_session_idx").on(table.sessionId),
+      roleCheck: check("mock_interview_messages_role_check", sql`${table.role} IN ('user', 'assistant', 'system')`)
+    }));
     insertMockInterviewSessionSchema = createInsertSchema(mockInterviewSessionsTable).omit({ id: true, createdAt: true });
   }
 });
@@ -69047,6 +69107,7 @@ var init_consultations = __esm({
     "use strict";
     init_pg_core();
     init_drizzle_zod();
+    init_drizzle_orm();
     init_users();
     consultationsTable = pgTable("consultations", {
       id: serial("id").primaryKey(),
@@ -69062,7 +69123,13 @@ var init_consultations = __esm({
       repliedBy: integer("replied_by").references(() => usersTable.id, { onDelete: "set null" }),
       repliedAt: timestamp("replied_at", { withTimezone: true }),
       createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
-    });
+    }, (table) => ({
+      userIdIdx: index("consultations_user_idx").on(table.userId),
+      assignedToIdx: index("consultations_assigned_to_idx").on(table.assignedTo),
+      repliedByIdx: index("consultations_replied_by_idx").on(table.repliedBy),
+      statusIdx: index("consultations_status_idx").on(table.status),
+      statusCheck: check("consultations_status_check", sql`${table.status} IN ('pending', 'replied', 'closed')`)
+    }));
     insertConsultationSchema = createInsertSchema(consultationsTable).omit({ id: true, createdAt: true });
   }
 });
@@ -69074,6 +69141,7 @@ var init_deposit_requests = __esm({
     "use strict";
     init_pg_core();
     init_drizzle_zod();
+    init_drizzle_orm();
     init_users();
     depositRequestsTable = pgTable("deposit_requests", {
       id: serial("id").primaryKey(),
@@ -69089,7 +69157,12 @@ var init_deposit_requests = __esm({
       adminNotes: text("admin_notes"),
       createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
       updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
-    });
+    }, (table) => ({
+      userIdIdx: index("deposit_requests_user_idx").on(table.userId),
+      statusIdx: index("deposit_requests_status_idx").on(table.status),
+      pointsAmountCheck: check("deposit_requests_points_amount_check", sql`${table.pointsAmount} > 0`),
+      statusCheck: check("deposit_requests_status_check", sql`${table.status} IN ('pending', 'approved', 'rejected')`)
+    }));
     pointsTransactionsTable = pgTable("points_transactions", {
       id: serial("id").primaryKey(),
       senderId: integer("sender_id").references(() => usersTable.id, { onDelete: "set null" }),
@@ -69103,7 +69176,11 @@ var init_deposit_requests = __esm({
       signature: text("signature"),
       previousSignature: text("previous_signature"),
       createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
-    });
+    }, (table) => ({
+      senderIdx: index("points_transactions_sender_idx").on(table.senderId),
+      receiverIdx: index("points_transactions_receiver_idx").on(table.receiverId),
+      amountCheck: check("points_transactions_amount_check", sql`${table.amount} > 0`)
+    }));
     insertDepositRequestSchema = createInsertSchema(depositRequestsTable).omit({ id: true, createdAt: true, updatedAt: true });
     insertPointsTransactionSchema = createInsertSchema(pointsTransactionsTable).omit({ id: true, createdAt: true });
   }
@@ -74187,7 +74264,10 @@ router.get("/healthz", async (_req, res) => {
   }
   try {
     const start = Date.now();
-    const response = await fetch("https://api.daily.co/v1/rooms", { method: "OPTIONS" });
+    const response = await fetch("https://api.daily.co/v1/rooms", {
+      method: "OPTIONS",
+      signal: AbortSignal.timeout(5e3)
+    });
     checks.daily = `ok (${Date.now() - start}ms)`;
   } catch (e) {
     checks.daily = `error: unreachable`;
@@ -74202,7 +74282,7 @@ router.get("/healthz", async (_req, res) => {
       checks.r2 = "ok (configured)";
     }
   } catch (e) {
-    checks.r2 = `error: ${e.message}`;
+    checks.r2 = "error: check failed";
     healthy = false;
   }
   const mem = process.memoryUsage();
@@ -74998,7 +75078,7 @@ var ZodType2 = class {
     const result = await (isAsync(maybeAsyncResult) ? maybeAsyncResult : Promise.resolve(maybeAsyncResult));
     return handleResult(ctx, result);
   }
-  refine(check2, message) {
+  refine(check3, message) {
     const getIssueProperties = (val) => {
       if (typeof message === "string" || typeof message === "undefined") {
         return { message };
@@ -75009,7 +75089,7 @@ var ZodType2 = class {
       }
     };
     return this._refinement((val, ctx) => {
-      const result = check2(val);
+      const result = check3(val);
       const setError = () => ctx.addIssue({
         code: ZodIssueCode2.custom,
         ...getIssueProperties(val)
@@ -75032,9 +75112,9 @@ var ZodType2 = class {
       }
     });
   }
-  refinement(check2, refinementData) {
+  refinement(check3, refinementData) {
     return this._refinement((val, ctx) => {
-      if (!check2(val)) {
+      if (!check3(val)) {
         ctx.addIssue(typeof refinementData === "function" ? refinementData(val, ctx) : refinementData);
         return false;
       } else {
@@ -75256,70 +75336,70 @@ var ZodString2 = class _ZodString2 extends ZodType2 {
     }
     const status = new ParseStatus();
     let ctx = void 0;
-    for (const check2 of this._def.checks) {
-      if (check2.kind === "min") {
-        if (input.data.length < check2.value) {
+    for (const check3 of this._def.checks) {
+      if (check3.kind === "min") {
+        if (input.data.length < check3.value) {
           ctx = this._getOrReturnCtx(input, ctx);
           addIssueToContext(ctx, {
             code: ZodIssueCode2.too_small,
-            minimum: check2.value,
+            minimum: check3.value,
             type: "string",
             inclusive: true,
             exact: false,
-            message: check2.message
+            message: check3.message
           });
           status.dirty();
         }
-      } else if (check2.kind === "max") {
-        if (input.data.length > check2.value) {
+      } else if (check3.kind === "max") {
+        if (input.data.length > check3.value) {
           ctx = this._getOrReturnCtx(input, ctx);
           addIssueToContext(ctx, {
             code: ZodIssueCode2.too_big,
-            maximum: check2.value,
+            maximum: check3.value,
             type: "string",
             inclusive: true,
             exact: false,
-            message: check2.message
+            message: check3.message
           });
           status.dirty();
         }
-      } else if (check2.kind === "length") {
-        const tooBig = input.data.length > check2.value;
-        const tooSmall = input.data.length < check2.value;
+      } else if (check3.kind === "length") {
+        const tooBig = input.data.length > check3.value;
+        const tooSmall = input.data.length < check3.value;
         if (tooBig || tooSmall) {
           ctx = this._getOrReturnCtx(input, ctx);
           if (tooBig) {
             addIssueToContext(ctx, {
               code: ZodIssueCode2.too_big,
-              maximum: check2.value,
+              maximum: check3.value,
               type: "string",
               inclusive: true,
               exact: true,
-              message: check2.message
+              message: check3.message
             });
           } else if (tooSmall) {
             addIssueToContext(ctx, {
               code: ZodIssueCode2.too_small,
-              minimum: check2.value,
+              minimum: check3.value,
               type: "string",
               inclusive: true,
               exact: true,
-              message: check2.message
+              message: check3.message
             });
           }
           status.dirty();
         }
-      } else if (check2.kind === "email") {
+      } else if (check3.kind === "email") {
         if (!emailRegex.test(input.data)) {
           ctx = this._getOrReturnCtx(input, ctx);
           addIssueToContext(ctx, {
             validation: "email",
             code: ZodIssueCode2.invalid_string,
-            message: check2.message
+            message: check3.message
           });
           status.dirty();
         }
-      } else if (check2.kind === "emoji") {
+      } else if (check3.kind === "emoji") {
         if (!emojiRegex) {
           emojiRegex = new RegExp(_emojiRegex, "u");
         }
@@ -75328,61 +75408,61 @@ var ZodString2 = class _ZodString2 extends ZodType2 {
           addIssueToContext(ctx, {
             validation: "emoji",
             code: ZodIssueCode2.invalid_string,
-            message: check2.message
+            message: check3.message
           });
           status.dirty();
         }
-      } else if (check2.kind === "uuid") {
+      } else if (check3.kind === "uuid") {
         if (!uuidRegex.test(input.data)) {
           ctx = this._getOrReturnCtx(input, ctx);
           addIssueToContext(ctx, {
             validation: "uuid",
             code: ZodIssueCode2.invalid_string,
-            message: check2.message
+            message: check3.message
           });
           status.dirty();
         }
-      } else if (check2.kind === "nanoid") {
+      } else if (check3.kind === "nanoid") {
         if (!nanoidRegex.test(input.data)) {
           ctx = this._getOrReturnCtx(input, ctx);
           addIssueToContext(ctx, {
             validation: "nanoid",
             code: ZodIssueCode2.invalid_string,
-            message: check2.message
+            message: check3.message
           });
           status.dirty();
         }
-      } else if (check2.kind === "cuid") {
+      } else if (check3.kind === "cuid") {
         if (!cuidRegex.test(input.data)) {
           ctx = this._getOrReturnCtx(input, ctx);
           addIssueToContext(ctx, {
             validation: "cuid",
             code: ZodIssueCode2.invalid_string,
-            message: check2.message
+            message: check3.message
           });
           status.dirty();
         }
-      } else if (check2.kind === "cuid2") {
+      } else if (check3.kind === "cuid2") {
         if (!cuid2Regex.test(input.data)) {
           ctx = this._getOrReturnCtx(input, ctx);
           addIssueToContext(ctx, {
             validation: "cuid2",
             code: ZodIssueCode2.invalid_string,
-            message: check2.message
+            message: check3.message
           });
           status.dirty();
         }
-      } else if (check2.kind === "ulid") {
+      } else if (check3.kind === "ulid") {
         if (!ulidRegex.test(input.data)) {
           ctx = this._getOrReturnCtx(input, ctx);
           addIssueToContext(ctx, {
             validation: "ulid",
             code: ZodIssueCode2.invalid_string,
-            message: check2.message
+            message: check3.message
           });
           status.dirty();
         }
-      } else if (check2.kind === "url") {
+      } else if (check3.kind === "url") {
         try {
           new URL(input.data);
         } catch {
@@ -75390,153 +75470,153 @@ var ZodString2 = class _ZodString2 extends ZodType2 {
           addIssueToContext(ctx, {
             validation: "url",
             code: ZodIssueCode2.invalid_string,
-            message: check2.message
+            message: check3.message
           });
           status.dirty();
         }
-      } else if (check2.kind === "regex") {
-        check2.regex.lastIndex = 0;
-        const testResult = check2.regex.test(input.data);
+      } else if (check3.kind === "regex") {
+        check3.regex.lastIndex = 0;
+        const testResult = check3.regex.test(input.data);
         if (!testResult) {
           ctx = this._getOrReturnCtx(input, ctx);
           addIssueToContext(ctx, {
             validation: "regex",
             code: ZodIssueCode2.invalid_string,
-            message: check2.message
+            message: check3.message
           });
           status.dirty();
         }
-      } else if (check2.kind === "trim") {
+      } else if (check3.kind === "trim") {
         input.data = input.data.trim();
-      } else if (check2.kind === "includes") {
-        if (!input.data.includes(check2.value, check2.position)) {
+      } else if (check3.kind === "includes") {
+        if (!input.data.includes(check3.value, check3.position)) {
           ctx = this._getOrReturnCtx(input, ctx);
           addIssueToContext(ctx, {
             code: ZodIssueCode2.invalid_string,
-            validation: { includes: check2.value, position: check2.position },
-            message: check2.message
+            validation: { includes: check3.value, position: check3.position },
+            message: check3.message
           });
           status.dirty();
         }
-      } else if (check2.kind === "toLowerCase") {
+      } else if (check3.kind === "toLowerCase") {
         input.data = input.data.toLowerCase();
-      } else if (check2.kind === "toUpperCase") {
+      } else if (check3.kind === "toUpperCase") {
         input.data = input.data.toUpperCase();
-      } else if (check2.kind === "startsWith") {
-        if (!input.data.startsWith(check2.value)) {
+      } else if (check3.kind === "startsWith") {
+        if (!input.data.startsWith(check3.value)) {
           ctx = this._getOrReturnCtx(input, ctx);
           addIssueToContext(ctx, {
             code: ZodIssueCode2.invalid_string,
-            validation: { startsWith: check2.value },
-            message: check2.message
+            validation: { startsWith: check3.value },
+            message: check3.message
           });
           status.dirty();
         }
-      } else if (check2.kind === "endsWith") {
-        if (!input.data.endsWith(check2.value)) {
+      } else if (check3.kind === "endsWith") {
+        if (!input.data.endsWith(check3.value)) {
           ctx = this._getOrReturnCtx(input, ctx);
           addIssueToContext(ctx, {
             code: ZodIssueCode2.invalid_string,
-            validation: { endsWith: check2.value },
-            message: check2.message
+            validation: { endsWith: check3.value },
+            message: check3.message
           });
           status.dirty();
         }
-      } else if (check2.kind === "datetime") {
-        const regex = datetimeRegex(check2);
+      } else if (check3.kind === "datetime") {
+        const regex = datetimeRegex(check3);
         if (!regex.test(input.data)) {
           ctx = this._getOrReturnCtx(input, ctx);
           addIssueToContext(ctx, {
             code: ZodIssueCode2.invalid_string,
             validation: "datetime",
-            message: check2.message
+            message: check3.message
           });
           status.dirty();
         }
-      } else if (check2.kind === "date") {
+      } else if (check3.kind === "date") {
         const regex = dateRegex;
         if (!regex.test(input.data)) {
           ctx = this._getOrReturnCtx(input, ctx);
           addIssueToContext(ctx, {
             code: ZodIssueCode2.invalid_string,
             validation: "date",
-            message: check2.message
+            message: check3.message
           });
           status.dirty();
         }
-      } else if (check2.kind === "time") {
-        const regex = timeRegex(check2);
+      } else if (check3.kind === "time") {
+        const regex = timeRegex(check3);
         if (!regex.test(input.data)) {
           ctx = this._getOrReturnCtx(input, ctx);
           addIssueToContext(ctx, {
             code: ZodIssueCode2.invalid_string,
             validation: "time",
-            message: check2.message
+            message: check3.message
           });
           status.dirty();
         }
-      } else if (check2.kind === "duration") {
+      } else if (check3.kind === "duration") {
         if (!durationRegex.test(input.data)) {
           ctx = this._getOrReturnCtx(input, ctx);
           addIssueToContext(ctx, {
             validation: "duration",
             code: ZodIssueCode2.invalid_string,
-            message: check2.message
+            message: check3.message
           });
           status.dirty();
         }
-      } else if (check2.kind === "ip") {
-        if (!isValidIP(input.data, check2.version)) {
+      } else if (check3.kind === "ip") {
+        if (!isValidIP(input.data, check3.version)) {
           ctx = this._getOrReturnCtx(input, ctx);
           addIssueToContext(ctx, {
             validation: "ip",
             code: ZodIssueCode2.invalid_string,
-            message: check2.message
+            message: check3.message
           });
           status.dirty();
         }
-      } else if (check2.kind === "jwt") {
-        if (!isValidJWT2(input.data, check2.alg)) {
+      } else if (check3.kind === "jwt") {
+        if (!isValidJWT2(input.data, check3.alg)) {
           ctx = this._getOrReturnCtx(input, ctx);
           addIssueToContext(ctx, {
             validation: "jwt",
             code: ZodIssueCode2.invalid_string,
-            message: check2.message
+            message: check3.message
           });
           status.dirty();
         }
-      } else if (check2.kind === "cidr") {
-        if (!isValidCidr(input.data, check2.version)) {
+      } else if (check3.kind === "cidr") {
+        if (!isValidCidr(input.data, check3.version)) {
           ctx = this._getOrReturnCtx(input, ctx);
           addIssueToContext(ctx, {
             validation: "cidr",
             code: ZodIssueCode2.invalid_string,
-            message: check2.message
+            message: check3.message
           });
           status.dirty();
         }
-      } else if (check2.kind === "base64") {
+      } else if (check3.kind === "base64") {
         if (!base64Regex.test(input.data)) {
           ctx = this._getOrReturnCtx(input, ctx);
           addIssueToContext(ctx, {
             validation: "base64",
             code: ZodIssueCode2.invalid_string,
-            message: check2.message
+            message: check3.message
           });
           status.dirty();
         }
-      } else if (check2.kind === "base64url") {
+      } else if (check3.kind === "base64url") {
         if (!base64urlRegex.test(input.data)) {
           ctx = this._getOrReturnCtx(input, ctx);
           addIssueToContext(ctx, {
             validation: "base64url",
             code: ZodIssueCode2.invalid_string,
-            message: check2.message
+            message: check3.message
           });
           status.dirty();
         }
       } else {
-        util.assertNever(check2);
+        util.assertNever(check3);
       }
     }
     return { status: status.value, value: input.data };
@@ -75548,10 +75628,10 @@ var ZodString2 = class _ZodString2 extends ZodType2 {
       ...errorUtil.errToObj(message)
     });
   }
-  _addCheck(check2) {
+  _addCheck(check3) {
     return new _ZodString2({
       ...this._def,
-      checks: [...this._def.checks, check2]
+      checks: [...this._def.checks, check3]
     });
   }
   email(message) {
@@ -75816,67 +75896,67 @@ var ZodNumber2 = class _ZodNumber extends ZodType2 {
     }
     let ctx = void 0;
     const status = new ParseStatus();
-    for (const check2 of this._def.checks) {
-      if (check2.kind === "int") {
+    for (const check3 of this._def.checks) {
+      if (check3.kind === "int") {
         if (!util.isInteger(input.data)) {
           ctx = this._getOrReturnCtx(input, ctx);
           addIssueToContext(ctx, {
             code: ZodIssueCode2.invalid_type,
             expected: "integer",
             received: "float",
-            message: check2.message
+            message: check3.message
           });
           status.dirty();
         }
-      } else if (check2.kind === "min") {
-        const tooSmall = check2.inclusive ? input.data < check2.value : input.data <= check2.value;
+      } else if (check3.kind === "min") {
+        const tooSmall = check3.inclusive ? input.data < check3.value : input.data <= check3.value;
         if (tooSmall) {
           ctx = this._getOrReturnCtx(input, ctx);
           addIssueToContext(ctx, {
             code: ZodIssueCode2.too_small,
-            minimum: check2.value,
+            minimum: check3.value,
             type: "number",
-            inclusive: check2.inclusive,
+            inclusive: check3.inclusive,
             exact: false,
-            message: check2.message
+            message: check3.message
           });
           status.dirty();
         }
-      } else if (check2.kind === "max") {
-        const tooBig = check2.inclusive ? input.data > check2.value : input.data >= check2.value;
+      } else if (check3.kind === "max") {
+        const tooBig = check3.inclusive ? input.data > check3.value : input.data >= check3.value;
         if (tooBig) {
           ctx = this._getOrReturnCtx(input, ctx);
           addIssueToContext(ctx, {
             code: ZodIssueCode2.too_big,
-            maximum: check2.value,
+            maximum: check3.value,
             type: "number",
-            inclusive: check2.inclusive,
+            inclusive: check3.inclusive,
             exact: false,
-            message: check2.message
+            message: check3.message
           });
           status.dirty();
         }
-      } else if (check2.kind === "multipleOf") {
-        if (floatSafeRemainder2(input.data, check2.value) !== 0) {
+      } else if (check3.kind === "multipleOf") {
+        if (floatSafeRemainder2(input.data, check3.value) !== 0) {
           ctx = this._getOrReturnCtx(input, ctx);
           addIssueToContext(ctx, {
             code: ZodIssueCode2.not_multiple_of,
-            multipleOf: check2.value,
-            message: check2.message
+            multipleOf: check3.value,
+            message: check3.message
           });
           status.dirty();
         }
-      } else if (check2.kind === "finite") {
+      } else if (check3.kind === "finite") {
         if (!Number.isFinite(input.data)) {
           ctx = this._getOrReturnCtx(input, ctx);
           addIssueToContext(ctx, {
             code: ZodIssueCode2.not_finite,
-            message: check2.message
+            message: check3.message
           });
           status.dirty();
         }
       } else {
-        util.assertNever(check2);
+        util.assertNever(check3);
       }
     }
     return { status: status.value, value: input.data };
@@ -75907,10 +75987,10 @@ var ZodNumber2 = class _ZodNumber extends ZodType2 {
       ]
     });
   }
-  _addCheck(check2) {
+  _addCheck(check3) {
     return new _ZodNumber({
       ...this._def,
-      checks: [...this._def.checks, check2]
+      checks: [...this._def.checks, check3]
     });
   }
   int(message) {
@@ -76045,45 +76125,45 @@ var ZodBigInt2 = class _ZodBigInt extends ZodType2 {
     }
     let ctx = void 0;
     const status = new ParseStatus();
-    for (const check2 of this._def.checks) {
-      if (check2.kind === "min") {
-        const tooSmall = check2.inclusive ? input.data < check2.value : input.data <= check2.value;
+    for (const check3 of this._def.checks) {
+      if (check3.kind === "min") {
+        const tooSmall = check3.inclusive ? input.data < check3.value : input.data <= check3.value;
         if (tooSmall) {
           ctx = this._getOrReturnCtx(input, ctx);
           addIssueToContext(ctx, {
             code: ZodIssueCode2.too_small,
             type: "bigint",
-            minimum: check2.value,
-            inclusive: check2.inclusive,
-            message: check2.message
+            minimum: check3.value,
+            inclusive: check3.inclusive,
+            message: check3.message
           });
           status.dirty();
         }
-      } else if (check2.kind === "max") {
-        const tooBig = check2.inclusive ? input.data > check2.value : input.data >= check2.value;
+      } else if (check3.kind === "max") {
+        const tooBig = check3.inclusive ? input.data > check3.value : input.data >= check3.value;
         if (tooBig) {
           ctx = this._getOrReturnCtx(input, ctx);
           addIssueToContext(ctx, {
             code: ZodIssueCode2.too_big,
             type: "bigint",
-            maximum: check2.value,
-            inclusive: check2.inclusive,
-            message: check2.message
+            maximum: check3.value,
+            inclusive: check3.inclusive,
+            message: check3.message
           });
           status.dirty();
         }
-      } else if (check2.kind === "multipleOf") {
-        if (input.data % check2.value !== BigInt(0)) {
+      } else if (check3.kind === "multipleOf") {
+        if (input.data % check3.value !== BigInt(0)) {
           ctx = this._getOrReturnCtx(input, ctx);
           addIssueToContext(ctx, {
             code: ZodIssueCode2.not_multiple_of,
-            multipleOf: check2.value,
-            message: check2.message
+            multipleOf: check3.value,
+            message: check3.message
           });
           status.dirty();
         }
       } else {
-        util.assertNever(check2);
+        util.assertNever(check3);
       }
     }
     return { status: status.value, value: input.data };
@@ -76123,10 +76203,10 @@ var ZodBigInt2 = class _ZodBigInt extends ZodType2 {
       ]
     });
   }
-  _addCheck(check2) {
+  _addCheck(check3) {
     return new _ZodBigInt({
       ...this._def,
-      checks: [...this._def.checks, check2]
+      checks: [...this._def.checks, check3]
     });
   }
   positive(message) {
@@ -76246,35 +76326,35 @@ var ZodDate2 = class _ZodDate extends ZodType2 {
     }
     const status = new ParseStatus();
     let ctx = void 0;
-    for (const check2 of this._def.checks) {
-      if (check2.kind === "min") {
-        if (input.data.getTime() < check2.value) {
+    for (const check3 of this._def.checks) {
+      if (check3.kind === "min") {
+        if (input.data.getTime() < check3.value) {
           ctx = this._getOrReturnCtx(input, ctx);
           addIssueToContext(ctx, {
             code: ZodIssueCode2.too_small,
-            message: check2.message,
+            message: check3.message,
             inclusive: true,
             exact: false,
-            minimum: check2.value,
+            minimum: check3.value,
             type: "date"
           });
           status.dirty();
         }
-      } else if (check2.kind === "max") {
-        if (input.data.getTime() > check2.value) {
+      } else if (check3.kind === "max") {
+        if (input.data.getTime() > check3.value) {
           ctx = this._getOrReturnCtx(input, ctx);
           addIssueToContext(ctx, {
             code: ZodIssueCode2.too_big,
-            message: check2.message,
+            message: check3.message,
             inclusive: true,
             exact: false,
-            maximum: check2.value,
+            maximum: check3.value,
             type: "date"
           });
           status.dirty();
         }
       } else {
-        util.assertNever(check2);
+        util.assertNever(check3);
       }
     }
     return {
@@ -76282,10 +76362,10 @@ var ZodDate2 = class _ZodDate extends ZodType2 {
       value: new Date(input.data.getTime())
     };
   }
-  _addCheck(check2) {
+  _addCheck(check3) {
     return new _ZodDate({
       ...this._def,
-      checks: [...this._def.checks, check2]
+      checks: [...this._def.checks, check3]
     });
   }
   min(minDate, message) {
@@ -78146,10 +78226,10 @@ function cleanParams(params, data) {
   const p2 = typeof p === "string" ? { message: p } : p;
   return p2;
 }
-function custom2(check2, _params = {}, fatal2) {
-  if (check2)
+function custom2(check3, _params = {}, fatal2) {
+  if (check3)
     return ZodAny2.create().superRefine((data, ctx) => {
-      const r = check2(data);
+      const r = check3(data);
       if (r instanceof Promise) {
         return r.then((r2) => {
           if (!r2) {
@@ -79766,6 +79846,16 @@ router3.delete("/jobs/:id", requireAuth, requireRole(["admin", "company"]), asyn
     res.status(400).json({ error: "Invalid id" });
     return;
   }
+  const [job] = await db.select().from(jobsTable).where(eq(jobsTable.id, params.data.id));
+  if (!job) {
+    res.status(404).json({ error: "Job not found" });
+    return;
+  }
+  const user = req.user;
+  if (user.role === "company" && job.companyId !== user.id) {
+    res.status(403).json({ error: "Forbidden: You do not own this job listing" });
+    return;
+  }
   await db.delete(jobsTable).where(eq(jobsTable.id, params.data.id));
   res.sendStatus(204);
 });
@@ -79802,6 +79892,7 @@ var jobs_default = router3;
 var import_express4 = __toESM(require_express2(), 1);
 init_src();
 init_drizzle_orm();
+init_wallet_security();
 var router4 = (0, import_express4.Router)();
 function getPriorityScore(title, category) {
   if (!title || !category) return 0;
@@ -80002,11 +80093,14 @@ router4.post("/applications", requireAuth, async (req, res) => {
     cvSnapshot: cleanCvSnapshot,
     contactInfoSnapshot: cleanContactInfoSnapshot
   }).returning();
+  const releaseLock = await acquireUserLock(parsed.data.jobId);
   try {
     const [currentJob] = await db.select().from(jobsTable).where(eq(jobsTable.id, parsed.data.jobId));
     const newCount = (currentJob?.applicationCount ?? 0) + 1;
     await db.update(jobsTable).set({ applicationCount: newCount }).where(eq(jobsTable.id, parsed.data.jobId));
   } catch (_e) {
+  } finally {
+    releaseLock();
   }
   res.status(201).json({ ...app2, jobTitle: null, createdAt: app2.createdAt ? typeof app2.createdAt === "string" ? app2.createdAt : new Date(app2.createdAt).toISOString() : (/* @__PURE__ */ new Date()).toISOString() });
 });
@@ -80157,6 +80251,7 @@ var DailyService = class {
           "Authorization": `Bearer ${DAILY_API_KEY}`,
           "Content-Type": "application/json"
         },
+        signal: AbortSignal.timeout(1e4),
         body: JSON.stringify({
           name: roomName,
           privacy: "private",
@@ -80215,6 +80310,7 @@ var DailyService = class {
           "Authorization": `Bearer ${DAILY_API_KEY}`,
           "Content-Type": "application/json"
         },
+        signal: AbortSignal.timeout(1e4),
         body: JSON.stringify({
           properties: {
             room_name: roomName,
@@ -80371,8 +80467,8 @@ var workshopUploadRateLimit = rateLimit({
   message: "\u062A\u0645 \u062A\u062C\u0627\u0648\u0632 \u062D\u062F \u0631\u0641\u0639 \u0627\u0644\u0645\u0644\u0641\u0627\u062A. \u064A\u0631\u062C\u0649 \u0627\u0644\u0645\u062D\u0627\u0648\u0644\u0629 \u0628\u0639\u062F \u062F\u0642\u064A\u0642\u0629."
 });
 var router5 = (0, import_express5.Router)();
-function getDynamicStatus(dateStr, durationMin) {
-  const startTime = new Date(dateStr).getTime();
+function getDynamicStatus(dateVal, durationMin) {
+  const startTime = new Date(dateVal).getTime();
   const endTime = startTime + (durationMin || 60) * 60 * 1e3;
   const now = Date.now();
   if (now < startTime) {
@@ -80418,7 +80514,12 @@ router5.post("/workshops", requireAuth, requireRole(["admin", "instructor"]), as
     res.status(400).json({ error: parsed.error.message });
     return;
   }
-  const [w] = await db.insert(workshopsTable).values({ ...parsed.data, tags: parsed.data.tags ?? [] }).returning();
+  const dateObj = new Date(parsed.data.date);
+  const [w] = await db.insert(workshopsTable).values({
+    ...parsed.data,
+    date: dateObj,
+    tags: parsed.data.tags ?? []
+  }).returning();
   await logAuditEvent({ action: "workshop_create", userId: req.user.id, targetType: "workshop", targetId: w.id, details: { title: parsed.data.title }, req });
   res.status(201).json(serializeWorkshop(w));
 });
@@ -80446,7 +80547,11 @@ router5.patch("/workshops/:id", requireAuth, requireRole(["admin", "instructor"]
     res.status(400).json({ error: parsed.error.message });
     return;
   }
-  const [w] = await db.update(workshopsTable).set(parsed.data).where(eq(workshopsTable.id, params.data.id)).returning();
+  const updateData = { ...parsed.data };
+  if (parsed.data.date) {
+    updateData.date = new Date(parsed.data.date);
+  }
+  const [w] = await db.update(workshopsTable).set(updateData).where(eq(workshopsTable.id, params.data.id)).returning();
   if (!w) {
     res.status(404).json({ error: "Workshop not found" });
     return;
@@ -80498,7 +80603,7 @@ router5.post("/workshops/:id/enroll", requireAuth, paymentRateLimit, async (req,
   }
   const price = workshop.price ?? 0;
   if (price > 0 && (user.role === "student" || user.role === "company")) {
-    const releaseLock = await acquireUserLock(targetUserId);
+    const releaseLock2 = await acquireUserLock(targetUserId);
     try {
       const [doubleCheck] = await db.select().from(enrollmentsTable).where(and(eq(enrollmentsTable.workshopId, params.data.id), eq(enrollmentsTable.userId, targetUserId)));
       if (doubleCheck) {
@@ -80536,7 +80641,7 @@ router5.post("/workshops/:id/enroll", requireAuth, paymentRateLimit, async (req,
       await insertSecureTransaction(targetUserId, 1, price, "workshop_enrollment", `Enroll: ${workshop.title.substring(0, 40)}`);
       await logAuditEvent({ action: "workshop_enroll_paid", userId: targetUserId, targetType: "workshop", targetId: workshop.id, details: { price, workshopTitle: workshop.title }, req });
     } finally {
-      releaseLock();
+      releaseLock2();
     }
   }
   const [enrollment] = await db.insert(enrollmentsTable).values({
@@ -80545,8 +80650,13 @@ router5.post("/workshops/:id/enroll", requireAuth, paymentRateLimit, async (req,
     userName: (user.role === "admin" || user.role === "instructor" ? parsed.data.userName : null) || user.name || "",
     userEmail: (user.role === "admin" || user.role === "instructor" ? parsed.data.userEmail : null) || user.email || ""
   }).returning();
-  const [wsForCount] = await db.select().from(workshopsTable).where(eq(workshopsTable.id, params.data.id));
-  await db.update(workshopsTable).set({ enrolledCount: (wsForCount?.enrolledCount || 0) + 1 }).where(eq(workshopsTable.id, params.data.id));
+  const releaseLock = await acquireUserLock(params.data.id);
+  try {
+    const [wsForCount] = await db.select().from(workshopsTable).where(eq(workshopsTable.id, params.data.id));
+    await db.update(workshopsTable).set({ enrolledCount: (wsForCount?.enrolledCount || 0) + 1 }).where(eq(workshopsTable.id, params.data.id));
+  } finally {
+    releaseLock();
+  }
   if (price > 0) {
     const [freshUser] = await db.select().from(usersTable).where(eq(usersTable.id, targetUserId));
     res.status(201).json({ ...enrollment, createdAt: enrollment.createdAt.toISOString(), pointsSpent: price, remainingPoints: freshUser?.points || 0 });
@@ -80710,7 +80820,7 @@ router5.post("/workshops/:id/exam/submit", requireAuth, async (req, res) => {
       certificateId = existingCert.id;
     } else {
       const certNumber = `CERT-WSH-${workshop.id}-${user.id}-${Date.now()}`;
-      const verificationCode = `MH-VFY-${Math.random().toString(36).substring(2, 8).toUpperCase()}-${Math.floor(1e3 + Math.random() * 9e3)}`;
+      const verificationCode = `MH-VFY-${crypto5.randomBytes(3).toString("hex").toUpperCase()}-${crypto5.randomInt(1e3, 1e4)}`;
       const [cert] = await db.insert(certificatesTable).values({
         userId: user.id,
         userName: user.name,
@@ -80814,7 +80924,7 @@ router5.post("/workshops/:id/certificate/claim", requireAuth, async (req, res) =
     return;
   }
   const certNumber = `CERT-WSH-${workshop.id}-${dbUser.id}-${Date.now()}`;
-  const verificationCode = `MH-VFY-${Math.random().toString(36).substring(2, 8).toUpperCase()}-${Math.floor(1e3 + Math.random() * 9e3)}`;
+  const verificationCode = `MH-VFY-${crypto5.randomBytes(3).toString("hex").toUpperCase()}-${crypto5.randomInt(1e3, 1e4)}`;
   const [cert] = await db.insert(certificatesTable).values({
     userId: dbUser.id,
     userName: dbUser.name,
@@ -80966,7 +81076,8 @@ router5.post("/workshops/:id/start-stream", requireAuth, requireRole(["admin", "
         const response = await fetch(`https://api.daily.co/v1/rooms/${roomName}`, {
           headers: {
             "Authorization": `Bearer ${process.env.DAILY_API_KEY}`
-          }
+          },
+          signal: AbortSignal.timeout(1e4)
         });
         if (response.status === 404) {
           roomUrl = null;
@@ -81025,7 +81136,8 @@ router5.get("/workshops/:id/join-stream", requireAuth, async (req, res) => {
       const response = await fetch(`https://api.daily.co/v1/rooms/${w.dailyRoomName}`, {
         headers: {
           "Authorization": `Bearer ${process.env.DAILY_API_KEY}`
-        }
+        },
+        signal: AbortSignal.timeout(1e4)
       });
       if (response.status === 404) {
         await db.update(workshopsTable).set({ dailyRoomUrl: null, dailyRoomName: null, isClosed: 1 }).where(eq(workshopsTable.id, workshopId));
@@ -81352,7 +81464,8 @@ router5.post("/workshops/:id/end-stream", requireAuth, async (req, res) => {
           method: "DELETE",
           headers: {
             "Authorization": `Bearer ${process.env.DAILY_API_KEY}`
-          }
+          },
+          signal: AbortSignal.timeout(1e4)
         });
       } catch (delErr) {
         logger3.error({ delErr }, "Failed to delete Daily room on stream end");
@@ -81405,7 +81518,7 @@ router6.post("/certificates", requireAuth, requireRole(["admin"]), async (req, r
   }
   const idSuffix = type === "track" ? `TRK-${trackId}` : `WSH-${workshopId}`;
   const certNumber = `CERT-${idSuffix}-${userId}-${Date.now()}`;
-  const verificationCode = `MH-VFY-${Math.random().toString(36).substring(2, 8).toUpperCase()}-${Math.floor(1e3 + Math.random() * 9e3)}`;
+  const verificationCode = `MH-VFY-${crypto6.randomBytes(3).toString("hex").toUpperCase()}-${crypto6.randomInt(1e3, 1e4)}`;
   const lvl = level !== void 0 ? Number(level) : type === "participation" ? 1 : type === "track" ? 3 : 2;
   const cst = cost !== void 0 ? Number(cost) : type === "participation" ? 0 : type === "track" ? 250 : 100;
   const [cert] = await db.insert(certificatesTable).values({
@@ -81570,7 +81683,8 @@ router6.get("/certificates/:id", async (req, res) => {
       return;
     }
   }
-  res.json(serializeCert(cert));
+  const { userId, cost, signatureHash, isPaid, ...publicCert } = serializeCert(cert);
+  res.json(publicCert);
 });
 router6.delete("/certificates/:id", requireAuth, requireRole(["admin"]), async (req, res) => {
   const certId = parseInt(req.params.id, 10);
@@ -81631,7 +81745,7 @@ router6.post("/certificates/batch-issue", requireAuth, requireRole(["admin"]), a
       const [u] = await db.select().from(usersTable).where(eq(usersTable.id, userId));
       if (!u) continue;
       const certNumber = `CERT-TRK-${track.id}-${u.id}-${Date.now()}`;
-      const verificationCode = `MH-VFY-${Math.random().toString(36).substring(2, 8).toUpperCase()}-${Math.floor(1e3 + Math.random() * 9e3)}`;
+      const verificationCode = `MH-VFY-${crypto6.randomBytes(3).toString("hex").toUpperCase()}-${crypto6.randomInt(1e3, 1e4)}`;
       const certLevel = level !== void 0 ? Number(level) : 3;
       let cost = 250;
       if (certLevel === 1) cost = 500;
@@ -81673,7 +81787,7 @@ router6.post("/certificates/batch-issue", requireAuth, requireRole(["admin"]), a
     skippedCount = alreadyCertified.size;
     for (const u of usersToIssue) {
       const certNumber = `CERT-WSH-${workshop.id}-${u.id}-${Date.now()}`;
-      const verificationCode = `MH-VFY-${Math.random().toString(36).substring(2, 8).toUpperCase()}-${Math.floor(1e3 + Math.random() * 9e3)}`;
+      const verificationCode = `MH-VFY-${crypto6.randomBytes(3).toString("hex").toUpperCase()}-${crypto6.randomInt(1e3, 1e4)}`;
       const certLevel = level !== void 0 ? Number(level) : 2;
       let cost = 100;
       if (certLevel === 1) cost = 500;
@@ -81771,6 +81885,11 @@ router7.put("/tracks/:id", requireAuth, requireRole(["admin"]), async (req, res)
     res.status(400).json({ error: parsed.error.message });
     return;
   }
+  const id = parseInt(req.params.id);
+  if (isNaN(id)) {
+    res.status(400).json({ error: "Invalid track ID" });
+    return;
+  }
   const updated = await db.update(tracksTable).set({
     title: parsed.data.title,
     slug: parsed.data.slug,
@@ -81781,19 +81900,33 @@ router7.put("/tracks/:id", requireAuth, requireRole(["admin"]), async (req, res)
     iconUrl: parsed.data.iconUrl,
     instructorId: parsed.data.instructorId,
     price: parsed.data.price
-  }).where(eq(tracksTable.id, parseInt(req.params.id))).returning();
+  }).where(eq(tracksTable.id, id)).returning();
   res.json(updated[0]);
 });
 router7.delete("/tracks/:id", requireAuth, requireRole(["admin"]), async (req, res) => {
-  await db.delete(tracksTable).where(eq(tracksTable.id, parseInt(req.params.id)));
+  const id = parseInt(req.params.id);
+  if (isNaN(id)) {
+    res.status(400).json({ error: "Invalid track ID" });
+    return;
+  }
+  await db.delete(tracksTable).where(eq(tracksTable.id, id));
   res.status(204).send();
 });
 router7.get("/tracks/:trackId/modules", async (req, res) => {
-  const modules = await db.select().from(trackModulesTable).where(eq(trackModulesTable.trackId, parseInt(req.params.trackId)));
+  const trackId = parseInt(req.params.trackId);
+  if (isNaN(trackId)) {
+    res.status(400).json({ error: "Invalid trackId" });
+    return;
+  }
+  const modules = await db.select().from(trackModulesTable).where(eq(trackModulesTable.trackId, trackId));
   res.json(modules);
 });
 router7.post("/tracks/:trackId/modules", requireAuth, requireRole(["admin"]), async (req, res) => {
   const trackId = parseInt(req.params.trackId);
+  if (isNaN(trackId)) {
+    res.status(400).json({ error: "Invalid trackId" });
+    return;
+  }
   const parsed = ModuleBodySchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
@@ -81818,6 +81951,11 @@ router7.put("/modules/:id", requireAuth, requireRole(["admin"]), async (req, res
     res.status(400).json({ error: parsed.error.message });
     return;
   }
+  const id = parseInt(req.params.id);
+  if (isNaN(id)) {
+    res.status(400).json({ error: "Invalid module ID" });
+    return;
+  }
   const updated = await db.update(trackModulesTable).set({
     title: parsed.data.title,
     description: parsed.data.description,
@@ -81825,11 +81963,15 @@ router7.put("/modules/:id", requireAuth, requireRole(["admin"]), async (req, res
     estimatedMinutes: parsed.data.estimatedMinutes,
     content: parsed.data.content,
     order: parsed.data.sortOrder
-  }).where(eq(trackModulesTable.id, parseInt(req.params.id))).returning();
+  }).where(eq(trackModulesTable.id, id)).returning();
   res.json(updated[0]);
 });
 router7.delete("/modules/:id", requireAuth, requireRole(["admin"]), async (req, res) => {
   const moduleId = parseInt(req.params.id);
+  if (isNaN(moduleId)) {
+    res.status(400).json({ error: "Invalid module ID" });
+    return;
+  }
   const [mod] = await db.select().from(trackModulesTable).where(eq(trackModulesTable.id, moduleId));
   if (mod) {
     await db.delete(trackModulesTable).where(eq(trackModulesTable.id, moduleId));
@@ -81875,6 +82017,10 @@ router7.get("/tracks/:slug/progress", requireAuth, async (req, res) => {
   }
   const user = req.user;
   const targetUserId = user.role === "admin" || user.role === "instructor" ? parseInt(req.query.userId || String(user.id), 10) : user.id;
+  if (isNaN(targetUserId)) {
+    res.status(400).json({ error: "Invalid userId" });
+    return;
+  }
   const userId = targetUserId;
   const [track] = await db.select().from(tracksTable).where(eq(tracksTable.slug, params.data.slug));
   if (!track) {
@@ -81903,6 +82049,10 @@ router7.post("/tracks/:slug/enroll", requireAuth, paymentRateLimit, async (req, 
   }
   const user = req.user;
   const targetUserId = user.role === "admin" || user.role === "instructor" ? parseInt(req.body.userId || String(user.id), 10) : user.id;
+  if (isNaN(targetUserId)) {
+    res.status(400).json({ error: "Invalid userId" });
+    return;
+  }
   const userId = targetUserId;
   const [track] = await db.select().from(tracksTable).where(eq(tracksTable.slug, params.data.slug));
   if (!track) {
@@ -81911,7 +82061,7 @@ router7.post("/tracks/:slug/enroll", requireAuth, paymentRateLimit, async (req, 
   }
   const price = track.price ?? 0;
   if (price > 0 && (user.role === "student" || user.role === "company")) {
-    const releaseLock = await acquireUserLock(userId);
+    const releaseLock2 = await acquireUserLock(userId);
     try {
       const [dbUser] = await db.select().from(usersTable).where(eq(usersTable.id, userId));
       if (!dbUser) {
@@ -81944,7 +82094,7 @@ router7.post("/tracks/:slug/enroll", requireAuth, paymentRateLimit, async (req, 
       await insertSecureTransaction(userId, 1, price, "track_enrollment", `Enroll: ${track.title.substring(0, 40)}`);
       await logAuditEvent({ action: "track_enroll_paid", userId, targetType: "track", targetId: track.id, details: { price, trackTitle: track.title }, req });
     } finally {
-      releaseLock();
+      releaseLock2();
     }
   }
   const modules = await db.select().from(trackModulesTable).where(eq(trackModulesTable.trackId, track.id));
@@ -81961,7 +82111,13 @@ router7.post("/tracks/:slug/enroll", requireAuth, paymentRateLimit, async (req, 
       });
     }
   }
-  await db.update(tracksTable).set({ enrolledCount: (track.enrolledCount || 0) + 1 }).where(eq(tracksTable.id, track.id));
+  const releaseLock = await acquireUserLock(track.id);
+  try {
+    const [freshTrack] = await db.select().from(tracksTable).where(eq(tracksTable.id, track.id));
+    await db.update(tracksTable).set({ enrolledCount: (freshTrack?.enrolledCount || 0) + 1 }).where(eq(tracksTable.id, track.id));
+  } finally {
+    releaseLock();
+  }
   if (price > 0) {
     const [freshUser] = await db.select().from(usersTable).where(eq(usersTable.id, userId));
     res.json({ success: true, isEnrolled: true, percentComplete: 0, pointsSpent: price, remainingPoints: freshUser?.points || 0 });
@@ -82276,20 +82432,24 @@ init_src();
 init_drizzle_orm();
 var router10 = (0, import_express10.Router)();
 router10.get("/leaderboard", async (req, res) => {
-  const limit = parseInt(req.query.limit || "20", 10);
-  const users = await db.select().from(usersTable).orderBy(desc(usersTable.points)).limit(limit);
-  const entries = await Promise.all(users.map(async (u, idx) => {
-    const [{ count: certCount }] = await db.select({ count: sql`count(*)` }).from(certificatesTable).where(eq(certificatesTable.userId, u.id));
-    return {
-      rank: idx + 1,
-      userId: u.id,
-      name: u.name,
-      avatarUrl: u.avatarUrl,
-      points: u.points,
-      streak: u.streak,
-      certificateCount: Number(certCount),
-      completedTracks: 0
-    };
+  const limit = Math.min(parseInt(req.query.limit || "20", 10) || 20, 100);
+  const usersWithCertCount = await db.select({
+    id: usersTable.id,
+    name: usersTable.name,
+    avatarUrl: usersTable.avatarUrl,
+    points: usersTable.points,
+    streak: usersTable.streak,
+    certCount: sql`coalesce(count(${certificatesTable.id}), 0)`
+  }).from(usersTable).leftJoin(certificatesTable, eq(usersTable.id, certificatesTable.userId)).groupBy(usersTable.id).orderBy(desc(usersTable.points)).limit(limit);
+  const entries = usersWithCertCount.map((u, idx) => ({
+    rank: idx + 1,
+    userId: u.id,
+    name: u.name,
+    avatarUrl: u.avatarUrl,
+    points: u.points,
+    streak: u.streak,
+    certificateCount: Number(u.certCount),
+    completedTracks: 0
   }));
   res.json(entries);
 });
@@ -82300,6 +82460,22 @@ var import_express11 = __toESM(require_express2(), 1);
 init_src();
 init_drizzle_orm();
 var router11 = (0, import_express11.Router)();
+var mockInterviewRateLimit = rateLimit({
+  windowMs: 60 * 1e3,
+  max: 10,
+  // 10 requests per minute
+  keyPrefix: "rl:mock-interview",
+  message: "\u062A\u0645 \u062A\u062C\u0627\u0648\u0632 \u062D\u062F \u0631\u0633\u0627\u0626\u0644 \u0627\u0644\u0645\u0642\u0627\u0628\u0644\u0629 \u0627\u0644\u062A\u062C\u0631\u064A\u0628\u064A\u0629. \u064A\u0631\u062C\u0649 \u0627\u0644\u0645\u062D\u0627\u0648\u0644\u0629 \u0628\u0639\u062F \u062F\u0642\u064A\u0642\u0629."
+});
+var CreateMockSessionBody = external_exports2.object({
+  track: external_exports2.string().min(1).max(50),
+  title: external_exports2.string().min(1).max(200).optional()
+});
+var SendMockMessageBody = external_exports2.object({
+  sessionId: external_exports2.union([external_exports2.number(), external_exports2.string().regex(/^\d+$/).transform((val) => parseInt(val, 10))]),
+  message: external_exports2.string().min(1).max(1e4),
+  role: external_exports2.string().optional()
+});
 var aiResponses = {
   tot: [
     "Great answer! When training others, it's important to assess learner needs first. Can you tell me about a time you adapted your teaching style?",
@@ -82342,12 +82518,13 @@ router11.get("/mock-interview/sessions", requireAuth, async (req, res) => {
   }
   res.json(sessions.map((s) => ({ ...s, createdAt: s.createdAt.toISOString() })));
 });
-router11.post("/mock-interview/sessions", requireAuth, async (req, res) => {
-  const { track, title } = req.body;
-  if (!track) {
-    res.status(400).json({ error: "track required" });
+router11.post("/mock-interview/sessions", requireAuth, mockInterviewRateLimit, async (req, res) => {
+  const parsed = CreateMockSessionBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
     return;
   }
+  const { track, title } = parsed.data;
   const user = req.user;
   const [session] = await db.insert(mockInterviewSessionsTable).values({
     userId: user.id,
@@ -82356,14 +82533,15 @@ router11.post("/mock-interview/sessions", requireAuth, async (req, res) => {
   }).returning();
   res.status(201).json({ ...session, createdAt: session.createdAt.toISOString() });
 });
-router11.post("/mock-interview/message", requireAuth, async (req, res) => {
-  const { sessionId, message, role } = req.body;
-  if (!sessionId || !message || !role) {
-    res.status(400).json({ error: "sessionId, message and role required" });
+router11.post("/mock-interview/message", requireAuth, mockInterviewRateLimit, async (req, res) => {
+  const parsed = SendMockMessageBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
     return;
   }
+  const { sessionId, message } = parsed.data;
   const user = req.user;
-  const [session] = await db.select().from(mockInterviewSessionsTable).where(eq(mockInterviewSessionsTable.id, parseInt(sessionId, 10)));
+  const [session] = await db.select().from(mockInterviewSessionsTable).where(eq(mockInterviewSessionsTable.id, sessionId));
   if (!session) {
     res.status(404).json({ error: "Session not found" });
     return;
@@ -82373,13 +82551,13 @@ router11.post("/mock-interview/message", requireAuth, async (req, res) => {
     return;
   }
   await db.insert(mockInterviewMessagesTable).values({
-    sessionId: parseInt(sessionId, 10),
+    sessionId,
     role: "user",
     message
   });
-  const messages = await db.select().from(mockInterviewMessagesTable).where(eq(mockInterviewMessagesTable.sessionId, parseInt(sessionId, 10)));
-  const track = session?.track || "default";
-  const reply = getAIResponse(track, Math.floor(messages.length / 2));
+  const [{ count }] = await db.select({ count: sql`count(*)` }).from(mockInterviewMessagesTable).where(eq(mockInterviewMessagesTable.sessionId, sessionId));
+  const trackName = session?.track || "default";
+  const reply = getAIResponse(trackName, Math.floor(Number(count) / 2));
   const feedback = getFeedback(message);
   res.json({ reply, feedback, score: null });
 });
@@ -82392,13 +82570,13 @@ init_drizzle_orm();
 init_wallet_security();
 var router12 = (0, import_express12.Router)();
 var ConsultationBodySchema = external_exports2.object({
-  category: external_exports2.string().min(1),
+  category: external_exports2.string().min(1).max(100),
   title: external_exports2.string().min(1).max(200),
-  message: external_exports2.string().min(1),
+  message: external_exports2.string().min(1).max(5e3),
   assignedTo: external_exports2.string().optional().nullable()
 });
 var ConsultationReplyBodySchema = external_exports2.object({
-  response: external_exports2.string().min(1)
+  response: external_exports2.string().min(1).max(5e3)
 });
 router12.get("/consultations", requireAuth, async (req, res) => {
   try {
@@ -82438,6 +82616,18 @@ router12.post("/consultations", requireAuth, consultationRateLimit, async (req, 
     return;
   }
   const { category, title, message, assignedTo } = parsed.data;
+  if (assignedTo) {
+    const assignedId = parseInt(assignedTo, 10);
+    if (isNaN(assignedId)) {
+      res.status(400).json({ error: "Invalid assignedTo ID" });
+      return;
+    }
+    const [assignedUser] = await db.select().from(usersTable).where(eq(usersTable.id, assignedId));
+    if (!assignedUser || assignedUser.role !== "admin" && assignedUser.role !== "instructor") {
+      res.status(400).json({ error: "Consultation can only be assigned to a valid admin or instructor" });
+      return;
+    }
+  }
   const cost = CONSULTATION_COST;
   const userId = req.user.id;
   const releaseLock = await acquireUserLock(userId);
@@ -83255,7 +83445,13 @@ router13.get("/admin/security-audit", requireAuth, requireRole(["admin"]), async
     res.status(500).json({ error: "Internal server error" });
   }
 });
-router13.post("/admin/migrate-chain", requireAuth, requireRole(["admin"]), async (_req, res) => {
+router13.post("/admin/migrate-chain", requireAuth, requireRole(["admin"]), async (req, res) => {
+  if (req.body?.confirm !== true) {
+    res.status(400).json({
+      error: "Confirmation required: Must send { confirm: true } in the request body / \u064A\u062C\u0628 \u0625\u0631\u0633\u0627\u0644 { confirm: true } \u0641\u064A \u062C\u0633\u0645 \u0627\u0644\u0637\u0644\u0628 \u0644\u062A\u0623\u0643\u064A\u062F \u0639\u0645\u0644\u064A\u0629 \u0627\u0644\u062A\u0631\u062D\u064A\u0644"
+    });
+    return;
+  }
   try {
     const { migrateLegacyTransactions: migrateLegacyTransactions2 } = await Promise.resolve().then(() => (init_wallet_security(), wallet_security_exports));
     const result = await migrateLegacyTransactions2();
@@ -83308,6 +83504,41 @@ var DEFAULT_OPTIONS = {
 };
 async function compressVideo(inputBuffer, inputMime, options = {}) {
   const opts = { ...DEFAULT_OPTIONS, ...options };
+  if (opts.maxWidth !== void 0) {
+    const val = Number(opts.maxWidth);
+    if (!Number.isInteger(val) || val < 120 || val > 7680) {
+      throw new Error("Invalid maxWidth: must be an integer between 120 and 7680");
+    }
+    opts.maxWidth = val;
+  }
+  if (opts.maxHeight !== void 0) {
+    const val = Number(opts.maxHeight);
+    if (!Number.isInteger(val) || val < 120 || val > 7680) {
+      throw new Error("Invalid maxHeight: must be an integer between 120 and 7680");
+    }
+    opts.maxHeight = val;
+  }
+  if (opts.crf !== void 0) {
+    const val = Number(opts.crf);
+    if (!Number.isInteger(val) || val < 0 || val > 51) {
+      throw new Error("Invalid crf: must be an integer between 0 and 51");
+    }
+    opts.crf = val;
+  }
+  if (opts.fps !== void 0) {
+    const val = Number(opts.fps);
+    if (!Number.isInteger(val) || val < 1 || val > 120) {
+      throw new Error("Invalid fps: must be an integer between 1 and 120");
+    }
+    opts.fps = val;
+  }
+  const validPresets = /* @__PURE__ */ new Set(["ultrafast", "superfast", "veryfast", "faster", "fast", "medium", "slow", "slower", "veryslow", "placebo"]);
+  if (opts.preset !== void 0 && !validPresets.has(opts.preset)) {
+    throw new Error("Invalid preset value");
+  }
+  if (opts.audioBitrate !== void 0 && !/^\d+k$/.test(opts.audioBitrate)) {
+    throw new Error("Invalid audioBitrate: must match pattern e.g., '128k'");
+  }
   if (!isFfmpegAvailable()) {
     throw new Error("FFmpeg not available at " + FFMPEG_PATH);
   }

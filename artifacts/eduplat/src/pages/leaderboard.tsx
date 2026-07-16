@@ -13,6 +13,19 @@ const medalGlows = [
   "border-amber-700/50 bg-amber-700/10 text-amber-700 ring-amber-700/10",
 ];
 
+function getInitials(name?: string | null): string {
+  if (!name) return "U";
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "U";
+  return parts.map(n => n[0]).join("").slice(0, 2).toUpperCase();
+}
+
+function getFirstName(name?: string | null): string {
+  if (!name) return "User";
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  return parts[0] || "User";
+}
+
 export default function LeaderboardPage() {
   const { data: entries, isLoading } = useGetLeaderboard(undefined, { query: { queryKey: getGetLeaderboardQueryKey() } });
   const { user } = useAuth();
@@ -55,13 +68,13 @@ export default function LeaderboardPage() {
             >
               <div className="relative group">
                 <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-sm font-extrabold border-2 ring-4 ${medalGlows[1]}`}>
-                  {entries[1].name.split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase()}
+                  {getInitials(entries[1].name)}
                 </div>
                 <div className="absolute -top-3.5 -right-1 bg-slate-400 text-[10px] w-5 h-5 rounded-lg flex items-center justify-center text-white font-bold border-2 border-background">
                   2
                 </div>
               </div>
-              <p className="text-xs font-bold text-center truncate max-w-20 mt-1 text-foreground">{entries[1].name.split(" ")[0]}</p>
+              <p className="text-xs font-bold text-center truncate max-w-20 mt-1 text-foreground">{getFirstName(entries[1].name)}</p>
               <div className="h-20 w-16 sm:w-20 rounded-t-xl flex flex-col items-center justify-end pb-3 bg-gradient-to-t from-slate-400/20 to-slate-400/5 border border-slate-400/20 shadow-inner">
                 <Trophy className="w-5 h-5 text-slate-400" />
               </div>
@@ -80,13 +93,13 @@ export default function LeaderboardPage() {
             >
               <div className="relative group">
                 <div className={`w-16 h-16 rounded-2xl flex items-center justify-center text-base font-extrabold border-2 ring-4 ${medalGlows[0]} shadow-lg shadow-amber-500/10`}>
-                  {entries[0].name.split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase()}
+                  {getInitials(entries[0].name)}
                 </div>
                 <div className="absolute -top-4 -right-1.5 bg-amber-500 text-xs w-6 h-6 rounded-lg flex items-center justify-center text-white font-bold border-2 border-background shadow-md">
                   👑
                 </div>
               </div>
-              <p className="text-sm font-bold text-center truncate max-w-24 mt-1 text-foreground">{entries[0].name.split(" ")[0]}</p>
+              <p className="text-sm font-bold text-center truncate max-w-24 mt-1 text-foreground">{getFirstName(entries[0].name)}</p>
               <div className="h-26 w-20 sm:w-24 rounded-t-xl flex flex-col items-center justify-end pb-4 bg-gradient-to-t from-amber-500/20 to-amber-500/5 border border-amber-500/20 shadow-inner relative">
                 <div className="absolute inset-0 bg-primary/2 rounded-t-xl" />
                 <Trophy className="w-6 h-6 text-amber-500 animate-pulse relative z-10" />
@@ -106,13 +119,13 @@ export default function LeaderboardPage() {
             >
               <div className="relative group">
                 <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-sm font-extrabold border-2 ring-4 ${medalGlows[2]}`}>
-                  {entries[2].name.split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase()}
+                  {getInitials(entries[2].name)}
                 </div>
                 <div className="absolute -top-3.5 -right-1 bg-amber-700 text-[10px] w-5 h-5 rounded-lg flex items-center justify-center text-white font-bold border-2 border-background">
                   3
                 </div>
               </div>
-              <p className="text-xs font-bold text-center truncate max-w-20 mt-1 text-foreground">{entries[2].name.split(" ")[0]}</p>
+              <p className="text-xs font-bold text-center truncate max-w-20 mt-1 text-foreground">{getFirstName(entries[2].name)}</p>
               <div className="h-16 w-16 sm:w-20 rounded-t-xl flex flex-col items-center justify-end pb-2.5 bg-gradient-to-t from-amber-700/20 to-amber-700/5 border border-amber-700/20 shadow-inner">
                 <Trophy className="w-4 h-4 text-amber-700" />
               </div>
@@ -170,10 +183,10 @@ export default function LeaderboardPage() {
                           <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-[10.5px] border ${
                             isMe ? "bg-primary text-primary-foreground border-primary" : "bg-muted text-muted-foreground border-border/60"
                           }`}>
-                            {entry.name.slice(0, 2).toUpperCase()}
+                            {getInitials(entry.name)}
                           </div>
                           <div>
-                            <span className="font-bold text-foreground">{entry.name}</span>
+                            <span className="font-bold text-foreground">{entry.name || (isAr ? "مستخدم" : "User")}</span>
                             {isMe && <span className={`text-[9.5px] font-black ${isAr ? "mr-1.5" : "ml-1.5"} px-1.5 py-0.5 rounded bg-primary/10 text-primary border border-primary/20`}>{isAr ? "أنت" : "YOU"}</span>}
                           </div>
                         </div>

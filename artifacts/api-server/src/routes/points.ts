@@ -867,7 +867,13 @@ router.get("/admin/security-audit", requireAuth, requireRole(["admin"]), async (
 });
 
 // A16. POST /admin/migrate-chain - Re-sign all legacy transactions
-router.post("/admin/migrate-chain", requireAuth, requireRole(["admin"]), async (_req, res): Promise<void> => {
+router.post("/admin/migrate-chain", requireAuth, requireRole(["admin"]), async (req, res): Promise<void> => {
+  if (req.body?.confirm !== true) {
+    res.status(400).json({ 
+      error: "Confirmation required: Must send { confirm: true } in the request body / يجب إرسال { confirm: true } في جسم الطلب لتأكيد عملية الترحيل" 
+    });
+    return;
+  }
   try {
     const { migrateLegacyTransactions } = await import("../services/wallet-security");
     const result = await migrateLegacyTransactions();

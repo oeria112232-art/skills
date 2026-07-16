@@ -43,6 +43,7 @@ export class DailyService {
           "Authorization": `Bearer ${DAILY_API_KEY}`,
           "Content-Type": "application/json"
         },
+        signal: AbortSignal.timeout(10000),
         body: JSON.stringify({
           name: roomName,
           privacy: "private", // strict access control using meeting tokens
@@ -105,6 +106,7 @@ export class DailyService {
           "Authorization": `Bearer ${DAILY_API_KEY}`,
           "Content-Type": "application/json"
         },
+        signal: AbortSignal.timeout(10000),
         body: JSON.stringify({
           properties: {
             room_name: roomName,

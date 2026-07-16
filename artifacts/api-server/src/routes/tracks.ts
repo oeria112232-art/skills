@@ -76,6 +76,8 @@ router.post("/tracks", requireAuth, requireRole(["admin"]), async (req: any, res
 router.put("/tracks/:id", requireAuth, requireRole(["admin"]), async (req: any, res): Promise<void> => {
   const parsed = TrackBodySchema.partial().safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
+  const id = parseInt(req.params.id as string);
+  if (isNaN(id)) { res.status(400).json({ error: "Invalid track ID" }); return; }
   const updated = await db.update(tracksTable).set({
     title: parsed.data.title,
     slug: parsed.data.slug,
@@ -86,23 +88,28 @@ router.put("/tracks/:id", requireAuth, requireRole(["admin"]), async (req: any, 
     iconUrl: parsed.data.iconUrl,
     instructorId: parsed.data.instructorId,
     price: parsed.data.price,
-  }).where(eq(tracksTable.id, parseInt(req.params.id as string))).returning();
+  }).where(eq(tracksTable.id, id)).returning();
   res.json(updated[0]);
 });
 
 router.delete("/tracks/:id", requireAuth, requireRole(["admin"]), async (req, res): Promise<void> => {
-  await db.delete(tracksTable).where(eq(tracksTable.id, parseInt(req.params.id as string)));
+  const id = parseInt(req.params.id as string);
+  if (isNaN(id)) { res.status(400).json({ error: "Invalid track ID" }); return; }
+  await db.delete(tracksTable).where(eq(tracksTable.id, id));
   res.status(204).send();
 });
 
 // Module CRUD
 router.get("/tracks/:trackId/modules", async (req, res): Promise<void> => {
-  const modules = await db.select().from(trackModulesTable).where(eq(trackModulesTable.trackId, parseInt(req.params.trackId as string)));
+  const trackId = parseInt(req.params.trackId as string);
+  if (isNaN(trackId)) { res.status(400).json({ error: "Invalid trackId" }); return; }
+  const modules = await db.select().from(trackModulesTable).where(eq(trackModulesTable.trackId, trackId));
   res.json(modules);
 });
 
 router.post("/tracks/:trackId/modules", requireAuth, requireRole(["admin"]), async (req: any, res): Promise<void> => {
   const trackId = parseInt(req.params.trackId as string);
+  if (isNaN(trackId)) { res.status(400).json({ error: "Invalid trackId" }); return; }
   const parsed = ModuleBodySchema.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
   const newModule = await db.insert(trackModulesTable).values({
@@ -122,6 +129,8 @@ router.post("/tracks/:trackId/modules", requireAuth, requireRole(["admin"]), asy
 router.put("/modules/:id", requireAuth, requireRole(["admin"]), async (req: any, res): Promise<void> => {
   const parsed = ModuleBodySchema.partial().safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
+  const id = parseInt(req.params.id as string);
+  if (isNaN(id)) { res.status(400).json({ error: "Invalid module ID" }); return; }
   const updated = await db.update(trackModulesTable).set({
     title: parsed.data.title,
     description: parsed.data.description,
@@ -129,12 +138,13 @@ router.put("/modules/:id", requireAuth, requireRole(["admin"]), async (req: any,
     estimatedMinutes: parsed.data.estimatedMinutes,
     content: parsed.data.content,
     order: parsed.data.sortOrder,
-  }).where(eq(trackModulesTable.id, parseInt(req.params.id as string))).returning();
+  }).where(eq(trackModulesTable.id, id)).returning();
   res.json(updated[0]);
 });
 
 router.delete("/modules/:id", requireAuth, requireRole(["admin"]), async (req, res): Promise<void> => {
   const moduleId = parseInt(req.params.id as string);
+  if (isNaN(moduleId)) { res.status(400).json({ error: "Invalid module ID" }); return; }
   const [mod] = await db.select().from(trackModulesTable).where(eq(trackModulesTable.id, moduleId));
   if (mod) {
     await db.delete(trackModulesTable).where(eq(trackModulesTable.id, moduleId));
@@ -179,6 +189,7 @@ router.get("/tracks/:slug/progress", requireAuth, async (req: AuthenticatedReque
   const targetUserId = (user.role === "admin" || user.role === "instructor")
     ? parseInt(req.query.userId as string || String(user.id), 10)
     : user.id;
+  if (isNaN(targetUserId)) { res.status(400).json({ error: "Invalid userId" }); return; }
   const userId = targetUserId;
   const [track] = await db.select().from(tracksTable).where(eq(tracksTable.slug, params.data.slug));
   if (!track) { res.status(404).json({ error: "Track not found" }); return; }
@@ -206,6 +217,7 @@ router.post("/tracks/:slug/enroll", requireAuth, paymentRateLimit, async (req: A
   const targetUserId = (user.role === "admin" || user.role === "instructor")
     ? parseInt(req.body.userId as string || String(user.id), 10)
     : user.id;
+  if (isNaN(targetUserId)) { res.status(400).json({ error: "Invalid userId" }); return; }
   const userId = targetUserId;
   
   const [track] = await db.select().from(tracksTable).where(eq(tracksTable.slug, params.data.slug));
@@ -274,10 +286,16 @@ router.post("/tracks/:slug/enroll", requireAuth, paymentRateLimit, async (req: A
     }
   }
 
-  // Also increment track enrolledCount
-  await db.update(tracksTable)
-    .set({ enrolledCount: (track.enrolledCount || 0) + 1 })
-    .where(eq(tracksTable.id, track.id));
+  // Also increment track enrolledCount using a lock
+  const releaseLock = await acquireUserLock(track.id);
+  try {
+    const [freshTrack] = await db.select().from(tracksTable).where(eq(tracksTable.id, track.id));
+    await db.update(tracksTable)
+      .set({ enrolledCount: (freshTrack?.enrolledCount || 0) + 1 })
+      .where(eq(tracksTable.id, track.id));
+  } finally {
+    releaseLock();
+  }
 
   if (price > 0) {
     const [freshUser] = await db.select().from(usersTable).where(eq(usersTable.id, userId));

@@ -1,13 +1,14 @@
-import { pgTable, text, serial, timestamp, integer, index } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, timestamp, integer, index, unique, check } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
+import { sql } from "drizzle-orm";
 import { usersTable } from "./users";
 
 export const workshopsTable = pgTable("workshops", {
   id: serial("id").primaryKey(),
   title: text("title").notNull(),
   description: text("description").notNull(),
-  date: text("date").notNull(),
+  date: timestamp("date", { withTimezone: true }).notNull(),
   duration: integer("duration").notNull().default(60),
   instructor: text("instructor").notNull(),
   tags: text("tags").array().notNull().default([]),
@@ -33,7 +34,14 @@ export const workshopsTable = pgTable("workshops", {
   isClosed: integer("is_closed").notNull().default(0),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
-});
+}, (table) => ({
+  statusIdx: index("workshops_status_idx").on(table.status),
+  durationCheck: check("workshops_duration_check", sql`${table.duration} > 0`),
+  capacityCheck: check("workshops_capacity_check", sql`${table.capacity} > 0`),
+  enrolledCountCheck: check("workshops_enrolled_count_check", sql`${table.enrolledCount} >= 0`),
+  priceCheck: check("workshops_price_check", sql`${table.price} >= 0`),
+  statusCheck: check("workshops_status_check", sql`${table.status} IN ('upcoming', 'ongoing', 'completed')`),
+}));
 
 export const enrollmentsTable = pgTable("enrollments", {
   id: serial("id").primaryKey(),
@@ -47,6 +55,8 @@ export const enrollmentsTable = pgTable("enrollments", {
   workshopIdx: index("enrollments_workshop_idx").on(table.workshopId),
   userIdx: index("enrollments_user_idx").on(table.userId),
   workshopUserIdx: index("enrollments_workshop_user_idx").on(table.workshopId, table.userId),
+  unq: unique("enrollments_workshop_user_unq").on(table.workshopId, table.userId),
+  attendedMinutesCheck: check("enrollments_attended_minutes_check", sql`${table.attendedMinutes} >= 0`),
 }));
 
 export const examQuestionsTable = pgTable("exam_questions", {
@@ -111,6 +121,7 @@ export const workshopSubscriptionsTable = pgTable("workshop_subscriptions", {
   workshopIdx: index("workshop_subscriptions_workshop_idx").on(table.workshopId),
   userIdx: index("workshop_subscriptions_user_idx").on(table.userId),
   workshopUserIdx: index("workshop_subscriptions_workshop_user_idx").on(table.workshopId, table.userId),
+  unq: unique("workshop_subscriptions_workshop_user_unq").on(table.workshopId, table.userId),
 }));
 
 export const insertWorkshopSchema = createInsertSchema(workshopsTable).omit({ id: true, createdAt: true, updatedAt: true, enrolledCount: true });

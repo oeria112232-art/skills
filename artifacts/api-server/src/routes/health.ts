@@ -21,7 +21,10 @@ router.get("/healthz", async (_req, res) => {
   // 2. Check Daily.co connectivity
   try {
     const start = Date.now();
-    const response = await fetch("https://api.daily.co/v1/rooms", { method: "OPTIONS" });
+    const response = await fetch("https://api.daily.co/v1/rooms", { 
+      method: "OPTIONS",
+      signal: AbortSignal.timeout(5000)
+    });
     checks.daily = `ok (${Date.now() - start}ms)`;
   } catch (e: any) {
     checks.daily = `error: unreachable`;
@@ -39,7 +42,7 @@ router.get("/healthz", async (_req, res) => {
       checks.r2 = "ok (configured)";
     }
   } catch (e: any) {
-    checks.r2 = `error: ${e.message}`;
+    checks.r2 = "error: check failed";
     healthy = false;
   }
 

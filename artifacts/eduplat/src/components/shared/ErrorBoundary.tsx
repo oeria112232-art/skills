@@ -41,7 +41,7 @@ export class ErrorBoundary extends Component<Props, State> {
   public render() {
     if (this.state.hasError) {
       const isAr = typeof window !== "undefined" && (
-        localStorage.getItem("eduplat-language") === "ar" ||
+        localStorage.getItem("mharat-lang") === "ar" ||
         navigator.language.startsWith("ar")
       );
 
@@ -77,11 +77,21 @@ export class ErrorBoundary extends Component<Props, State> {
             {/* Error Details */}
             {this.state.error && (
               <div className="rounded-xl border border-border/80 bg-background/50 p-4 text-start font-mono text-xs text-destructive overflow-auto max-h-48 space-y-2">
-                <p className="font-bold">{this.state.error.toString()}</p>
-                {this.state.errorInfo && (
-                  <pre className="text-[10px] text-muted-foreground whitespace-pre-wrap leading-normal">
-                    {this.state.errorInfo.componentStack}
-                  </pre>
+                {import.meta.env.DEV ? (
+                  <>
+                    <p className="font-bold">{this.state.error.toString()}</p>
+                    {this.state.errorInfo && (
+                      <pre className="text-[10px] text-muted-foreground whitespace-pre-wrap leading-normal">
+                        {this.state.errorInfo.componentStack}
+                      </pre>
+                    )}
+                  </>
+                ) : (
+                  <p className="font-medium text-center py-2 text-muted-foreground">
+                    {isAr 
+                      ? "تم إخفاء تفاصيل الخطأ لأسباب أمنية." 
+                      : "Error details are hidden for security reasons."}
+                  </p>
                 )}
               </div>
             )}

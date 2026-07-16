@@ -1,6 +1,7 @@
-import { pgTable, text, serial, timestamp, integer, json } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, timestamp, integer, json, index, check } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
+import { sql } from "drizzle-orm";
 
 export interface ContactInfo {
   phone?: string;
@@ -50,7 +51,13 @@ export const usersTable = pgTable("users", {
   companyCategory: text("company_category").default("general"),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
   deletedAt: timestamp("deleted_at", { withTimezone: true }),
-});
+}, (table) => ({
+  roleIdx: index("users_role_idx").on(table.role),
+  deletedAtIdx: index("users_deleted_at_idx").on(table.deletedAt),
+  roleCheck: check("users_role_check", sql`${table.role} IN ('admin', 'instructor', 'student', 'company')`),
+  pointsCheck: check("users_points_check", sql`${table.points} >= 0`),
+  streakCheck: check("users_streak_check", sql`${table.streak} >= 0`),
+}));
 
 export const insertUserSchema = createInsertSchema(usersTable).omit({ id: true, createdAt: true, updatedAt: true, deletedAt: true });
 export type InsertUser = z.infer<typeof insertUserSchema>;

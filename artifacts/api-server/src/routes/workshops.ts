@@ -43,8 +43,8 @@ const workshopUploadRateLimit = rateLimit({
 
 const router = Router();
 
-function getDynamicStatus(dateStr: string, durationMin: number): "upcoming" | "ongoing" | "completed" {
-  const startTime = new Date(dateStr).getTime();
+function getDynamicStatus(dateVal: string | Date, durationMin: number): "upcoming" | "ongoing" | "completed" {
+  const startTime = new Date(dateVal).getTime();
   const endTime = startTime + (durationMin || 60) * 60 * 1000;
   const now = Date.now();
   
@@ -102,7 +102,12 @@ router.get("/workshops", async (req, res): Promise<void> => {
 router.post("/workshops", requireAuth, requireRole(["admin", "instructor"]), async (req: AuthenticatedRequest, res): Promise<void> => {
   const parsed = CreateWorkshopBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
-  const [w] = await db.insert(workshopsTable).values({ ...parsed.data, tags: parsed.data.tags ?? [] }).returning();
+  const dateObj = new Date(parsed.data.date);
+  const [w] = await db.insert(workshopsTable).values({ 
+    ...parsed.data, 
+    date: dateObj, 
+    tags: parsed.data.tags ?? [] 
+  }).returning();
   await logAuditEvent({ action: "workshop_create", userId: req.user!.id, targetType: "workshop", targetId: w.id, details: { title: parsed.data.title }, req });
   res.status(201).json(serializeWorkshop(w));
 });
@@ -120,7 +125,13 @@ router.patch("/workshops/:id", requireAuth, requireRole(["admin", "instructor"])
   if (!params.success) { res.status(400).json({ error: "Invalid id" }); return; }
   const parsed = UpdateWorkshopBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
-  const [w] = await db.update(workshopsTable).set(parsed.data).where(eq(workshopsTable.id, params.data.id)).returning();
+  
+  const updateData: any = { ...parsed.data };
+  if (parsed.data.date) {
+    updateData.date = new Date(parsed.data.date);
+  }
+
+  const [w] = await db.update(workshopsTable).set(updateData).where(eq(workshopsTable.id, params.data.id)).returning();
   if (!w) { res.status(404).json({ error: "Workshop not found" }); return; }
   await logAuditEvent({ action: "workshop_update", userId: req.user!.id, targetType: "workshop", targetId: params.data.id, details: { fields: Object.keys(parsed.data) }, req });
   res.json(serializeWorkshop(w));
@@ -220,10 +231,15 @@ router.post("/workshops/:id/enroll", requireAuth, paymentRateLimit, async (req: 
     userName: (((user.role === "admin" || user.role === "instructor") ? parsed.data.userName : null) || user.name || ""),
     userEmail: (((user.role === "admin" || user.role === "instructor") ? parsed.data.userEmail : null) || user.email || ""),
   }).returning();
-  const [wsForCount] = await db.select().from(workshopsTable).where(eq(workshopsTable.id, params.data.id));
-  await db.update(workshopsTable)
-    .set({ enrolledCount: (wsForCount?.enrolledCount || 0) + 1 })
-    .where(eq(workshopsTable.id, params.data.id));
+  const releaseLock = await acquireUserLock(params.data.id);
+  try {
+    const [wsForCount] = await db.select().from(workshopsTable).where(eq(workshopsTable.id, params.data.id));
+    await db.update(workshopsTable)
+      .set({ enrolledCount: (wsForCount?.enrolledCount || 0) + 1 })
+      .where(eq(workshopsTable.id, params.data.id));
+  } finally {
+    releaseLock();
+  }
 
   if (price > 0) {
     const [freshUser] = await db.select().from(usersTable).where(eq(usersTable.id, targetUserId));
@@ -400,7 +416,7 @@ router.post("/workshops/:id/exam/submit", requireAuth, async (req: Authenticated
       certificateId = existingCert.id;
     } else {
       const certNumber = `CERT-WSH-${workshop.id}-${user.id}-${Date.now()}`;
-      const verificationCode = `MH-VFY-${Math.random().toString(36).substring(2, 8).toUpperCase()}-${Math.floor(1000 + Math.random() * 9000)}`;
+      const verificationCode = `MH-VFY-${crypto.randomBytes(3).toString("hex").toUpperCase()}-${crypto.randomInt(1000, 10000)}`;
       const [cert] = await (db.insert(certificatesTable).values({
         userId: user.id,
         userName: user.name,
@@ -500,7 +516,7 @@ router.post("/workshops/:id/certificate/claim", requireAuth, async (req: Authent
   
   // Generate and insert certificate
   const certNumber = `CERT-WSH-${workshop.id}-${dbUser.id}-${Date.now()}`;
-  const verificationCode = `MH-VFY-${Math.random().toString(36).substring(2, 8).toUpperCase()}-${Math.floor(1000 + Math.random() * 9000)}`;
+  const verificationCode = `MH-VFY-${crypto.randomBytes(3).toString("hex").toUpperCase()}-${crypto.randomInt(1000, 10000)}`;
   
   const [cert] = await (db.insert(certificatesTable).values({
     userId: dbUser.id,
@@ -703,7 +719,8 @@ router.post("/workshops/:id/start-stream", requireAuth, requireRole(["admin", "i
         const response = await fetch(`https://api.daily.co/v1/rooms/${roomName}`, {
           headers: {
             "Authorization": `Bearer ${process.env.DAILY_API_KEY}`
-          }
+          },
+          signal: AbortSignal.timeout(10000)
         });
         if (response.status === 404) {
           // Room does not exist anymore. Reset local variables to recreate it
@@ -785,7 +802,8 @@ router.get("/workshops/:id/join-stream", requireAuth, async (req: AuthenticatedR
       const response = await fetch(`https://api.daily.co/v1/rooms/${w.dailyRoomName}`, {
         headers: {
           "Authorization": `Bearer ${process.env.DAILY_API_KEY}`
-        }
+        },
+        signal: AbortSignal.timeout(10000)
       });
       if (response.status === 404) {
         // Room does not exist anymore! Clear it in db
@@ -1220,7 +1238,8 @@ router.post("/workshops/:id/end-stream", requireAuth, async (req: AuthenticatedR
           method: "DELETE",
           headers: {
             "Authorization": `Bearer ${process.env.DAILY_API_KEY}`
-          }
+          },
+          signal: AbortSignal.timeout(10000)
         });
       } catch (delErr) {
         logger.error({ delErr }, "Failed to delete Daily room on stream end");
