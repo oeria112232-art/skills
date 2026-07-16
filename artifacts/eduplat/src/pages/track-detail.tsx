@@ -1,6 +1,6 @@
 import { useRoute, Link } from "wouter";
 import { useGetTrack, useGetTrackProgress, useUpdateTrackProgress, useListCertificates, getGetTrackProgressQueryKey, getGetTrackQueryKey, getListCertificatesQueryKey } from "@workspace/api-client-react";
-import { ArrowLeft, CheckCircle, Circle, Clock, BookOpen, Code, PlayCircle, FileText, X, Play, HelpCircle, AlertTriangle, Send, RefreshCw, Terminal, Award, Check, Coins, Lock, ChevronRight, List } from "lucide-react";
+import { ArrowLeft, CheckCircle, Circle, Clock, BookOpen, Code, PlayCircle, FileText, X, Play, HelpCircle, AlertTriangle, Send, RefreshCw, Terminal, Award, Check, Coins, Lock, ChevronRight, List, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -53,6 +53,16 @@ export default function TrackDetailPage() {
   const isAr = language === "ar";
   const queryClient = useQueryClient();
   const { toast } = useToast();
+
+  const handleShare = () => {
+    navigator.clipboard.writeText(window.location.href);
+    toast({
+      title: isAr ? "تم نسخ الرابط!" : "Link Copied!",
+      description: isAr 
+        ? "تم نسخ رابط المسار التعليمي إلى الحافظة بنجاح." 
+        : "Learning track link has been copied to your clipboard.",
+    });
+  };
 
   const { data: track, isLoading: trackLoading } = useGetTrack(slug, { query: { enabled: !!slug, queryKey: getGetTrackQueryKey(slug) } });
   const { data: progress, isLoading: progressLoading } = useGetTrackProgress(slug, {
@@ -491,7 +501,19 @@ export default function TrackDetailPage() {
 
       <div className="max-w-4xl">
         <div className="p-6 rounded-xl border border-border bg-card mb-6">
-          <h1 className="text-2xl font-bold mb-2">{track.title}</h1>
+          <div className="flex items-start justify-between gap-4 mb-2 flex-wrap">
+            <h1 className="text-2xl font-bold">{track.title}</h1>
+            <Button
+              onClick={handleShare}
+              variant="outline"
+              size="sm"
+              className="rounded-xl h-8 gap-1.5 text-xs font-bold border-border/80 hover:bg-accent/40 text-muted-foreground hover:text-foreground shadow-sm"
+              title={isAr ? "مشاركة المسار" : "Share Track"}
+            >
+              <Share2 className="w-3.5 h-3.5" />
+              <span>{isAr ? "مشاركة" : "Share"}</span>
+            </Button>
+          </div>
           <p className="text-muted-foreground mb-4">{track.description}</p>
           <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4 flex-wrap">
             <span className="flex items-center gap-1"><Clock className="w-4 h-4" />{track.estimatedHours}{isAr ? " ساعة" : "h"}</span>

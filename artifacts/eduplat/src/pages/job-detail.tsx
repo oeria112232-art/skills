@@ -4,7 +4,7 @@ import {
   useGetJob, useGetJobScreeningQuestions, useCreateApplication, useSubmitScreening, useUpdateApplicationStatus,
   getListJobsQueryKey, getGetJobScreeningQuestionsQueryKey, getGetJobQueryKey,
 } from "@workspace/api-client-react";
-import { ArrowLeft, MapPin, Clock, Coins, Wifi, Timer, CheckCircle, XCircle, AlertTriangle, FileText, Send } from "lucide-react";
+import { ArrowLeft, MapPin, Clock, Coins, Wifi, Timer, CheckCircle, XCircle, AlertTriangle, FileText, Send, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -29,6 +29,16 @@ export default function JobDetailPage() {
   const { toast } = useToast();
   const { language } = useLanguage();
   const isAr = language === "ar";
+
+  const handleShare = () => {
+    navigator.clipboard.writeText(window.location.href);
+    toast({
+      title: isAr ? "تم نسخ الرابط!" : "Link Copied!",
+      description: isAr 
+        ? "تم نسخ رابط إعلان الوظيفة إلى الحافظة بنجاح." 
+        : "Job listing link has been copied to your clipboard.",
+    });
+  };
 
   const { data: job, isLoading: jobLoading } = useGetJob(jobId, { query: { enabled: !!jobId, queryKey: getGetJobQueryKey(jobId) } });
   const { data: questions } = useGetJobScreeningQuestions(jobId, { query: { enabled: !!jobId, queryKey: getGetJobScreeningQuestionsQueryKey(jobId) } });
@@ -156,9 +166,21 @@ export default function JobDetailPage() {
                     </div>
                   )}
                   <div>
-                    <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight leading-tight" data-testid="heading-job-title">
-                      {job.title}
-                    </h1>
+                    <div className="flex items-center gap-3 flex-wrap">
+                      <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight leading-tight" data-testid="heading-job-title">
+                        {job.title}
+                      </h1>
+                      <Button
+                        onClick={handleShare}
+                        variant="outline"
+                        size="sm"
+                        className="rounded-xl h-8 gap-1.5 text-xs font-bold border-border/80 hover:bg-accent/40 text-muted-foreground hover:text-foreground shadow-sm"
+                        title={isAr ? "مشاركة الوظيفة" : "Share Job"}
+                      >
+                        <Share2 className="w-3.5 h-3.5" />
+                        <span>{isAr ? "مشاركة" : "Share"}</span>
+                      </Button>
+                    </div>
                     <p className="text-primary font-bold mt-1 text-sm">{job.company}</p>
                   </div>
                 </div>

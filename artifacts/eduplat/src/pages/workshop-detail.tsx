@@ -4,7 +4,7 @@ import {
   useGetWorkshop, useGetWorkshopExam, useEnrollWorkshop, useSubmitExam, useListCertificates,
   getGetWorkshopQueryKey, getGetWorkshopExamQueryKey, getListCertificatesQueryKey,
 } from "@workspace/api-client-react";
-import { ArrowLeft, Calendar, Clock, Users, CheckCircle, XCircle, Award, Timer, ShieldAlert, Bell, Video, VideoOff, Mic, MicOff, Coins } from "lucide-react";
+import { ArrowLeft, Calendar, Clock, Users, CheckCircle, XCircle, Award, Timer, ShieldAlert, Bell, Video, VideoOff, Mic, MicOff, Coins, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -32,6 +32,16 @@ export default function WorkshopDetailPage() {
   const { toast } = useToast();
   const { language } = useLanguage();
   const isAr = language === "ar";
+
+  const handleShare = () => {
+    navigator.clipboard.writeText(window.location.href);
+    toast({
+      title: isAr ? "تم نسخ الرابط!" : "Link Copied!",
+      description: isAr 
+        ? "تم نسخ رابط الورشة إلى الحافظة بنجاح." 
+        : "Workshop link has been copied to your clipboard.",
+    });
+  };
 
   const { data: workshop, isLoading } = useGetWorkshop(workshopId, { query: { enabled: !!workshopId, queryKey: getGetWorkshopQueryKey(workshopId) } });
   const { data: exam } = useGetWorkshopExam(workshopId, { query: { enabled: !!workshopId, queryKey: getGetWorkshopExamQueryKey(workshopId) } });
@@ -711,9 +721,21 @@ export default function WorkshopDetailPage() {
             )
           )}
           <div className="p-6 sm:p-8 rounded-2xl border border-border bg-gradient-to-b from-card to-background shadow-lg mb-6">
-            <div className="flex items-start justify-between gap-4 mb-4">
+            <div className="flex items-start justify-between gap-4 mb-4 flex-wrap">
               <div>
-                <h1 className="text-2xl font-bold mb-1" data-testid="heading-workshop-title">{workshop.title}</h1>
+                <div className="flex items-center gap-3 flex-wrap mb-1">
+                  <h1 className="text-2xl font-bold" data-testid="heading-workshop-title">{workshop.title}</h1>
+                  <Button
+                    onClick={handleShare}
+                    variant="outline"
+                    size="sm"
+                    className="rounded-xl h-8 gap-1.5 text-xs font-bold border-border/80 hover:bg-accent/40 text-muted-foreground hover:text-foreground"
+                    title={isAr ? "مشاركة الورشة" : "Share Workshop"}
+                  >
+                    <Share2 className="w-3.5 h-3.5" />
+                    <span>{isAr ? "مشاركة" : "Share"}</span>
+                  </Button>
+                </div>
                 <p className="text-primary font-bold text-xs">{isAr ? `تقديم: ${workshop.instructor}` : `by ${workshop.instructor}`}</p>
               </div>
               <Badge className="rounded-xl font-bold">

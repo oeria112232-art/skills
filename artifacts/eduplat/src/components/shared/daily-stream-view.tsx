@@ -1175,10 +1175,9 @@ export function DailyStreamView({ roomUrl, token, workshopTitle, workshopId, ini
         
         {/* Video Left Column */}
         <div className="lg:col-span-8 flex flex-col gap-3 relative">
-          
           <div 
             ref={containerRef} 
-            className="w-full aspect-[16/9] min-h-[220px] sm:min-h-[300px] md:min-h-[480px] bg-zinc-950 rounded-2xl md:rounded-[28px] border border-border shadow-xl relative overflow-hidden"
+            className="w-full aspect-[16/9] min-h-[200px] md:min-h-[400px] lg:min-h-[450px] bg-zinc-950 rounded-2xl md:rounded-[28px] border border-border shadow-xl relative overflow-hidden"
           >
             {showSetup && (
               <div className="absolute inset-0 bg-background/98 backdrop-blur-xl z-50 flex items-center justify-center p-6 text-center overflow-y-auto">
@@ -1409,7 +1408,7 @@ export function DailyStreamView({ roomUrl, token, workshopTitle, workshopId, ini
           </div>
 
         {/* Interactive Classroom Sidebar Panel Right */}
-        <div className="lg:col-span-4 flex flex-col rounded-3xl border border-border bg-card/65 backdrop-blur-md shadow-xl overflow-hidden min-h-[480px] max-h-[570px]">
+        <div className="lg:col-span-4 flex flex-col rounded-3xl border border-border bg-card/65 backdrop-blur-md shadow-xl overflow-hidden h-[420px] lg:h-[526px]">
           
           {/* Tab Selection */}
           <div className="grid grid-cols-4 border-b border-border/50 bg-muted/30 p-1 text-[10px] font-bold">
