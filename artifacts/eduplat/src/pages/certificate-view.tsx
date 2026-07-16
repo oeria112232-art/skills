@@ -144,9 +144,39 @@ export default function CertificateViewPage() {
         </div>
       </div>
 
+      <style>{`
+        @media print {
+          body * {
+            visibility: hidden !important;
+          }
+          .certificate-print-container,
+          .certificate-print-container * {
+            visibility: visible !important;
+          }
+          .certificate-print-container {
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 297mm !important;
+            height: 210mm !important;
+            margin: 0 !important;
+            border: none !important;
+            box-shadow: none !important;
+            background-size: cover !important;
+            background-position: center !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+          @page {
+            size: A4 landscape !important;
+            margin: 0 !important;
+          }
+        }
+      `}</style>
+
       {/* 100% Match to the Original Certificate PDF template: Sharp rectangular corners, custom wave background */}
       <div 
-        className="max-w-4xl mx-auto p-8 sm:p-16 text-slate-800 border-2 shadow-2xl relative overflow-hidden aspect-[1.414/1] flex flex-col justify-between my-8 print:my-0 print:shadow-none print:border-none select-none rounded-none" 
+        className="max-w-4xl mx-auto p-8 sm:p-16 text-slate-800 border-2 shadow-2xl relative overflow-hidden aspect-[1.414/1] flex flex-col justify-between my-8 print:my-0 print:shadow-none print:border-none select-none rounded-none certificate-print-container" 
         style={{ 
           fontFamily: "'Lora', 'Georgia', serif", 
           backgroundImage: isImageTemplate ? `url(${workshop?.certTemplateUrl})` : theme.bg,

@@ -43,8 +43,38 @@ export function CertificatePreviewModal({
           </Button>
         </DialogHeader>
 
+        <style>{`
+          @media print {
+            body * {
+              visibility: hidden !important;
+            }
+            .certificate-print-container,
+            .certificate-print-container * {
+              visibility: visible !important;
+            }
+            .certificate-print-container {
+              position: absolute !important;
+              left: 0 !important;
+              top: 0 !important;
+              width: 297mm !important;
+              height: 210mm !important;
+              margin: 0 !important;
+              border: none !important;
+              box-shadow: none !important;
+              background-size: cover !important;
+              background-position: center !important;
+              -webkit-print-color-adjust: exact !important;
+              print-color-adjust: exact !important;
+            }
+            @page {
+              size: A4 landscape !important;
+              margin: 0 !important;
+            }
+          }
+        `}</style>
+
         {/* Certificate Frame Container */}
-        <div className="relative w-full overflow-hidden bg-white text-slate-800 p-6 sm:p-10 rounded-xl border-[12px] border-double border-amber-600/35 shadow-inner font-serif select-none max-w-full mx-auto print:border-none print:shadow-none">
+        <div className="relative w-full overflow-hidden bg-white text-slate-800 p-6 sm:p-10 rounded-xl border-[12px] border-double border-amber-600/35 shadow-inner font-serif select-none max-w-full mx-auto print:border-none print:shadow-none certificate-print-container">
           {/* Background watermark seal */}
           <div className="absolute inset-0 flex items-center justify-center opacity-[0.03] pointer-events-none">
             <Award className="w-[300px] h-[300px] text-amber-700" />
