@@ -4,7 +4,7 @@ import { eq } from "drizzle-orm";
 import { RegisterBody, LoginBody } from "@workspace/api-zod";
 import { logger } from "../lib/logger";
 import { logAuditEvent } from "../services/audit-log";
-import { requireAuth, tokenBlocklist } from "../middlewares/auth";
+import { requireAuth, tokenBlocklist, AuthenticatedRequest } from "../middlewares/auth";
 import { hashPassword } from "../services/auth-utils";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
@@ -15,7 +15,7 @@ import { JWT_SECRET } from "../lib/secrets";
 const router = Router();
 
 function makeToken(userId: number) {
-  return jwt.sign({ userId, jti: crypto.randomUUID() }, JWT_SECRET, { expiresIn: "7d" });
+  return jwt.sign({ userId, jti: crypto.randomUUID() }, JWT_SECRET, { expiresIn: "7d", algorithm: "HS256" });
 }
 
 router.post("/auth/register", async (req, res): Promise<void> => {
@@ -105,31 +105,15 @@ router.post("/auth/login", async (req, res): Promise<void> => {
   });
 });
 
-router.get("/auth/me", async (req, res): Promise<void> => {
-  const authHeader = req.headers.authorization;
-  if (!authHeader) {
-    res.status(401).json({ error: "Unauthorized" });
-    return;
-  }
-  try {
-    const token = authHeader.replace("Bearer ", "");
-    const decoded = jwt.verify(token, JWT_SECRET) as { userId: number };
-    const userId = decoded.userId;
-    const [user] = await db.select().from(usersTable).where(eq(usersTable.id, userId));
-    if (!user) {
-      res.status(404).json({ error: "User not found" });
-      return;
-    }
-    res.json({
-      id: user.id, name: user.name, email: user.email,
-      role: user.role, allowedPages: user.allowedPages, points: user.points, streak: user.streak,
-      avatarUrl: user.avatarUrl, cv: user.cv, contactInfo: user.contactInfo,
-      companyCategory: (user as any).companyCategory || "general",
-      createdAt: user.createdAt.toISOString(),
-    });
-  } catch {
-    res.status(401).json({ error: "Invalid token" });
-  }
+router.get("/auth/me", requireAuth, async (req: AuthenticatedRequest, res): Promise<void> => {
+  const user = req.user!;
+  res.json({
+    id: user.id, name: user.name, email: user.email,
+    role: user.role, allowedPages: user.allowedPages, points: user.points, streak: user.streak,
+    avatarUrl: user.avatarUrl, cv: user.cv, contactInfo: user.contactInfo,
+    companyCategory: (user as any).companyCategory || "general",
+    createdAt: user.createdAt.toISOString(),
+  });
 });
 
 router.post("/auth/logout", requireAuth, async (req: any, res): Promise<void> => {

@@ -193,7 +193,7 @@ router.post("/certificates/:id/claim", requireAuth, paymentRateLimit, async (req
 
       const idempotencyKey = req.headers["x-idempotency-key"] as string;
       if (idempotencyKey) {
-        if (!claimNonce(idempotencyKey)) {
+        if (!(await claimNonce(idempotencyKey))) {
           res.status(409).json({ error: "Duplicate request detected." });
           return;
         }
@@ -256,7 +256,7 @@ router.get("/certificates/:id", async (req, res): Promise<void> => {
     // so we manually check token for locked certs
     try {
       const token = authHeader.replace("Bearer ", "");
-      const verified = jwt.verify(token, JWT_SECRET) as { userId: number };
+      const verified = jwt.verify(token, JWT_SECRET, { algorithms: ["HS256"] }) as { userId: number };
       
       const [u] = await db.select().from(usersTable).where(eq(usersTable.id, verified.userId));
       if (!u || (u.role !== "admin" && u.role !== "instructor" && cert.userId !== u.id)) {

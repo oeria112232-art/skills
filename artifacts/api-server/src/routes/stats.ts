@@ -5,40 +5,44 @@ import { requireAuth, requireRole } from "../middlewares/auth";
 
 const router = Router();
 
-router.get("/stats/platform", async (_req, res): Promise<void> => {
-  const studentsTrained = (await db.select().from(usersTable).where(eq(usersTable.role, "student"))).length;
-  const certificatesIssued = (await db.select().from(certificatesTable)).length;
-  const jobsFilled = (await db.select().from(jobsTable).where(eq(jobsTable.status, "filled"))).length;
-  const workshopsHeld = (await db.select().from(workshopsTable).where(eq(workshopsTable.status, "completed"))).length;
-  const activeJobs = (await db.select().from(jobsTable).where(eq(jobsTable.status, "open"))).length;
+router.get("/stats/platform", requireAuth, async (_req, res): Promise<void> => {
+  const [{ count: studentsTrained }] = await db.select({ count: sql<number>`count(*)` }).from(usersTable).where(eq(usersTable.role, "student"));
+  const [{ count: certificatesIssued }] = await db.select({ count: sql<number>`count(*)` }).from(certificatesTable);
+  const [{ count: jobsFilled }] = await db.select({ count: sql<number>`count(*)` }).from(jobsTable).where(eq(jobsTable.status, "filled"));
+  const [{ count: workshopsHeld }] = await db.select({ count: sql<number>`count(*)` }).from(workshopsTable).where(eq(workshopsTable.status, "completed"));
+  const [{ count: activeJobs }] = await db.select({ count: sql<number>`count(*)` }).from(jobsTable).where(eq(jobsTable.status, "open"));
+
   res.json({
-    studentsTrained,
-    certificatesIssued,
-    jobsFilled,
-    workshopsHeld,
-    activeJobs,
+    studentsTrained: Number(studentsTrained),
+    certificatesIssued: Number(certificatesIssued),
+    jobsFilled: Number(jobsFilled),
+    workshopsHeld: Number(workshopsHeld),
+    activeJobs: Number(activeJobs),
   });
 });
 
 router.get("/stats/admin", requireAuth, requireRole(["admin", "instructor"]), async (_req, res): Promise<void> => {
-  const totalUsers = (await db.select().from(usersTable)).length;
-  const totalJobs = (await db.select().from(jobsTable)).length;
-  const openJobs = (await db.select().from(jobsTable).where(eq(jobsTable.status, "open"))).length;
-  const totalApplications = (await db.select().from(applicationsTable)).length;
-  const pendingApplications = (await db.select().from(applicationsTable).where(eq(applicationsTable.status, "pending"))).length;
-  const totalWorkshops = (await db.select().from(workshopsTable)).length;
-  const upcomingWorkshops = (await db.select().from(workshopsTable).where(eq(workshopsTable.status, "upcoming"))).length;
-  const totalCertificates = (await db.select().from(certificatesTable)).length;
+  const [{ count: totalUsers }] = await db.select({ count: sql<number>`count(*)` }).from(usersTable);
+  const [{ count: totalJobs }] = await db.select({ count: sql<number>`count(*)` }).from(jobsTable);
+  const [{ count: openJobs }] = await db.select({ count: sql<number>`count(*)` }).from(jobsTable).where(eq(jobsTable.status, "open"));
+  const [{ count: totalApplications }] = await db.select({ count: sql<number>`count(*)` }).from(applicationsTable);
+  const [{ count: pendingApplications }] = await db.select({ count: sql<number>`count(*)` }).from(applicationsTable).where(eq(applicationsTable.status, "pending"));
+  const [{ count: totalWorkshops }] = await db.select({ count: sql<number>`count(*)` }).from(workshopsTable);
+  const [{ count: upcomingWorkshops }] = await db.select({ count: sql<number>`count(*)` }).from(workshopsTable).where(eq(workshopsTable.status, "upcoming"));
+  const [{ count: totalCertificates }] = await db.select({ count: sql<number>`count(*)` }).from(certificatesTable);
 
-  const allApps = await db.select().from(applicationsTable).orderBy(desc(applicationsTable.createdAt));
-  const allJobs = await db.select().from(jobsTable);
-  const recentAppsMerged = allApps.slice(0, 5).map(app => {
-    const job = allJobs.find(j => j.id === app.jobId);
-    return {
-      ...app,
-      jobTitle: job ? job.title : null
-    };
-  });
+  const recentAppsMerged = await db.select({
+    id: applicationsTable.id,
+    userId: applicationsTable.userId,
+    jobId: applicationsTable.jobId,
+    status: applicationsTable.status,
+    createdAt: applicationsTable.createdAt,
+    jobTitle: jobsTable.title,
+  })
+  .from(applicationsTable)
+  .leftJoin(jobsTable, eq(applicationsTable.jobId, jobsTable.id))
+  .orderBy(desc(applicationsTable.createdAt))
+  .limit(5);
 
   res.json({
     totalUsers: Number(totalUsers),

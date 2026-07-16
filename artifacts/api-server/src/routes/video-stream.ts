@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
-import { requireAuth, type AuthenticatedRequest } from "../middlewares/auth";
-import { db, platformSettingsTable } from "@workspace/db";
+import { requireAuth, type AuthenticatedRequest, tokenBlocklist } from "../middlewares/auth";
+import { db, platformSettingsTable, usersTable } from "@workspace/db";
+import { eq } from "drizzle-orm";
 import { S3Client, GetObjectCommand, HeadObjectCommand } from "@aws-sdk/client-s3";
 import jwt from "jsonwebtoken";
 import { Readable } from "node:stream";
@@ -67,11 +68,27 @@ router.get("/video-stream", async (req: any, res): Promise<void> => {
     }
 
     let userId: number;
+    let jti: string;
     try {
-      const decoded = jwt.verify(token, JWT_SECRET) as any;
+      const decoded = jwt.verify(token, JWT_SECRET, { algorithms: ["HS256"] }) as { userId: number; jti: string };
       userId = decoded.userId;
+      jti = decoded.jti;
     } catch {
       res.status(401).json({ error: "Invalid or expired token" });
+      return;
+    }
+
+    // Check blocklist
+    const isBlocked = await tokenBlocklist.has(jti);
+    if (isBlocked) {
+      res.status(401).json({ error: "Token is revoked" });
+      return;
+    }
+
+    // Check user exist and not deleted
+    const [user] = await db.select().from(usersTable).where(eq(usersTable.id, userId));
+    if (!user || user.deletedAt) {
+      res.status(401).json({ error: "User not found or account is deactivated" });
       return;
     }
 

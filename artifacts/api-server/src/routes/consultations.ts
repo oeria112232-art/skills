@@ -110,7 +110,7 @@ router.post("/consultations", requireAuth, consultationRateLimit, async (req: Au
     // Idempotency check
     const idempotencyKey = req.headers["x-idempotency-key"] as string;
     if (idempotencyKey) {
-      if (!claimNonce(idempotencyKey)) {
+      if (!(await claimNonce(idempotencyKey))) {
         res.status(409).json({ error: "Duplicate request detected." });
         return;
       }

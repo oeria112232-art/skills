@@ -59,5 +59,6 @@ scratch/
 artifacts/api-server/scratch-check-db.js
 ffmpeg/
 db-fallback.json
+.runtime-keys.json
 
 

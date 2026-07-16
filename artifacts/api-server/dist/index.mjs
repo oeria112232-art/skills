@@ -49660,10 +49660,10 @@ var init_subquery = __esm({
     init_entity();
     Subquery = class {
       static [entityKind] = "Subquery";
-      constructor(sql4, fields, alias, isWith = false, usedTables = []) {
+      constructor(sql3, fields, alias, isWith = false, usedTables = []) {
         this._ = {
           brand: "Subquery",
-          sql: sql4,
+          sql: sql3,
           selectedFields: fields,
           alias,
           isWith,
@@ -56112,10 +56112,10 @@ var init_raw = __esm({
     init_entity();
     init_query_promise();
     PgRaw = class extends QueryPromise {
-      constructor(execute, sql4, query, mapBatchResult) {
+      constructor(execute, sql3, query, mapBatchResult) {
         super();
         this.execute = execute;
-        this.sql = sql4;
+        this.sql = sql3;
         this.query = query;
         this.mapBatchResult = mapBatchResult;
       }
@@ -56529,8 +56529,8 @@ var init_schema = __esm({
 });
 
 // ../../node_modules/.pnpm/drizzle-orm@0.45.2_@types+pg@8.20.0_pg@8.22.0/node_modules/drizzle-orm/cache/core/cache.js
-async function hashQuery(sql4, params) {
-  const dataToHash = `${sql4}-${JSON.stringify(params)}`;
+async function hashQuery(sql3, params) {
+  const dataToHash = `${sql3}-${JSON.stringify(params)}`;
   const encoder = new TextEncoder();
   const data = encoder.encode(dataToHash);
   const hashBuffer = await crypto.subtle.digest("SHA-256", data);
@@ -69327,6 +69327,9 @@ function loadLocalDb() {
     if (process.env.DEBUG_DB_LOGS) {
       console.log("Seeding default user accounts dynamically in local DB fallback...");
     }
+    if (!process.env.DEFAULT_ADMIN_PASSWORD) {
+      console.warn("\u26A0\uFE0F SECURITY WARNING: DEFAULT_ADMIN_PASSWORD environment variable is not defined in local DB fallback.");
+    }
     const adminEmail = process.env.DEFAULT_ADMIN_EMAIL || "aliop@app.com";
     const adminPassword = process.env.DEFAULT_ADMIN_PASSWORD || "ppooqqaa001122334455!@#$%";
     const adminName = process.env.DEFAULT_ADMIN_NAME || "\u0639\u0644\u064A / Ali";
@@ -69668,7 +69671,9 @@ var init_src = __esm({
             const snapshot = await get(ref(database, "users"));
             const val = snapshot.val();
             if (!val || Object.keys(val).length === 0) {
-              console.log("[Firebase] Empty database detected. Seeding default user accounts and platform settings...");
+              if (!process.env.DEFAULT_ADMIN_PASSWORD) {
+                console.warn("\u26A0\uFE0F SECURITY WARNING: DEFAULT_ADMIN_PASSWORD environment variable is not defined. Using a hardcoded fallback admin password.");
+              }
               const adminEmail = process.env.DEFAULT_ADMIN_EMAIL || "aliop@app.com";
               const adminPassword = process.env.DEFAULT_ADMIN_PASSWORD || "ppooqqaa001122334455!@#$%";
               const adminName = process.env.DEFAULT_ADMIN_NAME || "\u0639\u0644\u064A / Ali";
@@ -73897,11 +73902,22 @@ import crypto4 from "crypto";
 function generateNonce() {
   return crypto4.randomBytes(16).toString("hex");
 }
-function claimNonce(nonce) {
+async function claimNonce(nonce) {
   if (!nonce || typeof nonce !== "string") return false;
-  if (usedNonces.has(nonce)) return false;
-  usedNonces.set(nonce, Date.now());
-  return true;
+  const key = `nonce:${nonce}`;
+  try {
+    const result = await redis.setnx(key, "1");
+    if (result === 1) {
+      await redis.expire(key, 86400);
+      return true;
+    }
+    return false;
+  } catch (err) {
+    console.error("Redis error in claimNonce, falling back to in-memory store:", err);
+    if (usedNonces.has(nonce)) return false;
+    usedNonces.set(nonce, Date.now());
+    return true;
+  }
 }
 function generateSecureSignature(userId, action, nonce) {
   const timestamp2 = Date.now();
@@ -73947,18 +73963,8 @@ async function verifyAndHardenUserBalance(user) {
     Buffer.from(expectedSignature, "hex")
   );
   if (!isValid2) {
-    console.warn(
-      `\u26A0\uFE0F WARNING: Signature mismatch for User ID ${user.id}. Auto-healing the signature with the current WALLET_SECRET key to prevent blocking.`
-    );
-    const freshSignature = generatePointsSignature(user.id, currentPoints);
-    try {
-      await db.update(usersTable).set({ pointsSignature: freshSignature }).where(eq(usersTable.id, user.id));
-      user.pointsSignature = freshSignature;
-      return true;
-    } catch (dbErr) {
-      console.error(`Failed to save auto-healed signature for User ID ${user.id}:`, dbErr);
-      return false;
-    }
+    console.error(`\u{1F6A8} CRITICAL SECURITY ALERT: Signature mismatch for User ID ${user.id}. Possible unauthorized points tampering!`);
+    return false;
   }
   return isValid2;
 }
@@ -73971,8 +73977,7 @@ function generateTransactionSignature(txId, senderId, receiverId, amount, prevSi
   return crypto4.createHmac("sha256", WALLET_SECRET).update(payload).digest("hex");
 }
 async function insertSecureTransaction(senderId, receiverId, amount, type, notes) {
-  const allTxs = await db.select().from(pointsTransactionsTable).orderBy(desc(pointsTransactionsTable.createdAt));
-  const latestTx = allTxs.length > 0 ? allTxs[0] : null;
+  const [latestTx] = await db.select().from(pointsTransactionsTable).orderBy(desc(pointsTransactionsTable.createdAt)).limit(1);
   const prevSignature = latestTx?.signature || "genesis_block_signature_mharat";
   const [newTx] = await db.insert(pointsTransactionsTable).values({
     senderId,
@@ -79479,7 +79484,7 @@ async function requireAuth(req, res, next) {
   }
   try {
     const token = authHeader.replace("Bearer ", "");
-    const decoded = import_jsonwebtoken.default.verify(token, JWT_SECRET);
+    const decoded = import_jsonwebtoken.default.verify(token, JWT_SECRET, { algorithms: ["HS256"] });
     const isBlocked = await tokenBlocklist.has(decoded.jti);
     if (isBlocked) {
       res.status(401).json({ error: "Token is revoked" });
@@ -79491,7 +79496,7 @@ async function requireAuth(req, res, next) {
       return;
     }
     const [user] = await db.select().from(usersTable).where(eq(usersTable.id, userId));
-    if (!user) {
+    if (!user || user.deletedAt) {
       res.status(401).json({ error: "User not found" });
       return;
     }
@@ -79528,7 +79533,7 @@ init_secrets();
 import crypto3 from "crypto";
 var router2 = (0, import_express2.Router)();
 function makeToken(userId) {
-  return import_jsonwebtoken2.default.sign({ userId, jti: crypto3.randomUUID() }, JWT_SECRET, { expiresIn: "7d" });
+  return import_jsonwebtoken2.default.sign({ userId, jti: crypto3.randomUUID() }, JWT_SECRET, { expiresIn: "7d", algorithm: "HS256" });
 }
 router2.post("/auth/register", async (req, res) => {
   const parsed = RegisterBody.safeParse(req.body);
@@ -79623,38 +79628,22 @@ router2.post("/auth/login", async (req, res) => {
     }
   });
 });
-router2.get("/auth/me", async (req, res) => {
-  const authHeader = req.headers.authorization;
-  if (!authHeader) {
-    res.status(401).json({ error: "Unauthorized" });
-    return;
-  }
-  try {
-    const token = authHeader.replace("Bearer ", "");
-    const decoded = import_jsonwebtoken2.default.verify(token, JWT_SECRET);
-    const userId = decoded.userId;
-    const [user] = await db.select().from(usersTable).where(eq(usersTable.id, userId));
-    if (!user) {
-      res.status(404).json({ error: "User not found" });
-      return;
-    }
-    res.json({
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      allowedPages: user.allowedPages,
-      points: user.points,
-      streak: user.streak,
-      avatarUrl: user.avatarUrl,
-      cv: user.cv,
-      contactInfo: user.contactInfo,
-      companyCategory: user.companyCategory || "general",
-      createdAt: user.createdAt.toISOString()
-    });
-  } catch {
-    res.status(401).json({ error: "Invalid token" });
-  }
+router2.get("/auth/me", requireAuth, async (req, res) => {
+  const user = req.user;
+  res.json({
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    role: user.role,
+    allowedPages: user.allowedPages,
+    points: user.points,
+    streak: user.streak,
+    avatarUrl: user.avatarUrl,
+    cv: user.cv,
+    contactInfo: user.contactInfo,
+    companyCategory: user.companyCategory || "general",
+    createdAt: user.createdAt.toISOString()
+  });
 });
 router2.post("/auth/logout", requireAuth, async (req, res) => {
   const authHeader = req.headers.authorization;
@@ -79708,7 +79697,7 @@ router3.post("/jobs", requireAuth, requireRole(["admin", "company"]), async (req
   const [job] = await db.insert(jobsTable).values(parsed.data).returning();
   res.status(201).json({ ...job, isRemote: Boolean(job.isRemote), createdAt: job.createdAt ? new Date(job.createdAt).toISOString() : (/* @__PURE__ */ new Date()).toISOString() });
 });
-router3.get("/jobs/stats", async (_req, res) => {
+router3.get("/jobs/stats", requireAuth, async (_req, res) => {
   const [{ count: totalJobs }] = await db.select({ count: sql`count(*)` }).from(jobsTable);
   const [{ count: openJobs }] = await db.select({ count: sql`count(*)` }).from(jobsTable).where(eq(jobsTable.status, "open"));
   const [{ count: totalApplications }] = await db.select({ count: sql`count(*)` }).from(applicationsTable);
@@ -80305,6 +80294,7 @@ function rateLimit(options) {
       await redis.incr(key);
       next();
     } catch (err) {
+      console.error("\u26A0\uFE0F REDIS ERROR (Rate Limiter): falling back to in-memory rate limiting:", err);
       let entry = store.get(key);
       if (!entry || now > entry.resetTime) {
         entry = { count: 1, resetTime: now + windowMs };
@@ -80531,7 +80521,7 @@ router5.post("/workshops/:id/enroll", requireAuth, paymentRateLimit, async (req,
       }
       const idempotencyKey = req.headers["x-idempotency-key"];
       if (idempotencyKey) {
-        if (!claimNonce(idempotencyKey)) {
+        if (!await claimNonce(idempotencyKey)) {
           res.status(409).json({ error: "Duplicate request detected." });
           return;
         }
@@ -80740,7 +80730,8 @@ router5.post("/workshops/:id/exam/submit", requireAuth, async (req, res) => {
       }).returning();
       certificateId = cert.id;
     }
-    await updateAndSignUserBalance(user.id, 100);
+    const [freshUser] = await db.select().from(usersTable).where(eq(usersTable.id, user.id));
+    await updateAndSignUserBalance(user.id, (freshUser?.points || 0) + 100);
   }
   res.json({
     score,
@@ -80844,7 +80835,7 @@ router5.post("/workshops/:id/certificate/claim", requireAuth, async (req, res) =
   const data = `${cert.id}:${cert.userId}:${cert.type}:${cert.score}:${cert.certificateNumber}`;
   const signature = crypto5.createHmac("sha256", CERT_SIGN_SECRET).update(data).digest("hex");
   await db.update(certificatesTable).set({ signatureHash: signature }).where(eq(certificatesTable.id, cert.id));
-  await updateAndSignUserBalance(dbUser.id, 100);
+  await updateAndSignUserBalance(dbUser.id, (dbUser.points || 0) + 100);
   res.status(201).json({ success: true, certificateId: cert.id, alreadyClaimed: false });
 });
 router5.post("/workshops/:id/template", requireAuth, requireRole(["admin", "instructor"]), workshopUploadRateLimit, async (req, res) => {
@@ -81511,7 +81502,7 @@ router6.post("/certificates/:id/claim", requireAuth, paymentRateLimit, async (re
       }
       const idempotencyKey = req.headers["x-idempotency-key"];
       if (idempotencyKey) {
-        if (!claimNonce(idempotencyKey)) {
+        if (!await claimNonce(idempotencyKey)) {
           res.status(409).json({ error: "Duplicate request detected." });
           return;
         }
@@ -81568,7 +81559,7 @@ router6.get("/certificates/:id", async (req, res) => {
     }
     try {
       const token = authHeader.replace("Bearer ", "");
-      const verified = import_jsonwebtoken3.default.verify(token, JWT_SECRET);
+      const verified = import_jsonwebtoken3.default.verify(token, JWT_SECRET, { algorithms: ["HS256"] });
       const [u] = await db.select().from(usersTable).where(eq(usersTable.id, verified.userId));
       if (!u || u.role !== "admin" && u.role !== "instructor" && cert.userId !== u.id) {
         res.status(403).json({ error: "Forbidden: Cannot view locked certificate" });
@@ -81938,7 +81929,7 @@ router7.post("/tracks/:slug/enroll", requireAuth, paymentRateLimit, async (req, 
       }
       const idempotencyKey = req.headers["x-idempotency-key"];
       if (idempotencyKey) {
-        if (!claimNonce(idempotencyKey)) {
+        if (!await claimNonce(idempotencyKey)) {
           res.status(409).json({ error: "Duplicate request detected." });
           return;
         }
@@ -82231,38 +82222,37 @@ var import_express9 = __toESM(require_express2(), 1);
 init_src();
 init_drizzle_orm();
 var router9 = (0, import_express9.Router)();
-router9.get("/stats/platform", async (_req, res) => {
-  const studentsTrained = (await db.select().from(usersTable).where(eq(usersTable.role, "student"))).length;
-  const certificatesIssued = (await db.select().from(certificatesTable)).length;
-  const jobsFilled = (await db.select().from(jobsTable).where(eq(jobsTable.status, "filled"))).length;
-  const workshopsHeld = (await db.select().from(workshopsTable).where(eq(workshopsTable.status, "completed"))).length;
-  const activeJobs = (await db.select().from(jobsTable).where(eq(jobsTable.status, "open"))).length;
+router9.get("/stats/platform", requireAuth, async (_req, res) => {
+  const [{ count: studentsTrained }] = await db.select({ count: sql`count(*)` }).from(usersTable).where(eq(usersTable.role, "student"));
+  const [{ count: certificatesIssued }] = await db.select({ count: sql`count(*)` }).from(certificatesTable);
+  const [{ count: jobsFilled }] = await db.select({ count: sql`count(*)` }).from(jobsTable).where(eq(jobsTable.status, "filled"));
+  const [{ count: workshopsHeld }] = await db.select({ count: sql`count(*)` }).from(workshopsTable).where(eq(workshopsTable.status, "completed"));
+  const [{ count: activeJobs }] = await db.select({ count: sql`count(*)` }).from(jobsTable).where(eq(jobsTable.status, "open"));
   res.json({
-    studentsTrained,
-    certificatesIssued,
-    jobsFilled,
-    workshopsHeld,
-    activeJobs
+    studentsTrained: Number(studentsTrained),
+    certificatesIssued: Number(certificatesIssued),
+    jobsFilled: Number(jobsFilled),
+    workshopsHeld: Number(workshopsHeld),
+    activeJobs: Number(activeJobs)
   });
 });
 router9.get("/stats/admin", requireAuth, requireRole(["admin", "instructor"]), async (_req, res) => {
-  const totalUsers = (await db.select().from(usersTable)).length;
-  const totalJobs = (await db.select().from(jobsTable)).length;
-  const openJobs = (await db.select().from(jobsTable).where(eq(jobsTable.status, "open"))).length;
-  const totalApplications = (await db.select().from(applicationsTable)).length;
-  const pendingApplications = (await db.select().from(applicationsTable).where(eq(applicationsTable.status, "pending"))).length;
-  const totalWorkshops = (await db.select().from(workshopsTable)).length;
-  const upcomingWorkshops = (await db.select().from(workshopsTable).where(eq(workshopsTable.status, "upcoming"))).length;
-  const totalCertificates = (await db.select().from(certificatesTable)).length;
-  const allApps = await db.select().from(applicationsTable).orderBy(desc(applicationsTable.createdAt));
-  const allJobs = await db.select().from(jobsTable);
-  const recentAppsMerged = allApps.slice(0, 5).map((app2) => {
-    const job = allJobs.find((j) => j.id === app2.jobId);
-    return {
-      ...app2,
-      jobTitle: job ? job.title : null
-    };
-  });
+  const [{ count: totalUsers }] = await db.select({ count: sql`count(*)` }).from(usersTable);
+  const [{ count: totalJobs }] = await db.select({ count: sql`count(*)` }).from(jobsTable);
+  const [{ count: openJobs }] = await db.select({ count: sql`count(*)` }).from(jobsTable).where(eq(jobsTable.status, "open"));
+  const [{ count: totalApplications }] = await db.select({ count: sql`count(*)` }).from(applicationsTable);
+  const [{ count: pendingApplications }] = await db.select({ count: sql`count(*)` }).from(applicationsTable).where(eq(applicationsTable.status, "pending"));
+  const [{ count: totalWorkshops }] = await db.select({ count: sql`count(*)` }).from(workshopsTable);
+  const [{ count: upcomingWorkshops }] = await db.select({ count: sql`count(*)` }).from(workshopsTable).where(eq(workshopsTable.status, "upcoming"));
+  const [{ count: totalCertificates }] = await db.select({ count: sql`count(*)` }).from(certificatesTable);
+  const recentAppsMerged = await db.select({
+    id: applicationsTable.id,
+    userId: applicationsTable.userId,
+    jobId: applicationsTable.jobId,
+    status: applicationsTable.status,
+    createdAt: applicationsTable.createdAt,
+    jobTitle: jobsTable.title
+  }).from(applicationsTable).leftJoin(jobsTable, eq(applicationsTable.jobId, jobsTable.id)).orderBy(desc(applicationsTable.createdAt)).limit(5);
   res.json({
     totalUsers: Number(totalUsers),
     totalJobs: Number(totalJobs),
@@ -82384,7 +82374,7 @@ router11.post("/mock-interview/message", requireAuth, async (req, res) => {
   }
   await db.insert(mockInterviewMessagesTable).values({
     sessionId: parseInt(sessionId, 10),
-    role,
+    role: "user",
     message
   });
   const messages = await db.select().from(mockInterviewMessagesTable).where(eq(mockInterviewMessagesTable.sessionId, parseInt(sessionId, 10)));
@@ -82470,7 +82460,7 @@ router12.post("/consultations", requireAuth, consultationRateLimit, async (req, 
     }
     const idempotencyKey = req.headers["x-idempotency-key"];
     if (idempotencyKey) {
-      if (!claimNonce(idempotencyKey)) {
+      if (!await claimNonce(idempotencyKey)) {
         res.status(409).json({ error: "Duplicate request detected." });
         return;
       }
@@ -83488,10 +83478,16 @@ router14.post("/upload/video", requireAuth, requireRole(["admin", "instructor"])
       uploadBuffer = inputBuffer;
       uploadMime = mimeType;
     }
+    const ALLOWED_FOLDERS = ["eduplat/videos", "eduplat/covers", "eduplat/documents"];
+    const targetFolder = folder || "eduplat/videos";
+    if (!ALLOWED_FOLDERS.includes(targetFolder)) {
+      res.status(400).json({ error: "Invalid upload folder parameter" });
+      return;
+    }
     const ext = uploadMime.includes("webm") ? "webm" : "mp4";
     const safeName = (fileName || `video-${Date.now()}`).replace(/[^a-zA-Z0-9._-]/g, "_").replace(/\.[^.]+$/, "");
     const finalFileName = `${safeName}-${Date.now()}.${ext}`;
-    const key = `${folder || "eduplat/videos"}/${finalFileName}`;
+    const key = `${targetFolder}/${finalFileName}`;
     if (useLocalFallback) {
       console.warn("R2 is not configured. Saving uploaded video locally.");
       const uploadsDir = path6.resolve(__dirname5, "../../../uploads/videos");
@@ -83536,6 +83532,7 @@ var upload_default = router14;
 // src/routes/video-stream.ts
 var import_express15 = __toESM(require_express2(), 1);
 init_src();
+init_drizzle_orm();
 var import_jsonwebtoken4 = __toESM(require_jsonwebtoken(), 1);
 init_secrets();
 import { S3Client as S3Client2, GetObjectCommand, HeadObjectCommand } from "@aws-sdk/client-s3";
@@ -83591,11 +83588,23 @@ router15.get("/video-stream", async (req, res) => {
       return;
     }
     let userId;
+    let jti;
     try {
-      const decoded = import_jsonwebtoken4.default.verify(token, JWT_SECRET);
+      const decoded = import_jsonwebtoken4.default.verify(token, JWT_SECRET, { algorithms: ["HS256"] });
       userId = decoded.userId;
+      jti = decoded.jti;
     } catch {
       res.status(401).json({ error: "Invalid or expired token" });
+      return;
+    }
+    const isBlocked = await tokenBlocklist.has(jti);
+    if (isBlocked) {
+      res.status(401).json({ error: "Token is revoked" });
+      return;
+    }
+    const [user] = await db.select().from(usersTable).where(eq(usersTable.id, userId));
+    if (!user || user.deletedAt) {
+      res.status(401).json({ error: "User not found or account is deactivated" });
       return;
     }
     const key = req.query.key;
@@ -83836,7 +83845,7 @@ app.use(helmet({
 var isProduction2 = process.env.NODE_ENV === "production" || process.env.CI === "true";
 var allowedOrigins = (process.env.CORS_ORIGINS || "").split(",").map((s) => s.trim()).filter(Boolean);
 if (isProduction2 && allowedOrigins.length === 0) {
-  logger3.warn("WARNING: CORS_ORIGINS is not set in environment variables. Allowing all origins for compatibility.");
+  logger3.error("\u{1F6A8} SECURITY CONFIG ERROR: CORS_ORIGINS is not set in environment variables! Blocking all cross-origin requests in production.");
 }
 app.use((0, import_cors.default)({
   origin: (origin, callback) => {
@@ -83844,6 +83853,9 @@ app.use((0, import_cors.default)({
     if (allowedOrigins.length > 0) {
       if (allowedOrigins.includes(origin)) return callback(null, true);
       return callback(new Error("Not allowed by CORS"));
+    }
+    if (isProduction2) {
+      return callback(new Error("CORS_ORIGINS is not configured. Cross-origin requests are blocked."));
     }
     return callback(null, true);
   },

@@ -113,10 +113,17 @@ router.post("/upload/video", requireAuth, requireRole(["admin", "instructor"]), 
       uploadMime = mimeType;
     }
 
+    const ALLOWED_FOLDERS = ["eduplat/videos", "eduplat/covers", "eduplat/documents"];
+    const targetFolder = folder || "eduplat/videos";
+    if (!ALLOWED_FOLDERS.includes(targetFolder)) {
+      res.status(400).json({ error: "Invalid upload folder parameter" });
+      return;
+    }
+
     const ext = uploadMime.includes("webm") ? "webm" : "mp4";
     const safeName = (fileName || `video-${Date.now()}`).replace(/[^a-zA-Z0-9._-]/g, "_").replace(/\.[^.]+$/, "");
     const finalFileName = `${safeName}-${Date.now()}.${ext}`;
-    const key = `${folder || "eduplat/videos"}/${finalFileName}`;
+    const key = `${targetFolder}/${finalFileName}`;
 
     if (useLocalFallback) {
       console.warn("R2 is not configured. Saving uploaded video locally.");

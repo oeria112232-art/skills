@@ -28,7 +28,7 @@ export async function requireAuth(req: AuthenticatedRequest, res: Response, next
   }
   try {
     const token = authHeader.replace("Bearer ", "");
-    const decoded = jwt.verify(token, JWT_SECRET) as { userId: number; jti: string; exp: number };
+    const decoded = jwt.verify(token, JWT_SECRET, { algorithms: ["HS256"] }) as { userId: number; jti: string; exp: number };
     
     // Check blocklist
     const isBlocked = await tokenBlocklist.has(decoded.jti);
@@ -43,7 +43,7 @@ export async function requireAuth(req: AuthenticatedRequest, res: Response, next
       return;
     }
     const [user] = await db.select().from(usersTable).where(eq(usersTable.id, userId));
-    if (!user) {
+    if (!user || user.deletedAt) {
       res.status(401).json({ error: "User not found" });
       return;
     }

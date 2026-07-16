@@ -45,7 +45,7 @@ const isProduction = process.env.NODE_ENV === "production" || process.env.CI ===
 const allowedOrigins = (process.env.CORS_ORIGINS || "").split(",").map(s => s.trim()).filter(Boolean);
 
 if (isProduction && allowedOrigins.length === 0) {
-  logger.warn("WARNING: CORS_ORIGINS is not set in environment variables. Allowing all origins for compatibility.");
+  logger.error("🚨 SECURITY CONFIG ERROR: CORS_ORIGINS is not set in environment variables! Blocking all cross-origin requests in production.");
 }
 
 app.use(cors({
@@ -54,6 +54,9 @@ app.use(cors({
     if (allowedOrigins.length > 0) {
       if (allowedOrigins.includes(origin)) return callback(null, true);
       return callback(new Error("Not allowed by CORS"));
+    }
+    if (isProduction) {
+      return callback(new Error("CORS_ORIGINS is not configured. Cross-origin requests are blocked."));
     }
     return callback(null, true);
   },

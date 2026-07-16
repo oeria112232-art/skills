@@ -58,7 +58,7 @@ router.post("/jobs", requireAuth, requireRole(["admin", "company"]), async (req,
   res.status(201).json({ ...job, isRemote: Boolean(job.isRemote), createdAt: job.createdAt ? new Date(job.createdAt).toISOString() : new Date().toISOString() });
 });
 
-router.get("/jobs/stats", async (_req, res): Promise<void> => {
+router.get("/jobs/stats", requireAuth, async (_req, res): Promise<void> => {
   const [{ count: totalJobs }] = await db.select({ count: sql<number>`count(*)` }).from(jobsTable);
   const [{ count: openJobs }] = await db.select({ count: sql<number>`count(*)` }).from(jobsTable).where(eq(jobsTable.status, "open"));
   const [{ count: totalApplications }] = await db.select({ count: sql<number>`count(*)` }).from(applicationsTable);

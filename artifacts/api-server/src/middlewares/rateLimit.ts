@@ -48,6 +48,7 @@ export function rateLimit(options: {
       await redis.incr(key);
       next();
     } catch (err) {
+      console.error("⚠️ REDIS ERROR (Rate Limiter): falling back to in-memory rate limiting:", err);
       let entry = store.get(key);
       if (!entry || now > entry.resetTime) {
         entry = { count: 1, resetTime: now + windowMs };

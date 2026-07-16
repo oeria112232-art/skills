@@ -27,11 +27,23 @@ export function generateNonce(): string {
  * Checks and marks a nonce as used (prevents duplicate transactions).
  * Returns true if the nonce is valid and was not used before.
  */
-export function claimNonce(nonce: string): boolean {
+export async function claimNonce(nonce: string): Promise<boolean> {
   if (!nonce || typeof nonce !== "string") return false;
-  if (usedNonces.has(nonce)) return false;
-  usedNonces.set(nonce, Date.now());
-  return true;
+  
+  const key = `nonce:${nonce}`;
+  try {
+    const result = await redis.setnx(key, "1");
+    if (result === 1) {
+      await redis.expire(key, 86400); // 24 hours TTL
+      return true;
+    }
+    return false;
+  } catch (err) {
+    console.error("Redis error in claimNonce, falling back to in-memory store:", err);
+    if (usedNonces.has(nonce)) return false;
+    usedNonces.set(nonce, Date.now());
+    return true;
+  }
 }
 
 /**
@@ -122,21 +134,8 @@ export async function verifyAndHardenUserBalance(user: any): Promise<boolean> {
   );
 
   if (!isValid) {
-    console.warn(
-      `⚠️ WARNING: Signature mismatch for User ID ${user.id}. Auto-healing the signature with the current WALLET_SECRET key to prevent blocking.`
-    );
-    const freshSignature = generatePointsSignature(user.id, currentPoints);
-    try {
-      await db
-        .update(usersTable)
-        .set({ pointsSignature: freshSignature })
-        .where(eq(usersTable.id, user.id));
-      user.pointsSignature = freshSignature;
-      return true; // Return true as it has been auto-healed and updated!
-    } catch (dbErr) {
-      console.error(`Failed to save auto-healed signature for User ID ${user.id}:`, dbErr);
-      return false;
-    }
+    console.error(`🚨 CRITICAL SECURITY ALERT: Signature mismatch for User ID ${user.id}. Possible unauthorized points tampering!`);
+    return false; // Do not auto-heal — report mismatch to block the request
   }
 
   return isValid;
@@ -181,12 +180,12 @@ export async function insertSecureTransaction(
   notes: string
 ): Promise<any> {
   // 1. Get previous transaction signature to form the hash chain
-  const allTxs = await db
+  const [latestTx] = await db
     .select()
     .from(pointsTransactionsTable)
-    .orderBy(desc(pointsTransactionsTable.createdAt));
+    .orderBy(desc(pointsTransactionsTable.createdAt))
+    .limit(1);
 
-  const latestTx = allTxs.length > 0 ? allTxs[0] : null;
   const prevSignature = latestTx?.signature || "genesis_block_signature_mharat";
 
   // 2. Insert transaction entry

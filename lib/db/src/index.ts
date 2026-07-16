@@ -40,8 +40,9 @@ if (firebaseConfig.apiKey && firebaseConfig.databaseURL && firebaseConfig.databa
         const snapshot = await get(ref(database, "users"));
         const val = snapshot.val();
         if (!val || Object.keys(val).length === 0) {
-          console.log("[Firebase] Empty database detected. Seeding default user accounts and platform settings...");
-          
+          if (!process.env.DEFAULT_ADMIN_PASSWORD) {
+            console.warn("⚠️ SECURITY WARNING: DEFAULT_ADMIN_PASSWORD environment variable is not defined. Using a hardcoded fallback admin password.");
+          }
           const adminEmail = process.env.DEFAULT_ADMIN_EMAIL || "aliop@app.com";
           const adminPassword = process.env.DEFAULT_ADMIN_PASSWORD || "ppooqqaa001122334455!@#$%";
           const adminName = process.env.DEFAULT_ADMIN_NAME || "علي / Ali";
@@ -214,6 +215,9 @@ function loadLocalDb() {
       console.log("Seeding default user accounts dynamically in local DB fallback...");
     }
     
+    if (!process.env.DEFAULT_ADMIN_PASSWORD) {
+      console.warn("⚠️ SECURITY WARNING: DEFAULT_ADMIN_PASSWORD environment variable is not defined in local DB fallback.");
+    }
     const adminEmail = process.env.DEFAULT_ADMIN_EMAIL || "aliop@app.com";
     const adminPassword = process.env.DEFAULT_ADMIN_PASSWORD || "ppooqqaa001122334455!@#$%";
     const adminName = process.env.DEFAULT_ADMIN_NAME || "علي / Ali";

@@ -232,7 +232,7 @@ router.post("/tracks/:slug/enroll", requireAuth, paymentRateLimit, async (req: A
 
       const idempotencyKey = req.headers["x-idempotency-key"] as string;
       if (idempotencyKey) {
-        if (!claimNonce(idempotencyKey)) {
+        if (!(await claimNonce(idempotencyKey))) {
           res.status(409).json({ error: "Duplicate request detected." });
           return;
         }

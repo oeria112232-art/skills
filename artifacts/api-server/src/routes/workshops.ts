@@ -193,7 +193,7 @@ router.post("/workshops/:id/enroll", requireAuth, paymentRateLimit, async (req: 
 
       const idempotencyKey = req.headers["x-idempotency-key"] as string;
       if (idempotencyKey) {
-        if (!claimNonce(idempotencyKey)) {
+        if (!(await claimNonce(idempotencyKey))) {
           res.status(409).json({ error: "Duplicate request detected." });
           return;
         }
@@ -419,8 +419,9 @@ router.post("/workshops/:id/exam/submit", requireAuth, async (req: Authenticated
       certificateId = cert.id;
     }
     
-    // Award XP/points safely
-    await updateAndSignUserBalance(user.id, 100);
+    // Award XP/points safely (increment points instead of overwriting)
+    const [freshUser] = await db.select().from(usersTable).where(eq(usersTable.id, user.id));
+    await updateAndSignUserBalance(user.id, (freshUser?.points || 0) + 100);
   }
 
   res.json({
@@ -524,8 +525,8 @@ router.post("/workshops/:id/certificate/claim", requireAuth, async (req: Authent
     .set({ signatureHash: signature })
     .where(eq(certificatesTable.id, cert.id));
 
-  // Award XP/points safely
-  await updateAndSignUserBalance(dbUser.id, 100);
+  // Award XP/points safely (increment points instead of overwriting)
+  await updateAndSignUserBalance(dbUser.id, (dbUser.points || 0) + 100);
     
   res.status(201).json({ success: true, certificateId: cert.id, alreadyClaimed: false });
 });

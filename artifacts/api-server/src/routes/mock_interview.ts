@@ -89,10 +89,10 @@ router.post("/mock-interview/message", requireAuth, async (req: AuthenticatedReq
     return;
   }
 
-  // Save the user message
+  // Save the user message (force role to "user")
   await db.insert(mockInterviewMessagesTable).values({
     sessionId: parseInt(sessionId, 10),
-    role,
+    role: "user",
     message,
   });
 
