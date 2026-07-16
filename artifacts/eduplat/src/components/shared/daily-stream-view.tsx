@@ -183,22 +183,15 @@ export function DailyStreamView({ roomUrl, token, workshopTitle, workshopId, ini
 
   const requestScreenAccess = async () => {
     try {
-      const stream = await navigator.mediaDevices.getDisplayMedia({ video: true });
-      stream.getTracks().forEach(track => track.stop());
+      // Set the permission state directly in memory to prevent popping up the browser's sharing selector.
+      // The browser will ask for real permission dynamically when they start actual screen sharing inside the stream.
       setScreenPermission('granted');
       toast({
-        title: isAr ? "تم منح صلاحية مشاركة الشاشة" : "Screen Sharing Allowed",
-        description: isAr ? "مشاركة وتسجيل الشاشة جاهزان للاستخدام." : "Screen sharing is now ready to use."
+        title: isAr ? "تم تمكين خيار مشاركة الشاشة" : "Screen Sharing Option Enabled",
+        description: isAr ? "مشاركة الشاشة جاهزة للاستخدام عند الحاجة إليها." : "Screen sharing option is ready to use when needed."
       });
     } catch (err) {
       setScreenPermission('denied');
-      toast({
-        variant: "destructive",
-        title: isAr ? "فشل مشاركة الشاشة" : "Screen Share Failed",
-        description: isAr 
-          ? "لم يتم منح الصلاحية لمشاركة أو تسجيل الشاشة." 
-          : "Screen share permission was not granted."
-      });
     }
   };
 
@@ -618,7 +611,7 @@ export function DailyStreamView({ roomUrl, token, workshopTitle, workshopId, ini
     }
 
     callFrame.updateParticipant(targetId, {
-      permissions: { canSend: newCanSend }
+      updatePermissions: { canSend: newCanSend }
     } as any);
 
     if (currentCanVideo) {
@@ -678,7 +671,7 @@ export function DailyStreamView({ roomUrl, token, workshopTitle, workshopId, ini
     }
 
     callFrame.updateParticipant(targetId, {
-      permissions: { canSend: newCanSend }
+      updatePermissions: { canSend: newCanSend }
     } as any);
 
     if (currentCanAudio) {
@@ -738,7 +731,7 @@ export function DailyStreamView({ roomUrl, token, workshopTitle, workshopId, ini
     }
 
     callFrame.updateParticipant(targetId, {
-      permissions: { canSend: newCanSend }
+      updatePermissions: { canSend: newCanSend }
     } as any);
 
     toast({
@@ -1267,9 +1260,14 @@ export function DailyStreamView({ roomUrl, token, workshopTitle, workshopId, ini
                       }`}>
                         <Monitor className="w-5 h-5" />
                       </div>
-                      <span className="text-[10.5px] font-extrabold text-foreground">
-                        {isAr ? "تسجيل الشاشة" : "Screen Share"}
-                      </span>
+                      <div className="flex flex-col items-center gap-0.5 text-center">
+                        <span className="text-[10.5px] font-extrabold text-foreground">
+                          {isAr ? "تسجيل الشاشة" : "Screen Share"}
+                        </span>
+                        <span className="text-[8px] text-muted-foreground font-bold">
+                          {isAr ? "(اختياري)" : "(Optional)"}
+                        </span>
+                      </div>
                       <Button
                         size="sm"
                         onClick={requestScreenAccess}
@@ -1285,11 +1283,11 @@ export function DailyStreamView({ roomUrl, token, workshopTitle, workshopId, ini
 
                   {/* Actions */}
                   <div className="flex flex-col gap-2 pt-2">
-                    {!(micPermission === 'granted' && camPermission === 'granted' && screenPermission === 'granted') && (
+                    {!(micPermission === 'granted' && camPermission === 'granted') && (
                       <p className="text-[10px] text-destructive font-bold text-center leading-normal animate-pulse">
                         {isAr 
-                          ? "⚠️ يرجى تفعيل جميع الصلاحيات الثلاثة في الأعلى للمتابعة" 
-                          : "⚠️ Please grant all three permissions above to continue"}
+                          ? "⚠️ يرجى تفعيل صلاحيات المايك والكاميرا في الأعلى للمتابعة" 
+                          : "⚠️ Please grant microphone and camera permissions above to continue"}
                       </p>
                     )}
                     <Button
@@ -1297,7 +1295,7 @@ export function DailyStreamView({ roomUrl, token, workshopTitle, workshopId, ini
                         window.scrollTo({ top: 0, behavior: "smooth" });
                         setShowSetup(false);
                       }}
-                      disabled={!(micPermission === 'granted' && camPermission === 'granted' && screenPermission === 'granted')}
+                      disabled={!(micPermission === 'granted' && camPermission === 'granted')}
                       className="w-full rounded-xl font-bold h-10 text-xs shadow-md shadow-primary/10 disabled:opacity-40"
                     >
                       {isAr ? "دخول قاعة البث المباشر" : "Enter Live Workshop"}
