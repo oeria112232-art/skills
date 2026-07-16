@@ -53,7 +53,7 @@ export default function JobDetailPage() {
   if (jobLoading) return <AppLayout><Skeleton className="h-96 w-full rounded-2xl bg-card border border-border/50" /></AppLayout>;
   if (!job) return <AppLayout><p className="text-center text-muted-foreground mt-16 font-bold">{isAr ? "الوظيفة غير موجودة" : "Job not found"}</p></AppLayout>;
 
-  const q = questions ?? [];
+  const q = [] as Exclude<typeof questions, undefined>; // Disabled screening quizzes per user request to cancel all job exams
 
   const handleStartQuiz = async () => {
     try {
