@@ -4,7 +4,7 @@ import {
   useGetWorkshop, useGetWorkshopExam, useEnrollWorkshop, useSubmitExam, useListCertificates,
   getGetWorkshopQueryKey, getGetWorkshopExamQueryKey, getListCertificatesQueryKey,
 } from "@workspace/api-client-react";
-import { ArrowLeft, Calendar, Clock, Users, CheckCircle, XCircle, Award, Timer, ShieldAlert, Bell, Video, Mic, MicOff, Coins } from "lucide-react";
+import { ArrowLeft, Calendar, Clock, Users, CheckCircle, XCircle, Award, Timer, ShieldAlert, Bell, Video, VideoOff, Mic, MicOff, Coins } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -91,7 +91,7 @@ export default function WorkshopDetailPage() {
     return false;
   });
   // Stream session state — persisted in sessionStorage for page refresh survival
-  const [activeStream, setActiveStream] = useState<{ roomUrl: string; token: string; initialMicEnabled?: boolean } | null>(() => {
+  const [activeStream, setActiveStream] = useState<{ roomUrl: string; token: string; initialMicEnabled?: boolean; initialCamEnabled?: boolean } | null>(() => {
     try {
       const saved = sessionStorage.getItem(`stream_session_${workshopId}`);
       if (saved) return JSON.parse(saved);
@@ -102,9 +102,12 @@ export default function WorkshopDetailPage() {
   const [restoringStream, setRestoringStream] = useState(false);
   const [showPreJoinCheck, setShowPreJoinCheck] = useState(false);
   const [preJoinMicEnabled, setPreJoinMicEnabled] = useState(false);
+  const [preJoinCamEnabled, setPreJoinCamEnabled] = useState(false);
+  const [preJoinHasPermission, setPreJoinHasPermission] = useState(false);
+  const [requestingPermissions, setRequestingPermissions] = useState(false);
 
   // Helper: persist stream session
-  const setAndSaveStream = (data: { roomUrl: string; token: string; initialMicEnabled?: boolean } | null) => {
+  const setAndSaveStream = (data: { roomUrl: string; token: string; initialMicEnabled?: boolean; initialCamEnabled?: boolean } | null) => {
     if (data) {
       sessionStorage.setItem(`stream_session_${workshopId}`, JSON.stringify(data));
     } else {
@@ -113,12 +116,35 @@ export default function WorkshopDetailPage() {
     setActiveStream(data);
   };
 
-  // Smooth scroll to top when stream is active
+  // Smooth scroll to top when stream is active or pre-join check is shown
   useEffect(() => {
-    if (activeStream) {
+    if (activeStream || showPreJoinCheck) {
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
-  }, [activeStream]);
+  }, [activeStream, showPreJoinCheck]);
+
+  // Request camera and microphone permissions when showing the pre-join dialog
+  useEffect(() => {
+    if (showPreJoinCheck) {
+      const requestMediaPermissions = async () => {
+        setRequestingPermissions(true);
+        try {
+          // Trigger browser mic and camera permission prompt
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
+          // Stop tracks immediately as we are only checking permissions
+          stream.getTracks().forEach(track => track.stop());
+          setPreJoinHasPermission(true);
+        } catch (err) {
+          console.warn("Media permissions not granted or not available:", err);
+          // Fallback to allow continuing without blocking entirely
+          setPreJoinHasPermission(true);
+        } finally {
+          setRequestingPermissions(false);
+        }
+      };
+      requestMediaPermissions();
+    }
+  }, [showPreJoinCheck]);
 
   // Auto-restore stream: if sessionStorage has a saved session, re-fetch a fresh token
   // to handle page refresh (old token may still be valid, but we refresh for safety)
@@ -438,7 +464,7 @@ export default function WorkshopDetailPage() {
     }
   };
 
-  const handleStartStream = async (micEnabled: boolean) => {
+  const handleStartStream = async (micEnabled: boolean, camEnabled: boolean) => {
     if (!user || !workshopId) return;
     setLoadingStream(true);
     try {
@@ -454,7 +480,7 @@ export default function WorkshopDetailPage() {
         throw new Error(errData.error || "Failed to start stream");
       }
       const data = await response.json();
-      setAndSaveStream({ roomUrl: data.roomUrl, token: data.token, initialMicEnabled: micEnabled });
+      setAndSaveStream({ roomUrl: data.roomUrl, token: data.token, initialMicEnabled: micEnabled, initialCamEnabled: camEnabled });
       toast({
         title: isAr ? "تم بدء البث بنجاح" : "Stream Started",
         description: isAr ? "تم إنشاء غرفة البث المباشر وأنت الآن المنسق." : "The live room is active and you are the owner."
@@ -470,7 +496,7 @@ export default function WorkshopDetailPage() {
     }
   };
 
-  const handleJoinStream = async (micEnabled: boolean) => {
+  const handleJoinStream = async (micEnabled: boolean, camEnabled: boolean) => {
     if (!user || !workshopId) return;
     setLoadingStream(true);
     try {
@@ -484,7 +510,7 @@ export default function WorkshopDetailPage() {
         throw new Error(errData.error || "Failed to join stream");
       }
       const data = await response.json();
-      setAndSaveStream({ roomUrl: data.roomUrl, token: data.token, initialMicEnabled: micEnabled });
+      setAndSaveStream({ roomUrl: data.roomUrl, token: data.token, initialMicEnabled: micEnabled, initialCamEnabled: camEnabled });
       toast({
         title: isAr ? "انضممت للبث المباشر" : "Joined Live Stream",
         description: isAr ? "مرحباً بك في البث التفاعلي للورشة." : "Welcome to the interactive workshop stream."
@@ -675,6 +701,7 @@ export default function WorkshopDetailPage() {
                 workshopTitle={workshop.title}
                 workshopId={workshop.id}
                 initialMicEnabled={activeStream.initialMicEnabled ?? false}
+                initialCamEnabled={activeStream.initialCamEnabled ?? false}
                 onLeave={handleLeaveStream}
               />
             </div>
@@ -719,23 +746,57 @@ export default function WorkshopDetailPage() {
               {showPreJoinCheck && !activeStream && (
                 <div className="w-full p-6 rounded-2xl border border-border bg-card/65 backdrop-blur-md shadow-lg text-center flex flex-col items-center justify-center gap-4 my-2 max-w-sm">
                   <h4 className="font-bold text-xs text-foreground">
-                    {isAr ? "إعدادات الميكروفون قبل الدخول للبث" : "Microphone Settings Before Entering"}
+                    {isAr ? "إعدادات البث قبل الدخول" : "Broadcast Settings Before Entering"}
                   </h4>
                   
-                  <button
-                    onClick={() => setPreJoinMicEnabled(prev => !prev)}
-                    className={`w-14 h-14 rounded-full flex items-center justify-center border transition-all hover:scale-105 active:scale-95 shadow-md ${
-                      preJoinMicEnabled 
-                        ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-500 hover:bg-emerald-500/20' 
-                        : 'bg-destructive/10 border-destructive/30 text-destructive hover:bg-destructive/20'
-                    }`}
-                    title={preJoinMicEnabled ? (isAr ? "المايك يعمل - انقر لكتمه" : "Mic On - Click to mute") : (isAr ? "المايك مغلق - انقر لتشغيله" : "Mic Muted - Click to unmute")}
-                  >
-                    {preJoinMicEnabled ? <Mic className="w-6 h-6" /> : <MicOff className="w-6 h-6" />}
-                  </button>
-                  
-                  <span className="text-[10px] text-muted-foreground font-semibold">
-                    {preJoinMicEnabled ? (isAr ? "ستدخل البث والمايك يعمل" : "You will enter with mic open") : (isAr ? "ستدخل البث والمايك مغلق كلياً" : "You will enter with mic muted")}
+                  {requestingPermissions ? (
+                    <div className="py-4 text-xs font-semibold text-muted-foreground animate-pulse">
+                      {isAr ? "جاري طلب صلاحيات المايك والكاميرا..." : "Requesting mic and camera permissions..."}
+                    </div>
+                  ) : (
+                    <div className="flex gap-4 items-center justify-center my-2">
+                      {/* Microphone Toggle */}
+                      <div className="flex flex-col items-center gap-1.5">
+                        <button
+                          onClick={() => setPreJoinMicEnabled(prev => !prev)}
+                          className={`w-12 h-12 rounded-full flex items-center justify-center border transition-all hover:scale-105 active:scale-95 shadow-md ${
+                            preJoinMicEnabled 
+                              ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-500 hover:bg-emerald-500/20' 
+                              : 'bg-destructive/10 border-destructive/30 text-destructive hover:bg-destructive/20'
+                          }`}
+                          title={preJoinMicEnabled ? (isAr ? "المايك يعمل - انقر لكتمه" : "Mic On - Click to mute") : (isAr ? "المايك مغلق - انقر لتشغيله" : "Mic Muted - Click to unmute")}
+                        >
+                          {preJoinMicEnabled ? <Mic className="w-5 h-5" /> : <MicOff className="w-5 h-5" />}
+                        </button>
+                        <span className="text-[9px] text-muted-foreground font-bold">
+                          {isAr ? "الميكروفون" : "Microphone"}
+                        </span>
+                      </div>
+
+                      {/* Camera Toggle */}
+                      <div className="flex flex-col items-center gap-1.5">
+                        <button
+                          onClick={() => setPreJoinCamEnabled(prev => !prev)}
+                          className={`w-12 h-12 rounded-full flex items-center justify-center border transition-all hover:scale-105 active:scale-95 shadow-md ${
+                            preJoinCamEnabled 
+                              ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-500 hover:bg-emerald-500/20' 
+                              : 'bg-destructive/10 border-destructive/30 text-destructive hover:bg-destructive/20'
+                          }`}
+                          title={preJoinCamEnabled ? (isAr ? "الكاميرا تعمل - انقر لإيقافها" : "Camera On - Click to turn off") : (isAr ? "الكاميرا مغلقة - انقر لتشغيلها" : "Camera Off - Click to turn on")}
+                        >
+                          {preJoinCamEnabled ? <Video className="w-5 h-5" /> : <VideoOff className="w-5 h-5" />}
+                        </button>
+                        <span className="text-[9px] text-muted-foreground font-bold">
+                          {isAr ? "الكاميرا" : "Camera"}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
+                  <span className="text-[9px] text-muted-foreground font-semibold">
+                    {isAr 
+                      ? `ستدخل البث مع (${preJoinMicEnabled ? "مايك مفتوح" : "مايك مغلق"}) و (${preJoinCamEnabled ? "كاميرا مفتوحة" : "كاميرا مغلقة"})`
+                      : `You will enter with mic ${preJoinMicEnabled ? "open" : "muted"} and camera ${preJoinCamEnabled ? "open" : "off"}`}
                   </span>
 
                   <div className="flex gap-2 w-full mt-2">
@@ -749,13 +810,13 @@ export default function WorkshopDetailPage() {
                     <Button
                       onClick={async () => {
                         if (user?.role === "admin" || user?.role === "instructor") {
-                          await handleStartStream(preJoinMicEnabled);
+                          await handleStartStream(preJoinMicEnabled, preJoinCamEnabled);
                         } else {
-                          await handleJoinStream(preJoinMicEnabled);
+                          await handleJoinStream(preJoinMicEnabled, preJoinCamEnabled);
                         }
                         setShowPreJoinCheck(false);
                       }}
-                      disabled={loadingStream}
+                      disabled={loadingStream || requestingPermissions}
                       className="flex-1 rounded-xl font-bold text-xs h-10 bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-500/25"
                     >
                       {loadingStream ? (isAr ? "جاري الدخول..." : "Entering...") : (isAr ? "دخول البث" : "Enter Stream")}

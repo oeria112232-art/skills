@@ -21,6 +21,7 @@ interface DailyStreamViewProps {
   workshopTitle: string;
   workshopId: number;
   initialMicEnabled: boolean;
+  initialCamEnabled?: boolean;
   onLeave: (durationMinutes: number) => void;
 }
 
@@ -68,7 +69,7 @@ const playChime = () => {
   }
 };
 
-export function DailyStreamView({ roomUrl, token, workshopTitle, workshopId, initialMicEnabled, onLeave }: DailyStreamViewProps) {
+export function DailyStreamView({ roomUrl, token, workshopTitle, workshopId, initialMicEnabled, initialCamEnabled = false, onLeave }: DailyStreamViewProps) {
   const { language } = useLanguage();
   const isAr = language === "ar";
   const { user } = useAuth();
@@ -102,9 +103,10 @@ export function DailyStreamView({ roomUrl, token, workshopTitle, workshopId, ini
   // Participant, Media, & Hand Raising States
   const [participants, setParticipants] = useState<any[]>([]);
   const [localAudioEnabled, setLocalAudioEnabled] = useState(initialMicEnabled);
-  const [localVideoEnabled, setLocalVideoEnabled] = useState(false); // starts OFF (room default)
+  const [localVideoEnabled, setLocalVideoEnabled] = useState(initialCamEnabled); // Set based on user setup selection
   const [localCanSendVideo, setLocalCanSendVideo] = useState(isModerator); // moderators always can
   const [localCanSendAudio, setLocalCanSendAudio] = useState(true); // trainees start allowed
+  const [localCanSendScreen, setLocalCanSendScreen] = useState(isModerator); // moderators always can
   const [isScreenSharing, setIsScreenSharing] = useState(false);
   const [raisedHands, setRaisedHands] = useState<Record<string, boolean>>({});
   const [isHandRaised, setIsHandRaised] = useState(false);
@@ -586,6 +588,7 @@ export function DailyStreamView({ roomUrl, token, workshopTitle, workshopId, ini
     if (!pt) return;
 
     const canSendList = pt.permissions?.canSend as any;
+    
     const hasAudio = (canSendList === true || canSendList === "*" || canSendList === undefined)
       ? true
       : (canSendList instanceof Set)
@@ -594,39 +597,35 @@ export function DailyStreamView({ roomUrl, token, workshopTitle, workshopId, ini
           ? canSendList.includes("audio")
           : false;
 
-    let newCanSend: string[] = [];
-    if (currentCanVideo) {
-      newCanSend = hasAudio ? ["audio"] : [];
-      callFrame.updateParticipant(participantId, { 
-        setVideo: false,
-        permissions: { canSend: newCanSend }
-      } as any);
-    } else {
-      newCanSend = hasAudio 
-        ? ["audio", "video", "screenVideo", "screenAudio"]
-        : ["video", "screenVideo", "screenAudio"];
-      
-      callFrame.updateParticipant(participantId, {
-        permissions: { canSend: newCanSend }
-      } as any);
+    const hasScreen = (canSendList === true || canSendList === "*" || canSendList === undefined)
+      ? true
+      : (canSendList instanceof Set)
+        ? canSendList.has("screenVideo")
+        : Array.isArray(canSendList)
+          ? canSendList.includes("screenVideo")
+          : false;
 
-      // Smart Invite App Message
-      if (isJoined) {
-        try {
-          callFrame.sendAppMessage({
-            type: "request-camera-activation",
-            targetSessionId: participantId
-          }, "*");
-        } catch (err) {
-          console.error("Failed to send camera request message:", err);
-        }
-      }
+    let newCanSend: string[] = [];
+    if (hasAudio) newCanSend.push("audio");
+    if (hasScreen) newCanSend.push("screenVideo", "screenAudio");
+
+    if (!currentCanVideo) {
+      newCanSend.push("video");
+    }
+
+    callFrame.updateParticipant(participantId, {
+      permissions: { canSend: newCanSend }
+    } as any);
+
+    if (currentCanVideo) {
+      // Instantly turn off their camera feed when revoking permission
+      callFrame.updateParticipant(participantId, { setVideo: false } as any);
     }
 
     toast({
       title: isAr ? "صلاحيات الكاميرا" : "Camera Permissions",
       description: isAr 
-        ? (currentCanVideo ? "تم قفل وحظر الكاميرا للمشارك." : "تم السماح للمشارك بتشغيل الكاميرا ومشاركة الشاشة.")
+        ? (currentCanVideo ? "تم قفل وحظر الكاميرا للمشارك." : "تم السماح للمشارك بتشغيل الكاميرا.")
         : (currentCanVideo ? "Camera blocked for participant." : "Camera allowed for participant.")
     });
 
@@ -645,6 +644,71 @@ export function DailyStreamView({ roomUrl, token, workshopTitle, workshopId, ini
     if (!pt) return;
 
     const canSendList = pt.permissions?.canSend as any;
+    
+    const hasVideo = (canSendList === true || canSendList === "*" || canSendList === undefined)
+      ? true
+      : (canSendList instanceof Set)
+        ? canSendList.has("video")
+        : Array.isArray(canSendList)
+          ? canSendList.includes("video")
+          : false;
+
+    const hasScreen = (canSendList === true || canSendList === "*" || canSendList === undefined)
+      ? true
+      : (canSendList instanceof Set)
+        ? canSendList.has("screenVideo")
+        : Array.isArray(canSendList)
+          ? canSendList.includes("screenVideo")
+          : false;
+
+    let newCanSend: string[] = [];
+    if (hasVideo) newCanSend.push("video");
+    if (hasScreen) newCanSend.push("screenVideo", "screenAudio");
+
+    if (!currentCanAudio) {
+      newCanSend.push("audio");
+    }
+
+    callFrame.updateParticipant(participantId, {
+      permissions: { canSend: newCanSend }
+    } as any);
+
+    if (currentCanAudio) {
+      // Instantly mute their mic when revoking permission
+      callFrame.updateParticipant(participantId, { setAudio: false } as any);
+    }
+
+    toast({
+      title: isAr ? "صلاحيات الميكروفون" : "Microphone Permissions",
+      description: isAr 
+        ? (currentCanAudio ? "تم كتم وحظر الميكروفون للمشارك." : "تم السماح للمشارك بتشغيل الميكروفون.")
+        : (currentCanAudio ? "Microphone blocked for participant." : "Microphone allowed for participant.")
+    });
+
+    setTimeout(() => {
+      if (callFrame) {
+        const pts = callFrame.participants();
+        setParticipants(Object.values(pts));
+      }
+    }, 500);
+  };
+
+  // Toggle Participant Screen Share Permission (Host Control)
+  const toggleParticipantScreenPermission = (participantId: string, currentCanScreen: boolean) => {
+    if (!callFrame) return;
+    const pt = callFrame.participants()[participantId];
+    if (!pt) return;
+
+    const canSendList = pt.permissions?.canSend as any;
+    
+    const hasAudio = (canSendList === true || canSendList === "*" || canSendList === undefined)
+      ? true
+      : (canSendList instanceof Set)
+        ? canSendList.has("audio")
+        : Array.isArray(canSendList)
+          ? canSendList.includes("audio")
+          : false;
+
     const hasVideo = (canSendList === true || canSendList === "*" || canSendList === undefined)
       ? true
       : (canSendList instanceof Set)
@@ -654,39 +718,22 @@ export function DailyStreamView({ roomUrl, token, workshopTitle, workshopId, ini
           : false;
 
     let newCanSend: string[] = [];
-    if (currentCanAudio) {
-      newCanSend = hasVideo ? ["video", "screenVideo", "screenAudio"] : [];
-      callFrame.updateParticipant(participantId, { 
-        setAudio: false,
-        permissions: { canSend: newCanSend }
-      } as any);
-    } else {
-      newCanSend = hasVideo 
-        ? ["audio", "video", "screenVideo", "screenAudio"] 
-        : ["audio"];
-      
-      callFrame.updateParticipant(participantId, {
-        permissions: { canSend: newCanSend }
-      } as any);
+    if (hasAudio) newCanSend.push("audio");
+    if (hasVideo) newCanSend.push("video");
 
-      // Smart Invite App Message
-      if (isJoined) {
-        try {
-          callFrame.sendAppMessage({
-            type: "request-audio-activation",
-            targetSessionId: participantId
-          }, "*");
-        } catch (err) {
-          console.error("Failed to send audio request message:", err);
-        }
-      }
+    if (!currentCanScreen) {
+      newCanSend.push("screenVideo", "screenAudio");
     }
 
+    callFrame.updateParticipant(participantId, {
+      permissions: { canSend: newCanSend }
+    } as any);
+
     toast({
-      title: isAr ? "صلاحيات الميكروفون" : "Microphone Permissions",
+      title: isAr ? "صلاحيات مشاركة الشاشة" : "Screen Share Permissions",
       description: isAr 
-        ? (currentCanAudio ? "تم كتم وحظر الميكروفون للمشارك." : "تم السماح للمشارك بتشغيل الميكروفون.")
-        : (currentCanAudio ? "Microphone blocked for participant." : "Microphone allowed for participant.")
+        ? (currentCanScreen ? "تم قفل وحظر مشاركة الشاشة للمشارك." : "تم السماح للمشارك بمشاركة الشاشة.")
+        : (currentCanScreen ? "Screen share blocked for participant." : "Screen share allowed for participant.")
     });
 
     setTimeout(() => {
@@ -923,8 +970,17 @@ export function DailyStreamView({ roomUrl, token, workshopTitle, workshopId, ini
               ? canSend.includes("audio")
               : false;
 
+        const canScreen = (canSend === true || canSend === "*" || canSend === undefined)
+          ? true
+          : (canSend instanceof Set)
+            ? canSend.has("screenVideo")
+            : Array.isArray(canSend)
+              ? canSend.includes("screenVideo")
+              : false;
+
         setLocalCanSendVideo(canVideo);
         setLocalCanSendAudio(canAudio);
+        setLocalCanSendScreen(canScreen);
       }
     };
 
@@ -935,7 +991,7 @@ export function DailyStreamView({ roomUrl, token, workshopTitle, workshopId, ini
     const handleJoined = () => {
       setIsJoined(true);
       frame.setLocalAudio(initialMicEnabled);
-      frame.setLocalVideo(false); // start camera off but fully initialized for toggles
+      frame.setLocalVideo(initialCamEnabled); // start camera based on setup selection
       updateParticipantsList();
     };
 
@@ -1301,7 +1357,7 @@ export function DailyStreamView({ roomUrl, token, workshopTitle, workshopId, ini
               )}
 
               {/* Screen Share Toggle — only shown if user has permission */}
-              {localCanSendVideo ? (
+              {localCanSendScreen ? (
                 <Button
                   onClick={toggleScreenShare}
                   variant={isScreenSharing ? "secondary" : "outline"}
@@ -1697,6 +1753,14 @@ export function DailyStreamView({ roomUrl, token, workshopTitle, workshopId, ini
                             ? canSendList.includes("video")
                             : false;
 
+                      const hasScreenPermission = (canSendList === true || canSendList === "*" || canSendList === undefined)
+                        ? true
+                        : (canSendList instanceof Set)
+                          ? canSendList.has("screenVideo")
+                          : Array.isArray(canSendList)
+                            ? canSendList.includes("screenVideo")
+                            : false;
+
                       return (
                         <div key={p.session_id} className="flex items-center justify-between p-2.5 rounded-xl border border-border/45 bg-background/40 hover:bg-background/85 transition-all">
                           <div className="flex items-center gap-2">
@@ -1769,6 +1833,32 @@ export function DailyStreamView({ roomUrl, token, workshopTitle, workshopId, ini
                                 title={isCamOn ? (isAr ? "الكاميرا تعمل" : "Cam On") : (isAr ? "الكاميرا مغلقة" : "Cam Off")}
                               >
                                 {isCamOn ? <Video className="w-3.5 h-3.5" /> : <VideoOff className="w-3.5 h-3.5" />}
+                              </div>
+                            )}
+
+                            {/* Screen Share Status / Toggle Button */}
+                            {isModerator && !isLocal ? (
+                              <button
+                                onClick={() => toggleParticipantScreenPermission(p.session_id, hasScreenPermission)}
+                                className={`w-7 h-7 rounded-lg flex items-center justify-center border transition-all hover:scale-105 active:scale-95 ${
+                                  hasScreenPermission 
+                                    ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-500 hover:bg-emerald-500/25' 
+                                    : 'bg-destructive/15 border-destructive/30 text-destructive hover:bg-destructive/25'
+                                }`}
+                                title={hasScreenPermission ? (isAr ? "إغلاق وحظر مشاركة الشاشة" : "Lock screen share") : (isAr ? "السماح بمشاركة الشاشة" : "Allow screen share")}
+                              >
+                                <Monitor className="w-3.5 h-3.5" />
+                              </button>
+                            ) : (
+                              <div 
+                                className={`w-7 h-7 rounded-lg flex items-center justify-center border ${
+                                  p.screen 
+                                    ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-600' 
+                                    : 'bg-destructive/10 border-destructive/20 text-destructive'
+                                }`} 
+                                title={p.screen ? (isAr ? "مشاركة الشاشة مفعلة" : "Screen Sharing On") : (isAr ? "مشاركة الشاشة مغلقة" : "Screen Sharing Off")}
+                              >
+                                <Monitor className="w-3.5 h-3.5" />
                               </div>
                             )}
 
