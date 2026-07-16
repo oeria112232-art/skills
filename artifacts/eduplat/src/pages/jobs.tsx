@@ -10,6 +10,46 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { useLanguage } from "@/components/layout/LanguageContext";
 import { motion } from "framer-motion";
 
+function formatJobTime(createdAt: string | Date | undefined, isAr: boolean) {
+  if (!createdAt) return "";
+  const date = new Date(createdAt);
+  const now = new Date();
+  
+  // Reset hours to compare calendar days accurately
+  const dDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const dNow = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const diffDays = Math.round((dNow.getTime() - dDate.getTime()) / (1000 * 60 * 60 * 24));
+  
+  if (diffDays === 0) {
+    // Today
+    const hours = date.getHours();
+    const minutes = date.getMinutes().toString().padStart(2, "0");
+    const ampm = hours >= 12 ? (isAr ? "م" : "PM") : (isAr ? "ص" : "AM");
+    const formattedHours = hours % 12 || 12;
+    return isAr 
+      ? `اليوم الساعة ${formattedHours}:${minutes} ${ampm}`
+      : `Today at ${formattedHours}:${minutes} ${ampm}`;
+  }
+  
+  if (diffDays === 1) {
+    // Yesterday
+    return isAr ? "أمس" : "Yesterday";
+  }
+  
+  if (diffDays < 7) {
+    // Day name within current week
+    const daysAr = ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"];
+    const daysEn = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    const dayIndex = date.getDay();
+    return isAr ? daysAr[dayIndex] : daysEn[dayIndex];
+  }
+  
+  // Older dates: Month/Day format (e.g. 7/17)
+  const month = date.getMonth() + 1;
+  const day = date.getDate();
+  return `${month}/${day}`;
+}
+
 export default function JobsPage() {
   const { language } = useLanguage();
   const isAr = language === "ar";
@@ -143,7 +183,14 @@ export default function JobsPage() {
                     <h3 className="font-extrabold text-base text-foreground leading-snug group-hover:text-primary transition-colors duration-200">
                       {job.title}
                     </h3>
-                    <p className="text-xs font-bold text-muted-foreground mt-1">{job.company}</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <p className="text-xs font-bold text-muted-foreground">{job.company}</p>
+                      <span className="text-[10px] text-muted-foreground/40">•</span>
+                      <span className="text-[10px] text-muted-foreground/75 font-bold flex items-center gap-1">
+                        <Clock className="w-3 h-3 text-primary/60" />
+                        {formatJobTime(job.createdAt, isAr)}
+                      </span>
+                    </div>
                     
                     <div className="flex flex-wrap gap-4 mt-4 text-[10.5px] text-muted-foreground font-semibold">
                       <span className="flex items-center gap-1">
