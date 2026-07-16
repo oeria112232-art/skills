@@ -686,6 +686,12 @@ router.post("/workshops/:id/start-stream", requireAuth, requireRole(["admin", "i
     return;
   }
 
+  // Prevent restarting the stream if the workshop status is completed or has already been closed
+  if (w.status === "completed" || w.isClosed === 1) {
+    res.status(400).json({ error: "الورشة منتهية بالفعل ولا يمكن إعادة فتح البث لها مجدداً." });
+    return;
+  }
+
   try {
     let roomUrl = w.dailyRoomUrl;
     let roomName = w.dailyRoomName;
@@ -1196,10 +1202,11 @@ router.post("/workshops/:id/end-stream", requireAuth, async (req: AuthenticatedR
       return;
     }
 
-    // 2. Set isClosed: 1 and clear stream info
+    // 2. Set isClosed: 1, mark workshop status as completed, and clear stream info
     await db.update(workshopsTable)
       .set({
         isClosed: 1,
+        status: "completed",
         dailyRoomUrl: null,
         dailyRoomName: null
       })

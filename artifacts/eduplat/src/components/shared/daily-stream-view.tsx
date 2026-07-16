@@ -584,9 +584,13 @@ export function DailyStreamView({ roomUrl, token, workshopTitle, workshopId, ini
   // Toggle Participant Camera Permission (Host Control)
   const toggleParticipantCameraPermission = (participantId: string, currentCanVideo: boolean) => {
     if (!callFrame) return;
-    const pt = callFrame.participants()[participantId];
-    if (!pt) return;
+    const pt = Object.values(callFrame.participants()).find((p: any) => p.session_id === participantId || p.id === participantId || p.user_id === participantId);
+    if (!pt) {
+      console.warn("Participant not found for camera permission toggle:", participantId);
+      return;
+    }
 
+    const targetId = pt.session_id || participantId;
     const canSendList = pt.permissions?.canSend as any;
     
     const hasAudio = (canSendList === true || canSendList === "*" || canSendList === undefined)
@@ -613,13 +617,13 @@ export function DailyStreamView({ roomUrl, token, workshopTitle, workshopId, ini
       newCanSend.push("video");
     }
 
-    callFrame.updateParticipant(participantId, {
+    callFrame.updateParticipant(targetId, {
       permissions: { canSend: newCanSend }
     } as any);
 
     if (currentCanVideo) {
       // Instantly turn off their camera feed when revoking permission
-      callFrame.updateParticipant(participantId, { setVideo: false } as any);
+      callFrame.updateParticipant(targetId, { setVideo: false } as any);
     }
 
     toast({
@@ -640,9 +644,13 @@ export function DailyStreamView({ roomUrl, token, workshopTitle, workshopId, ini
   // Toggle Participant Audio Permission (Host Control)
   const toggleParticipantAudioPermission = (participantId: string, currentCanAudio: boolean) => {
     if (!callFrame) return;
-    const pt = callFrame.participants()[participantId];
-    if (!pt) return;
+    const pt = Object.values(callFrame.participants()).find((p: any) => p.session_id === participantId || p.id === participantId || p.user_id === participantId);
+    if (!pt) {
+      console.warn("Participant not found for audio permission toggle:", participantId);
+      return;
+    }
 
+    const targetId = pt.session_id || participantId;
     const canSendList = pt.permissions?.canSend as any;
     
     const hasVideo = (canSendList === true || canSendList === "*" || canSendList === undefined)
@@ -669,13 +677,13 @@ export function DailyStreamView({ roomUrl, token, workshopTitle, workshopId, ini
       newCanSend.push("audio");
     }
 
-    callFrame.updateParticipant(participantId, {
+    callFrame.updateParticipant(targetId, {
       permissions: { canSend: newCanSend }
     } as any);
 
     if (currentCanAudio) {
       // Instantly mute their mic when revoking permission
-      callFrame.updateParticipant(participantId, { setAudio: false } as any);
+      callFrame.updateParticipant(targetId, { setAudio: false } as any);
     }
 
     toast({
@@ -696,9 +704,13 @@ export function DailyStreamView({ roomUrl, token, workshopTitle, workshopId, ini
   // Toggle Participant Screen Share Permission (Host Control)
   const toggleParticipantScreenPermission = (participantId: string, currentCanScreen: boolean) => {
     if (!callFrame) return;
-    const pt = callFrame.participants()[participantId];
-    if (!pt) return;
+    const pt = Object.values(callFrame.participants()).find((p: any) => p.session_id === participantId || p.id === participantId || p.user_id === participantId);
+    if (!pt) {
+      console.warn("Participant not found for screen permission toggle:", participantId);
+      return;
+    }
 
+    const targetId = pt.session_id || participantId;
     const canSendList = pt.permissions?.canSend as any;
     
     const hasAudio = (canSendList === true || canSendList === "*" || canSendList === undefined)
@@ -725,7 +737,7 @@ export function DailyStreamView({ roomUrl, token, workshopTitle, workshopId, ini
       newCanSend.push("screenVideo", "screenAudio");
     }
 
-    callFrame.updateParticipant(participantId, {
+    callFrame.updateParticipant(targetId, {
       permissions: { canSend: newCanSend }
     } as any);
 
@@ -1273,18 +1285,22 @@ export function DailyStreamView({ roomUrl, token, workshopTitle, workshopId, ini
 
                   {/* Actions */}
                   <div className="flex flex-col gap-2 pt-2">
+                    {!(micPermission === 'granted' && camPermission === 'granted' && screenPermission === 'granted') && (
+                      <p className="text-[10px] text-destructive font-bold text-center leading-normal animate-pulse">
+                        {isAr 
+                          ? "⚠️ يرجى تفعيل جميع الصلاحيات الثلاثة في الأعلى للمتابعة" 
+                          : "⚠️ Please grant all three permissions above to continue"}
+                      </p>
+                    )}
                     <Button
-                      onClick={() => setShowSetup(false)}
-                      className="w-full rounded-xl font-bold h-10 text-xs shadow-md shadow-primary/10"
+                      onClick={() => {
+                        window.scrollTo({ top: 0, behavior: "smooth" });
+                        setShowSetup(false);
+                      }}
+                      disabled={!(micPermission === 'granted' && camPermission === 'granted' && screenPermission === 'granted')}
+                      className="w-full rounded-xl font-bold h-10 text-xs shadow-md shadow-primary/10 disabled:opacity-40"
                     >
                       {isAr ? "دخول قاعة البث المباشر" : "Enter Live Workshop"}
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      onClick={() => setShowSetup(false)}
-                      className="w-full rounded-xl font-bold h-9 text-xs text-muted-foreground hover:text-foreground border border-transparent"
-                    >
-                      {isAr ? "تخطي الإعداد" : "Skip Setup"}
                     </Button>
                   </div>
                 </div>

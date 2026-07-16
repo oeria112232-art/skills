@@ -80963,6 +80963,10 @@ router5.post("/workshops/:id/start-stream", requireAuth, requireRole(["admin", "
     res.status(404).json({ error: "Workshop not found" });
     return;
   }
+  if (w.status === "completed" || w.isClosed === 1) {
+    res.status(400).json({ error: "\u0627\u0644\u0648\u0631\u0634\u0629 \u0645\u0646\u062A\u0647\u064A\u0629 \u0628\u0627\u0644\u0641\u0639\u0644 \u0648\u0644\u0627 \u064A\u0645\u0643\u0646 \u0625\u0639\u0627\u062F\u0629 \u0641\u062A\u062D \u0627\u0644\u0628\u062B \u0644\u0647\u0627 \u0645\u062C\u062F\u062F\u0627\u064B." });
+    return;
+  }
   try {
     let roomUrl = w.dailyRoomUrl;
     let roomName = w.dailyRoomName;
@@ -81347,6 +81351,7 @@ router5.post("/workshops/:id/end-stream", requireAuth, async (req, res) => {
     }
     await db.update(workshopsTable).set({
       isClosed: 1,
+      status: "completed",
       dailyRoomUrl: null,
       dailyRoomName: null
     }).where(eq(workshopsTable.id, workshopId));

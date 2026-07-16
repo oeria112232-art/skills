@@ -742,106 +742,31 @@ export default function WorkshopDetailPage() {
             )}
             
             <div className="flex flex-wrap gap-3 pt-2">
-              {/* Pre-Join Mic Check Card */}
-              {showPreJoinCheck && !activeStream && (
-                <div className="w-full p-6 rounded-2xl border border-border bg-card/65 backdrop-blur-md shadow-lg text-center flex flex-col items-center justify-center gap-4 my-2 max-w-sm">
-                  <h4 className="font-bold text-xs text-foreground">
-                    {isAr ? "إعدادات البث قبل الدخول" : "Broadcast Settings Before Entering"}
-                  </h4>
-                  
-                  {requestingPermissions ? (
-                    <div className="py-4 text-xs font-semibold text-muted-foreground animate-pulse">
-                      {isAr ? "جاري طلب صلاحيات المايك والكاميرا..." : "Requesting mic and camera permissions..."}
-                    </div>
-                  ) : (
-                    <div className="flex gap-4 items-center justify-center my-2">
-                      {/* Microphone Toggle */}
-                      <div className="flex flex-col items-center gap-1.5">
-                        <button
-                          onClick={() => setPreJoinMicEnabled(prev => !prev)}
-                          className={`w-12 h-12 rounded-full flex items-center justify-center border transition-all hover:scale-105 active:scale-95 shadow-md ${
-                            preJoinMicEnabled 
-                              ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-500 hover:bg-emerald-500/20' 
-                              : 'bg-destructive/10 border-destructive/30 text-destructive hover:bg-destructive/20'
-                          }`}
-                          title={preJoinMicEnabled ? (isAr ? "المايك يعمل - انقر لكتمه" : "Mic On - Click to mute") : (isAr ? "المايك مغلق - انقر لتشغيله" : "Mic Muted - Click to unmute")}
-                        >
-                          {preJoinMicEnabled ? <Mic className="w-5 h-5" /> : <MicOff className="w-5 h-5" />}
-                        </button>
-                        <span className="text-[9px] text-muted-foreground font-bold">
-                          {isAr ? "الميكروفون" : "Microphone"}
-                        </span>
-                      </div>
-
-                      {/* Camera Toggle */}
-                      <div className="flex flex-col items-center gap-1.5">
-                        <button
-                          onClick={() => setPreJoinCamEnabled(prev => !prev)}
-                          className={`w-12 h-12 rounded-full flex items-center justify-center border transition-all hover:scale-105 active:scale-95 shadow-md ${
-                            preJoinCamEnabled 
-                              ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-500 hover:bg-emerald-500/20' 
-                              : 'bg-destructive/10 border-destructive/30 text-destructive hover:bg-destructive/20'
-                          }`}
-                          title={preJoinCamEnabled ? (isAr ? "الكاميرا تعمل - انقر لإيقافها" : "Camera On - Click to turn off") : (isAr ? "الكاميرا مغلقة - انقر لتشغيلها" : "Camera Off - Click to turn on")}
-                        >
-                          {preJoinCamEnabled ? <Video className="w-5 h-5" /> : <VideoOff className="w-5 h-5" />}
-                        </button>
-                        <span className="text-[9px] text-muted-foreground font-bold">
-                          {isAr ? "الكاميرا" : "Camera"}
-                        </span>
-                      </div>
-                    </div>
-                  )}
-
-                  <span className="text-[9px] text-muted-foreground font-semibold">
-                    {isAr 
-                      ? `ستدخل البث مع (${preJoinMicEnabled ? "مايك مفتوح" : "مايك مغلق"}) و (${preJoinCamEnabled ? "كاميرا مفتوحة" : "كاميرا مغلقة"})`
-                      : `You will enter with mic ${preJoinMicEnabled ? "open" : "muted"} and camera ${preJoinCamEnabled ? "open" : "off"}`}
-                  </span>
-
-                  <div className="flex gap-2 w-full mt-2">
-                    <Button
-                      onClick={() => setShowPreJoinCheck(false)}
-                      variant="outline"
-                      className="flex-1 rounded-xl font-bold text-xs h-10 border-border/50"
-                    >
-                      {isAr ? "إلغاء" : "Cancel"}
-                    </Button>
-                    <Button
-                      onClick={async () => {
-                        if (user?.role === "admin" || user?.role === "instructor") {
-                          await handleStartStream(preJoinMicEnabled, preJoinCamEnabled);
-                        } else {
-                          await handleJoinStream(preJoinMicEnabled, preJoinCamEnabled);
-                        }
-                        setShowPreJoinCheck(false);
-                      }}
-                      disabled={loadingStream || requestingPermissions}
-                      className="flex-1 rounded-xl font-bold text-xs h-10 bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-500/25"
-                    >
-                      {loadingStream ? (isAr ? "جاري الدخول..." : "Entering...") : (isAr ? "دخول البث" : "Enter Stream")}
-                    </Button>
-                  </div>
-                </div>
-              )}
-
               {/* Stream Controls for Moderators */}
-              {(user?.role === "admin" || user?.role === "instructor") && !activeStream && !showPreJoinCheck && (
+              {(user?.role === "admin" || user?.role === "instructor") && !activeStream && (
                 <Button
-                  onClick={() => setShowPreJoinCheck(true)}
+                  onClick={async () => {
+                    window.scrollTo({ top: 0, behavior: "smooth" });
+                    await handleStartStream(false, false);
+                  }}
+                  disabled={loadingStream}
                   className="rounded-xl font-bold px-6 text-xs h-10 bg-indigo-600 hover:bg-indigo-700 text-white shadow-md shadow-indigo-500/25"
                 >
-                  {isAr ? "بدء بث الورشة (صلاحية مدرب)" : "Start Live Stream (Instructor)"}
+                  {loadingStream ? (isAr ? "جاري تشغيل البث..." : "Starting Stream...") : (isAr ? "بدء بث الورشة (صلاحية مدرب)" : "Start Live Stream (Instructor)")}
                 </Button>
               )}
 
               {/* Stream Controls for Trainees */}
-              {user?.role !== "admin" && user?.role !== "instructor" && enrolled && workshop.status === "ongoing" && !activeStream && !showPreJoinCheck && (
+              {user?.role !== "admin" && user?.role !== "instructor" && enrolled && workshop.status === "ongoing" && !activeStream && (
                 <Button
-                  onClick={() => setShowPreJoinCheck(true)}
+                  onClick={async () => {
+                    window.scrollTo({ top: 0, behavior: "smooth" });
+                    await handleJoinStream(false, false);
+                  }}
+                  disabled={loadingStream}
                   className="rounded-xl font-bold px-6 text-xs h-10 bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-500/25 animate-pulse"
                 >
-                  {isAr ? "دخول البث المباشر التفاعلي" : "Join Live Video Stream"}
+                  {loadingStream ? (isAr ? "جاري الانضمام..." : "Joining...") : (isAr ? "دخول البث المباشر التفاعلي" : "Join Live Video Stream")}
                 </Button>
               )}
 
