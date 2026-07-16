@@ -11,9 +11,27 @@ import os from "os";
 // JWT tokens remain valid across restarts even without env vars configured.
 // ---------------------------------------------------------------------------
 
+// Resolve a highly persistent storage directory that survives Git redeployments and restarts
+let STORAGE_DIR = os.homedir();
+if (process.env.STORAGE_PATH) {
+  STORAGE_DIR = process.env.STORAGE_PATH;
+} else {
+  const parentDir = path.resolve(process.cwd(), "..");
+  try {
+    const testFile = path.join(parentDir, ".write_test_" + Math.random().toString(36).substring(7));
+    fs.writeFileSync(testFile, "write_test");
+    fs.unlinkSync(testFile);
+    STORAGE_DIR = parentDir; // Parent directory is writable and outside the git deployment folder!
+  } catch (e) {
+    if (fs.existsSync("/storage")) {
+      STORAGE_DIR = "/storage";
+    }
+  }
+}
+
 const KEYS_FILE = path.resolve(
   process.env.KEYS_FILE_PATH ||
-  path.join(os.homedir(), ".runtime-keys.json")
+  path.join(STORAGE_DIR, ".runtime-keys.json")
 );
 
 function loadOrGenerateKey(keyName: string, envValue: string | undefined): string {
