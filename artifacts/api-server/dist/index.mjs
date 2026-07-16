@@ -84078,22 +84078,35 @@ var allowedOrigins = (process.env.CORS_ORIGINS || "").split(",").map((s) => s.tr
 if (isProduction2 && allowedOrigins.length === 0) {
   logger3.error("\u{1F6A8} SECURITY CONFIG ERROR: CORS_ORIGINS is not set in environment variables! Blocking all cross-origin requests in production.");
 }
-app.use((0, import_cors.default)({
-  origin: (origin, callback) => {
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.length > 0) {
-      if (allowedOrigins.includes(origin)) return callback(null, true);
-      return callback(new Error("Not allowed by CORS"));
+app.use((0, import_cors.default)((req, callback) => {
+  const origin = req.header("Origin");
+  const corsOptions = {
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-Idempotency-Key"],
+    maxAge: 86400
+  };
+  const host = req.header("Host");
+  const protocol = req.secure || req.headers["x-forwarded-proto"] === "https" ? "https" : "http";
+  const sameOrigin = origin && (origin === `${protocol}://${host}` || origin === `https://${host}` || origin === `http://${host}`);
+  if (!origin || sameOrigin) {
+    corsOptions.origin = true;
+    callback(null, corsOptions);
+  } else if (allowedOrigins.length > 0) {
+    if (allowedOrigins.includes(origin)) {
+      corsOptions.origin = true;
+      callback(null, corsOptions);
+    } else {
+      callback(new Error("Not allowed by CORS"));
     }
+  } else {
     if (isProduction2) {
-      return callback(new Error("CORS_ORIGINS is not configured. Cross-origin requests are blocked."));
+      callback(new Error("CORS_ORIGINS is not configured. Cross-origin requests are blocked."));
+    } else {
+      corsOptions.origin = true;
+      callback(null, corsOptions);
     }
-    return callback(null, true);
-  },
-  credentials: true,
-  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization", "X-Idempotency-Key"],
-  maxAge: 86400
+  }
 }));
 app.use(
   (0, import_pino_http.default)({
