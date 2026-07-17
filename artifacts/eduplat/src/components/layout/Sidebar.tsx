@@ -23,6 +23,7 @@ const studentLinks = [
   { href: "/user/applications", icon: Briefcase, label: "My Applications", arLabel: "طلباتي" },
   { href: "/user/wallet", icon: Wallet, label: "My Wallet", arLabel: "المحفظة" },
   { href: "/leaderboard", icon: Trophy, label: "Leaderboard", arLabel: "المتصدرين" },
+  { href: "/user/settings", icon: UserCircle, label: "My Account", arLabel: "حسابي" },
 ];
 
 const adminLinks = [
@@ -38,12 +39,14 @@ const adminLinks = [
   { href: "/admin/companies", icon: Building2, label: "Companies", arLabel: "الشركات" },
   { href: "/admin/consultations", icon: MessageSquare, label: "Consultations", arLabel: "الاستشارات" },
   { href: "/admin/deposits", icon: Wallet, label: "Points Deposits", arLabel: "شحن النقاط" },
+  { href: "/user/settings", icon: UserCircle, label: "My Account", arLabel: "حسابي" },
 ];
 
 const companyLinks = [
   { href: "/company/dashboard", icon: LayoutDashboard, label: "Dashboard", arLabel: "لوحة التحكم" },
   { href: "/company/jobs", icon: Briefcase, label: "My Jobs", arLabel: "وظائفي" },
   { href: "/company/applications", icon: Users, label: "Applications", arLabel: "الطلبات" },
+  { href: "/user/settings", icon: UserCircle, label: "My Account", arLabel: "حسابي" },
 ];
 
 // Bottom nav items for mobile (most-used shortcuts)
@@ -99,7 +102,6 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
   const ThemeIcon = themeIcon;
   const cycleTheme = () => {
     if (theme === "light") setTheme("dark");
-    else if (theme === "dark") setTheme("system");
     else setTheme("light");
   };
 
@@ -189,7 +191,7 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
           >
             <ThemeIcon className="w-3.5 h-3.5 text-primary" />
             <span>
-              {theme === "dark" ? (isAr ? "داكن" : "Dark") : theme === "light" ? (isAr ? "فاتح" : "Light") : (isAr ? "تلقائي" : "System")}
+              {theme === "dark" ? (isAr ? "داكن" : "Dark") : (isAr ? "فاتح" : "Light")}
             </span>
           </button>
         </div>
@@ -293,23 +295,8 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
         )}
       </nav>
 
-      <div className="px-2.5 py-4 border-t border-sidebar-border/50">
-        <Link href={user ? "/user/settings" : "/auth"}>
-          <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-all duration-200 group cursor-pointer mb-2">
-            <Users className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors" />
-            <span className="flex-1 truncate">{isAr ? "حسابي" : "My Account"}</span>
-          </div>
-        </Link>
-        {user && (
-          <button
-            onClick={() => logout()}
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-destructive hover:bg-destructive/10 transition-all duration-200 group"
-          >
-            <LogOut className="w-4 h-4 flex-shrink-0" />
-            <span className="flex-1 text-left truncate">{isAr ? "تسجيل الخروج" : "Log out"}</span>
-          </button>
-        )}
-      </div>
+      {/* Bottom padding */}
+      <div className="h-4 shrink-0" />
     </div>
   );
 
@@ -328,11 +315,11 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
         <>
           {/* Mobile Top Bar */}
           <div className="fixed top-0 left-0 right-0 h-16 border-b bg-background/90 backdrop-blur-md z-40 flex items-center justify-between px-4 shadow-sm">
-            <div className="flex items-center gap-3">
+            <div className={cn("flex items-center gap-3", isAr ? "order-2" : "order-1")}>
               <SkillsLogo className="h-8 w-8" />
               <span className="font-bold text-lg text-foreground tracking-tight">Mharat</span>
             </div>
-            <div className="flex items-center gap-2">
+            <div className={cn("flex items-center gap-2", isAr ? "order-1 flex-row-reverse" : "order-2")}>
               <button
                 onClick={cycleTheme}
                 className="p-2 rounded-xl text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-colors"

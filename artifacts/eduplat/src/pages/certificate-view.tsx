@@ -108,10 +108,17 @@ export default function CertificateViewPage() {
 
   // Detect custom template options
   const hasCustomTemplate = !!workshop?.certTemplateUrl;
+  const isImageUrl = (url?: string | null) => {
+    if (!url) return false;
+    const lower = url.toLowerCase();
+    return lower.endsWith(".png") || lower.endsWith(".jpg") || lower.endsWith(".jpeg") || lower.endsWith(".svg");
+  };
   const isImageTemplate = hasCustomTemplate && (
     workshop?.certTemplateType === "png" ||
     workshop?.certTemplateType === "jpg" ||
-    workshop?.certTemplateType === "jpeg"
+    workshop?.certTemplateType === "jpeg" ||
+    workshop?.certTemplateType === "svg" ||
+    isImageUrl(workshop?.certTemplateUrl)
   );
   const isDocTemplate = hasCustomTemplate && !isImageTemplate;
 
@@ -343,7 +350,7 @@ export default function CertificateViewPage() {
               </div>
               <div className="border-t border-stone-800 pt-0.5 font-sans">
                 <p className="font-extrabold text-[7px] uppercase tracking-wider text-stone-500">
-                  TRAINER
+                  {workshop?.certSignTitle || (isAr ? "المدرب" : "TRAINER")}
                 </p>
                 <p className="text-[8px] font-bold text-stone-700 mt-0.5">
                   {workshop?.certSignName || "Ahmed Joudah Ghafil"}
@@ -362,6 +369,12 @@ export default function CertificateViewPage() {
             <span>YOUR VERIFICATION CODE: {cert.verificationCode || "MHARAT-EVAL-XXXX"}</span>
             <span>•</span>
             <span>HASH: {cert.signatureHash || "MHARAT-SECURE-ESIGN-88192-VERIFIED"}</span>
+            {workshop?.certEkey && (
+              <>
+                <span>•</span>
+                <span>E-KEY: {workshop.certEkey}</span>
+              </>
+            )}
           </div>
         </div>
 

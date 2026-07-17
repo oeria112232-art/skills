@@ -183,10 +183,17 @@ export default function AdminCertificatesPage() {
   };
 
   // Helper variables for rendering preview templates cleanly
+  const isImageUrl = (url?: string) => {
+    if (!url) return false;
+    const lower = url.toLowerCase();
+    return lower.endsWith(".png") || lower.endsWith(".jpg") || lower.endsWith(".jpeg") || lower.endsWith(".svg");
+  };
   const isImageTemplate = !!selectedWorkshop?.certTemplateUrl && (
     selectedWorkshop.certTemplateType === "png" ||
     selectedWorkshop.certTemplateType === "jpg" ||
-    selectedWorkshop.certTemplateType === "jpeg"
+    selectedWorkshop.certTemplateType === "jpeg" ||
+    selectedWorkshop.certTemplateType === "svg" ||
+    isImageUrl(selectedWorkshop?.certTemplateUrl)
   );
   const isDocTemplate = !!selectedWorkshop?.certTemplateUrl && !isImageTemplate;
 

@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { useUpdateUser, useListTracks, useGetTrackProgress, useListCertificates, useListApplications, useListJobs, useUploadUserAvatar } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "wouter";
-import { User, Mail, Phone, MapPin, Globe, Linkedin, Github, FileText, GraduationCap, Award, Briefcase, Plus, Clock, ExternalLink, Trash2, Eye, Loader2, Lock, Coins } from "lucide-react";
+import { User, Mail, Phone, MapPin, Globe, Linkedin, Github, FileText, GraduationCap, Award, Briefcase, Plus, Clock, ExternalLink, Trash2, Eye, Loader2, Lock, Coins, LogOut } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
@@ -83,7 +83,7 @@ function TrackProgressCard({ track, userId, isAr }: { track: any; userId: number
 }
 
 export default function UserSettingsPage() {
-  const { user, login } = useAuth();
+  const { user, login, logout } = useAuth();
   const { language } = useLanguage();
   const isAr = language === "ar";
   const { toast } = useToast();
@@ -233,12 +233,12 @@ export default function UserSettingsPage() {
         </div>
 
         <Tabs defaultValue="profile" className="space-y-6">
-          <TabsList className="flex md:grid md:grid-cols-5 w-full max-w-2xl bg-muted rounded-xl p-1 h-11 overflow-x-auto md:overflow-visible scrollbar-none snap-x snap-mandatory">
-            <TabsTrigger value="profile" className="rounded-lg text-xs font-bold flex-1 md:flex-initial whitespace-nowrap snap-start shrink-0">{isAr ? "المعلومات" : "Profile"}</TabsTrigger>
-            <TabsTrigger value="cv" className="rounded-lg text-xs font-bold flex-1 md:flex-initial whitespace-nowrap snap-start shrink-0">{isAr ? "السيرة الذاتية" : "CV"}</TabsTrigger>
-            <TabsTrigger value="tracks" className="rounded-lg text-xs font-bold flex-1 md:flex-initial whitespace-nowrap snap-start shrink-0">{isAr ? "المسارات" : "Tracks"}</TabsTrigger>
-            <TabsTrigger value="certs" className="rounded-lg text-xs font-bold flex-1 md:flex-initial whitespace-nowrap snap-start shrink-0">{isAr ? "الشهادات" : "Certificates"}</TabsTrigger>
-            <TabsTrigger value="apps" className="rounded-lg text-xs font-bold flex-1 md:flex-initial whitespace-nowrap snap-start shrink-0">{isAr ? "طلباتي" : "Applied Jobs"}</TabsTrigger>
+          <TabsList className="flex flex-wrap md:grid md:grid-cols-5 w-full max-w-2xl bg-muted rounded-xl p-1 h-auto md:h-11 gap-1.5 md:gap-0">
+            <TabsTrigger value="profile" className="rounded-lg text-xs font-bold flex-1 md:flex-initial whitespace-nowrap py-2 md:py-0">{isAr ? "المعلومات" : "Profile"}</TabsTrigger>
+            <TabsTrigger value="cv" className="rounded-lg text-xs font-bold flex-1 md:flex-initial whitespace-nowrap py-2 md:py-0">{isAr ? "السيرة الذاتية" : "CV"}</TabsTrigger>
+            <TabsTrigger value="tracks" className="rounded-lg text-xs font-bold flex-1 md:flex-initial whitespace-nowrap py-2 md:py-0">{isAr ? "المسارات" : "Tracks"}</TabsTrigger>
+            <TabsTrigger value="certs" className="rounded-lg text-xs font-bold flex-1 md:flex-initial whitespace-nowrap py-2 md:py-0">{isAr ? "الشهادات" : "Certificates"}</TabsTrigger>
+            <TabsTrigger value="apps" className="rounded-lg text-xs font-bold flex-1 md:flex-initial whitespace-nowrap py-2 md:py-0">{isAr ? "طلباتي" : "Applied Jobs"}</TabsTrigger>
           </TabsList>
 
           {/* Profile Tab */}
@@ -348,8 +348,16 @@ export default function UserSettingsPage() {
               </Card>
             </div>
 
-            <div className="flex justify-end pt-4">
-              <Button size="lg" onClick={handleSave} disabled={updateUser.isPending} className="rounded-xl px-8">
+            <div className="flex justify-between items-center pt-4 flex-wrap gap-3">
+              <Button 
+                variant="destructive" 
+                onClick={() => logout()} 
+                className="rounded-xl px-6 gap-2 text-xs font-bold shadow-md shadow-destructive/10"
+              >
+                <LogOut className="w-4 h-4" />
+                {isAr ? "تسجيل الخروج" : "Log out"}
+              </Button>
+              <Button size="lg" onClick={handleSave} disabled={updateUser.isPending} className="rounded-xl px-8 shadow-md shadow-primary/10">
                 {updateUser.isPending ? (isAr ? "جاري الحفظ..." : "Saving...") : (isAr ? "حفظ التغييرات" : "Save Changes")}
               </Button>
             </div>

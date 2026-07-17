@@ -375,20 +375,20 @@ export default function CompanyApplicationsPage() {
               
               <Tabs value={activeProfileTab} onValueChange={setActiveProfileTab} className="w-full">
                 
-                <TabsList className="grid w-full grid-cols-5 gap-1 bg-muted/65 p-1 rounded-xl mb-6">
-                  <TabsTrigger value="resume" className="rounded-lg text-[10.5px] font-bold py-2">
+                <TabsList className="flex flex-wrap md:grid md:grid-cols-5 w-full bg-muted/65 rounded-xl p-1 h-auto md:h-11 gap-1.5 md:gap-0 mb-6">
+                  <TabsTrigger value="resume" className="rounded-lg text-[10.5px] font-bold py-2 md:py-0 flex-1 md:flex-initial whitespace-nowrap">
                     {isAr ? "السيرة الذاتية" : "Resume"}
                   </TabsTrigger>
-                  <TabsTrigger value="tracks" className="rounded-lg text-[10.5px] font-bold py-2">
+                  <TabsTrigger value="tracks" className="rounded-lg text-[10.5px] font-bold py-2 md:py-0 flex-1 md:flex-initial whitespace-nowrap">
                     {isAr ? "المسارات" : "Tracks"}
                   </TabsTrigger>
-                  <TabsTrigger value="certs" className="rounded-lg text-[10.5px] font-bold py-2">
+                  <TabsTrigger value="certs" className="rounded-lg text-[10.5px] font-bold py-2 md:py-0 flex-1 md:flex-initial whitespace-nowrap">
                     {isAr ? "الشهادات" : "Certificates"}
                   </TabsTrigger>
-                  <TabsTrigger value="workshops" className="rounded-lg text-[10.5px] font-bold py-2">
+                  <TabsTrigger value="workshops" className="rounded-lg text-[10.5px] font-bold py-2 md:py-0 flex-1 md:flex-initial whitespace-nowrap">
                     {isAr ? "الورش" : "Workshops"}
                   </TabsTrigger>
-                  <TabsTrigger value="cover" className="rounded-lg text-[10.5px] font-bold py-2">
+                  <TabsTrigger value="cover" className="rounded-lg text-[10.5px] font-bold py-2 md:py-0 flex-1 md:flex-initial whitespace-nowrap">
                     {isAr ? "رسالة التغطية" : "Cover Letter"}
                   </TabsTrigger>
                 </TabsList>

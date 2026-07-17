@@ -12,6 +12,7 @@ import { useLanguage } from "@/components/layout/LanguageContext";
 import { Textarea } from "@/components/ui/textarea";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 
 const moduleTypeIcons: Record<string, React.ComponentType<{ className?: string }>> = {
   lesson: BookOpen,
@@ -74,6 +75,15 @@ export default function TrackDetailPage() {
   const [enrolling, setEnrolling] = useState(false);
   const [activeStudyMod, setActiveStudyMod] = useState<TrackModule | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [isDesktop, setIsDesktop] = useState(() => typeof window !== "undefined" ? window.innerWidth >= 1024 : true);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsDesktop(window.innerWidth >= 1024);
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
   const [optimisticCompletedSet, setOptimisticCompletedSet] = useState<Set<number>>(new Set());
 
   const [lessonText, setLessonText] = useState("");
@@ -240,7 +250,18 @@ export default function TrackDetailPage() {
   };
 
   const renderSidebar = () => (
-    <div className={`${sidebarOpen ? "w-80" : "w-0"} transition-all duration-300 border-l border-border bg-card flex-shrink-0 overflow-hidden flex flex-col`}>
+    <div className={cn(
+      "bg-card flex-shrink-0 flex flex-col transition-all duration-300 ease-in-out border-l border-border",
+      // Mobile Layout (fixed overlay)
+      "fixed inset-y-0 z-50 w-80 max-w-[85vw] shadow-2xl",
+      isAr ? "right-0" : "left-0",
+      isAr 
+        ? (sidebarOpen ? "translate-x-0 opacity-100 visible" : "translate-x-full opacity-0 invisible") 
+        : (sidebarOpen ? "translate-x-0 opacity-100 visible" : "-translate-x-full opacity-0 invisible"),
+      // Desktop overrides
+      "lg:static lg:inset-auto lg:z-0 lg:shadow-none lg:translate-x-0 lg:opacity-100 lg:visible",
+      sidebarOpen ? "lg:w-80" : "lg:w-0 lg:border-none"
+    )}>
       {sidebarOpen && (
         <>
           <div className="p-4 border-b border-border">
@@ -485,7 +506,14 @@ export default function TrackDetailPage() {
           <ChevronRight className="w-3 h-3 text-muted-foreground" />
           <span className="text-xs font-bold">{activeStudyMod.title}</span>
         </div>
-        <div className="flex-1 flex overflow-hidden">
+        <div className="flex-1 flex overflow-hidden relative">
+          {/* Mobile Sidebar Backdrop overlay */}
+          {!isDesktop && sidebarOpen && (
+            <div 
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 transition-all duration-300 animate-in fade-in"
+              onClick={() => setSidebarOpen(false)}
+            />
+          )}
           {renderContent()}
           {renderSidebar()}
         </div>
