@@ -1062,6 +1062,8 @@ export default function WorkshopDetailPage() {
           certEkey={workshop.certEkey || "MHARAT-SECURE-ESIGN-88192-VERIFIED"}
           isAr={isAr}
           recipientName={hasEarnedCert ? user?.name : undefined}
+          certTemplateUrl={workshop.certTemplateUrl}
+          certTemplateType={workshop.certTemplateType}
         />
       )}
     </AppLayout>

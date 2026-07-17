@@ -1,4 +1,4 @@
-import { useGetAdminStats } from "@workspace/api-client-react";
+import { useQuery } from "@tanstack/react-query";
 import { Users, Briefcase, BookOpen, Award, TrendingUp, Clock, CheckCircle, XCircle } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AppLayout } from "@/components/layout/AppLayout";
@@ -14,27 +14,56 @@ const statusColors: Record<string, string> = {
   rejected: "bg-gray-500/10 text-gray-500",
 };
 
-export default function AdminDashboard() {
+export default function CompanyDashboard() {
   const { language } = useLanguage();
   const isAr = language === "ar";
-  const { data: stats, isLoading } = useGetAdminStats();
+  
+  const { data: stats, isLoading } = useQuery<any>({
+    queryKey: ["stats", "company"],
+    queryFn: async () => {
+      const response = await fetch("/api/stats/company", {
+        headers: {
+          "Authorization": `Bearer ${localStorage.getItem("mharat-token")}`
+        }
+      });
+      if (!response.ok) throw new Error("Failed to fetch stats");
+      return response.json();
+    }
+  });
 
   const statCards = stats ? [
-    { label: isAr ? "إجمالي المستخدمين" : "Total Users", value: stats.totalUsers, icon: Users, color: "text-blue-500", link: "/admin/users" },
-    { label: isAr ? "الوظائف المفتوحة" : "Open Jobs", value: stats.openJobs, sub: isAr ? `من إجمالي ${stats.totalJobs}` : `of ${stats.totalJobs} total`, icon: Briefcase, color: "text-green-500", link: "/admin/jobs" },
-    { label: isAr ? "طلبات التقديم المعلقة" : "Pending Applications", value: stats.pendingApplications, sub: isAr ? `من إجمالي ${stats.totalApplications}` : `of ${stats.totalApplications} total`, icon: TrendingUp, color: "text-orange-500", link: "/admin/applications" },
-    { label: isAr ? "ورش العمل القادمة" : "Upcoming Workshops", value: stats.upcomingWorkshops, sub: isAr ? `من إجمالي ${stats.totalWorkshops}` : `of ${stats.totalWorkshops} total`, icon: BookOpen, color: "text-violet-500", link: "/admin/workshops" },
-    { label: isAr ? "الشهادات الصادرة" : "Certificates Issued", value: stats.totalCertificates, icon: Award, color: "text-yellow-500", link: "/certificates" },
+    { 
+      label: isAr ? "إجمالي الوظائف" : "Total Jobs", 
+      value: stats.totalJobs, 
+      icon: Briefcase, 
+      color: "text-blue-500", 
+      link: "/company/jobs" 
+    },
+    { 
+      label: isAr ? "الوظائف المفتوحة" : "Open Jobs", 
+      value: stats.openJobs, 
+      icon: TrendingUp, 
+      color: "text-green-500", 
+      link: "/company/jobs" 
+    },
+    { 
+      label: isAr ? "طلبات التقديم المعلقة" : "Pending Applications", 
+      value: stats.pendingApplications, 
+      sub: isAr ? `من إجمالي ${stats.totalApplications}` : `of ${stats.totalApplications} total`, 
+      icon: Users, 
+      color: "text-orange-500", 
+      link: "/company/applications" 
+    },
   ] : [];
 
   return (
     <AppLayout>
       <div className="mb-8">
         <h1 className="text-2xl font-bold mb-1" data-testid="heading-admin-dashboard">
-          {isAr ? "لوحة التحكم الإدارية" : "Admin Dashboard"}
+          {isAr ? "لوحة تحكم الشركة" : "Company Dashboard"}
         </h1>
         <p className="text-muted-foreground">
-          {isAr ? "نظرة عامة على المنصة والمقاييس الرئيسية" : "Platform overview and key metrics"}
+          {isAr ? "نظرة عامة على طلبات التوظيف والوظائف الشاغرة" : "Overview of job applications and vacancies"}
         </p>
       </div>
 
@@ -69,7 +98,7 @@ export default function AdminDashboard() {
       <div className="rounded-xl border border-border bg-card overflow-hidden">
         <div className="flex items-center justify-between px-5 py-4 border-b border-border">
           <h2 className="font-semibold">{isAr ? "أحدث طلبات التقديم" : "Recent Applications"}</h2>
-          <Link href="/admin/applications" className="text-xs text-primary hover:underline" data-testid="link-view-all-applications">
+          <Link href="/company/applications" className="text-xs text-primary hover:underline" data-testid="link-view-all-applications">
             {isAr ? "عرض الكل" : "View all"}
           </Link>
         </div>
@@ -82,7 +111,7 @@ export default function AdminDashboard() {
           </div>
         ) : (
           <div className="divide-y divide-border">
-            {stats.recentApplications.map(app => (
+            {stats.recentApplications.map((app: any) => (
               <div key={app.id} className="px-5 py-3 flex items-center justify-between gap-4" data-testid={`recent-app-${app.id}`}>
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-sm truncate">{app.applicantName}</p>

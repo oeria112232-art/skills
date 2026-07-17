@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db, usersTable, jobsTable, applicationsTable, workshopsTable, certificatesTable, enrollmentsTable, platformSettingsTable } from "@workspace/db";
-import { eq, desc, sql } from "drizzle-orm";
+import { eq, desc, sql, inArray } from "drizzle-orm";
 import { requireAuth, requireRole } from "../middlewares/auth";
 
 const router = Router();
@@ -77,6 +77,71 @@ router.get("/stats/admin", requireAuth, requireRole(["admin", "instructor"]), as
       ...app, createdAt: app.createdAt.toISOString()
     })),
   });
+});
+
+router.get("/stats/company", requireAuth, requireRole(["company", "admin"]), async (req: any, res): Promise<void> => {
+  try {
+    const companyId = req.user!.id;
+
+    // Get all jobs posted by this company
+    const companyJobs = await db.select().from(jobsTable).where(eq(jobsTable.companyId, companyId));
+    const jobIds = companyJobs.map(j => j.id);
+
+    const totalJobs = companyJobs.length;
+    const openJobs = companyJobs.filter(j => j.status === "open").length;
+
+    if (jobIds.length === 0) {
+      res.json({
+        totalJobs: 0,
+        openJobs: 0,
+        totalApplications: 0,
+        pendingApplications: 0,
+        recentApplications: [],
+      });
+      return;
+    }
+
+    // Get all applications for these jobs
+    const apps = await db.select().from(applicationsTable).where(inArray(applicationsTable.jobId, jobIds));
+    const totalApplications = apps.length;
+    const pendingApplications = apps.filter(a => a.status === "pending").length;
+
+    // Get recent applications with job titles
+    const recentAppsMerged = await db.select({
+      id: applicationsTable.id,
+      userId: applicationsTable.userId,
+      jobId: applicationsTable.jobId,
+      applicantName: applicationsTable.applicantName,
+      applicantEmail: applicationsTable.applicantEmail,
+      status: applicationsTable.status,
+      screeningScore: applicationsTable.screeningScore,
+      createdAt: applicationsTable.createdAt,
+      jobTitle: jobsTable.title,
+    })
+    .from(applicationsTable)
+    .leftJoin(jobsTable, eq(applicationsTable.jobId, jobsTable.id))
+    .where(inArray(applicationsTable.jobId, jobIds))
+    .orderBy(desc(applicationsTable.createdAt))
+    .limit(5);
+
+    res.json({
+      totalJobs,
+      openJobs,
+      totalApplications,
+      pendingApplications,
+      recentApplications: recentAppsMerged.map(app => ({
+        ...app, createdAt: app.createdAt.toISOString()
+      })),
+    });
+  } catch (err) {
+    res.json({
+      totalJobs: 0,
+      openJobs: 0,
+      totalApplications: 0,
+      pendingApplications: 0,
+      recentApplications: [],
+    });
+  }
 });
 
 export default router;
