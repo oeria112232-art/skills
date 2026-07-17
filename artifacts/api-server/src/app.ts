@@ -117,8 +117,9 @@ app.use("/api", generalRateLimit);
 // Auth-specific rate limiting
 app.use("/api/auth", authRateLimit);
 
-// Static uploads serving - allow public covers, authenticate other folders
+// Static uploads serving - allow public covers and templates, authenticate other folders
 app.use("/api/uploads/covers", express.static(path.resolve(__dirname, "../../../uploads/covers")));
+app.use("/api/uploads/templates", express.static(path.resolve(__dirname, "../../../uploads/templates")));
 app.use("/api/uploads", requireAuth, express.static(path.resolve(__dirname, "../../../uploads")));
 
 app.use("/api", router);

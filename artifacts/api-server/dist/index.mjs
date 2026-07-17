@@ -84233,6 +84233,7 @@ app.use(validateBase64Payload(5));
 app.use("/api", generalRateLimit);
 app.use("/api/auth", authRateLimit);
 app.use("/api/uploads/covers", import_express17.default.static(path8.resolve(__dirname7, "../../../uploads/covers")));
+app.use("/api/uploads/templates", import_express17.default.static(path8.resolve(__dirname7, "../../../uploads/templates")));
 app.use("/api/uploads", requireAuth, import_express17.default.static(path8.resolve(__dirname7, "../../../uploads")));
 app.use("/api", routes_default);
 if (isProduction2) {
