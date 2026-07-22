@@ -561,11 +561,11 @@ router.post("/workshops/:id/template", requireAuth, requireRole(["admin", "instr
   }
 
   // Validate template file type
-  const ALLOWED_TEMPLATE_TYPES = ["application/pdf", "image/jpeg", "image/png", "image/svg+xml"];
-  const ALLOWED_TEMPLATE_EXTS = [".pdf", ".jpg", ".jpeg", ".png", ".svg"];
+  const ALLOWED_TEMPLATE_TYPES = ["application/pdf", "image/jpeg", "image/png", "image/svg+xml", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "application/msword"];
+  const ALLOWED_TEMPLATE_EXTS = [".pdf", ".jpg", ".jpeg", ".png", ".svg", ".docx", ".doc"];
   const tplExt = path.extname(fileName).toLowerCase();
-  if (!ALLOWED_TEMPLATE_TYPES.includes(fileType) && !ALLOWED_TEMPLATE_EXTS.includes(tplExt)) {
-    res.status(400).json({ error: "Invalid template type. Allowed: pdf, jpg, png, svg" });
+  if (!ALLOWED_TEMPLATE_TYPES.includes(fileType) && !ALLOWED_TEMPLATE_EXTS.includes(tplExt) && !fileType.startsWith("image/") && !fileType.includes("pdf")) {
+    res.status(400).json({ error: "Invalid template type. Allowed: pdf, docx, jpg, png, svg" });
     return;
   }
   
@@ -587,9 +587,9 @@ router.post("/workshops/:id/template", requireAuth, requireRole(["admin", "instr
       dataBuffer = Buffer.from(base64Data, "base64");
     }
 
-    // Validate decoded file size (max 10MB for templates)
-    if (dataBuffer.length > 10 * 1024 * 1024) {
-      res.status(400).json({ error: "Template file too large. Maximum 10MB allowed" });
+    // Validate decoded file size (max 20MB for templates)
+    if (dataBuffer.length > 20 * 1024 * 1024) {
+      res.status(400).json({ error: "Template file too large. Maximum 20MB allowed" });
       return;
     }
     
@@ -606,12 +606,16 @@ router.post("/workshops/:id/template", requireAuth, requireRole(["admin", "instr
     
     fs.writeFileSync(filePath, dataBuffer);
     
+    // Normalize template type for visual preview detection
+    const normalizedType = tplExt ? tplExt.replace(".", "") : (fileType.includes("pdf") ? "pdf" : (fileType.includes("word") || fileType.includes("doc") ? "docx" : "png"));
+
     // Update workshop database record
     const publicUrl = `/api/uploads/templates/${safeFileName}`;
     const [updatedW] = await db.update(workshopsTable)
       .set({
         certTemplateUrl: publicUrl,
-        certTemplateType: fileType
+        certTemplateType: normalizedType,
+        updatedAt: new Date()
       })
       .where(eq(workshopsTable.id, workshopId))
       .returning();
@@ -634,7 +638,8 @@ router.delete("/workshops/:id/template", requireAuth, requireRole(["admin", "ins
     .update(workshopsTable)
     .set({
       certTemplateUrl: null,
-      certTemplateType: "default"
+      certTemplateType: "default",
+      updatedAt: new Date()
     })
     .where(eq(workshopsTable.id, workshopId))
     .returning();

@@ -248,13 +248,21 @@ export default function AdminCertificatesPage() {
   const isImageUrl = (url?: string) => {
     if (!url) return false;
     const cleanUrl = url.split("?")[0].split("#")[0].toLowerCase();
-    return cleanUrl.endsWith(".png") || cleanUrl.endsWith(".jpg") || cleanUrl.endsWith(".jpeg") || cleanUrl.endsWith(".svg");
+    return (
+      cleanUrl.endsWith(".png") ||
+      cleanUrl.endsWith(".jpg") ||
+      cleanUrl.endsWith(".jpeg") ||
+      cleanUrl.endsWith(".svg") ||
+      cleanUrl.endsWith(".webp")
+    );
   };
   const isImageTemplate = !!selectedEntity?.certTemplateUrl && (
     selectedEntity.certTemplateType === "png" ||
     selectedEntity.certTemplateType === "jpg" ||
     selectedEntity.certTemplateType === "jpeg" ||
     selectedEntity.certTemplateType === "svg" ||
+    selectedEntity.certTemplateType === "webp" ||
+    selectedEntity.certTemplateType?.startsWith("image/") ||
     isImageUrl(selectedEntity?.certTemplateUrl)
   );
   const isDocTemplate = !!selectedEntity?.certTemplateUrl && !isImageTemplate;
@@ -262,7 +270,7 @@ export default function AdminCertificatesPage() {
   const renderPreview = () => {
     if (!selectedEntity) return null;
 
-    const cacheBuster = (selectedEntity as any)?.updatedAt ? new Date((selectedEntity as any).updatedAt).getTime() : "1";
+    const cacheBuster = (selectedEntity as any)?.updatedAt ? new Date((selectedEntity as any).updatedAt).getTime() : Date.now();
 
     return (
       <div className="space-y-4">
@@ -670,7 +678,8 @@ export default function AdminCertificatesPage() {
                               reader.readAsDataURL(file);
                               reader.onload = async () => {
                                 const base64Data = reader.result as string;
-                                const fileType = file.name.split('.').pop()?.toLowerCase() || 'pdf';
+                                const fileExt = file.name.split('.').pop()?.toLowerCase() || 'pdf';
+                                const fileType = file.type || fileExt;
                                 const endpoint = targetType === "workshop" 
                                   ? `/api/workshops/${selectedEntityId}/template`
                                   : `/api/tracks/${selectedEntityId}/template`;

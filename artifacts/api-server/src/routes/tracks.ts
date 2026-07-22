@@ -443,12 +443,14 @@ router.post("/tracks/:id/template", requireAuth, requireRole(["admin", "instruct
     const filePath = path.join(uploadsDir, safeFileName);
     fs.writeFileSync(filePath, dataBuffer);
 
+    const normalizedType = tplExt ? tplExt.replace(".", "") : (fileType.includes("pdf") ? "pdf" : "png");
     const publicUrl = `/api/uploads/templates/${safeFileName}`;
     const [updatedTrack] = await db
       .update(tracksTable)
       .set({
         certTemplateUrl: publicUrl,
-        certTemplateType: fileType
+        certTemplateType: normalizedType,
+        updatedAt: new Date()
       })
       .where(eq(tracksTable.id, trackId))
       .returning();
@@ -470,7 +472,8 @@ router.delete("/tracks/:id/template", requireAuth, requireRole(["admin", "instru
     .update(tracksTable)
     .set({
       certTemplateUrl: null,
-      certTemplateType: "default"
+      certTemplateType: "default",
+      updatedAt: new Date()
     })
     .where(eq(tracksTable.id, trackId))
     .returning();

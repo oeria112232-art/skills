@@ -103,13 +103,13 @@ app.use(
 );
 
 // Body parsing with size limits
-app.use(express.json({ limit: "2mb" }));
-app.use(express.urlencoded({ limit: "2mb", extended: true }));
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
 // Input sanitization
 app.use(sanitizeInput);
 app.use(validateInputLimits);
-app.use(validateBase64Payload(5));
+app.use(validateBase64Payload(50));
 
 // General rate limiting
 app.use("/api", generalRateLimit);
