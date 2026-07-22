@@ -4,6 +4,8 @@ import { eq, and } from "drizzle-orm";
 import { GetTrackParams, GetTrackProgressParams, UpdateTrackProgressParams, UpdateTrackProgressBody } from "@workspace/api-zod";
 import { z } from "zod";
 import crypto from "crypto";
+import fs from "fs";
+import path from "path";
 import { requireAuth, requireRole, type AuthenticatedRequest } from "../middlewares/auth";
 import {
   verifyAndHardenUserBalance,
@@ -383,6 +385,102 @@ router.post("/tracks/:slug/progress", requireAuth, async (req: AuthenticatedRequ
     completedModules, totalModules, percentComplete,
     points: completedModules.length * 10,
   });
+});
+
+router.patch("/tracks/:id", requireAuth, requireRole(["admin", "instructor"]), async (req: AuthenticatedRequest, res): Promise<void> => {
+  const trackId = parseInt(req.params.id as string || "0", 10);
+  if (isNaN(trackId) || trackId <= 0) {
+    res.status(400).json({ error: "Invalid track id" });
+    return;
+  }
+
+  const { certSignTitle, certSignName, certEkey } = req.body;
+  const updateData: any = {};
+  if (certSignTitle !== undefined) updateData.certSignTitle = certSignTitle;
+  if (certSignName !== undefined) updateData.certSignName = certSignName;
+  if (certEkey !== undefined) updateData.certEkey = certEkey;
+
+  const [t] = await db.update(tracksTable).set(updateData).where(eq(tracksTable.id, trackId)).returning();
+  if (!t) { res.status(404).json({ error: "Track not found" }); return; }
+  res.json(t);
+});
+
+router.post("/tracks/:id/template", requireAuth, requireRole(["admin", "instructor"]), async (req: AuthenticatedRequest, res): Promise<void> => {
+  const trackId = parseInt(req.params.id as string || "0", 10);
+  if (isNaN(trackId) || trackId <= 0) {
+    res.status(400).json({ error: "Invalid track id" });
+    return;
+  }
+
+  const { fileName, fileType, base64Data } = req.body;
+  if (!fileName || !fileType || !base64Data) {
+    res.status(400).json({ error: "Missing required fields" });
+    return;
+  }
+
+  const [track] = await db.select().from(tracksTable).where(eq(tracksTable.id, trackId));
+  if (!track) {
+    res.status(404).json({ error: "Track not found" });
+    return;
+  }
+
+  try {
+    const matches = base64Data.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+    let dataBuffer: Buffer;
+    if (matches && matches.length === 3) {
+      dataBuffer = Buffer.from(matches[2], "base64");
+    } else {
+      dataBuffer = Buffer.from(base64Data, "base64");
+    }
+
+    const tplExt = path.extname(fileName).toLowerCase() || ".pdf";
+    const uploadsDir = path.resolve(__dirname, "../../../uploads/templates");
+    if (!fs.existsSync(uploadsDir)) {
+      fs.mkdirSync(uploadsDir, { recursive: true });
+    }
+
+    const safeFileName = `track-${trackId}-template${tplExt}`;
+    const filePath = path.join(uploadsDir, safeFileName);
+    fs.writeFileSync(filePath, dataBuffer);
+
+    const publicUrl = `/api/uploads/templates/${safeFileName}`;
+    const [updatedTrack] = await db
+      .update(tracksTable)
+      .set({
+        certTemplateUrl: publicUrl,
+        certTemplateType: fileType
+      })
+      .where(eq(tracksTable.id, trackId))
+      .returning();
+
+    res.json(updatedTrack);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || "Failed to save track template" });
+  }
+});
+
+router.delete("/tracks/:id/template", requireAuth, requireRole(["admin", "instructor"]), async (req: AuthenticatedRequest, res): Promise<void> => {
+  const trackId = parseInt(req.params.id as string || "0", 10);
+  if (isNaN(trackId) || trackId <= 0) {
+    res.status(400).json({ error: "Invalid track id" });
+    return;
+  }
+
+  const [updatedTrack] = await db
+    .update(tracksTable)
+    .set({
+      certTemplateUrl: null,
+      certTemplateType: "default"
+    })
+    .where(eq(tracksTable.id, trackId))
+    .returning();
+
+  if (!updatedTrack) {
+    res.status(404).json({ error: "Track not found" });
+    return;
+  }
+
+  res.json(updatedTrack);
 });
 
 export default router;

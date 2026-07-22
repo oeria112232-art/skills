@@ -5,6 +5,7 @@ import {
   useListCertificates,
   getListWorkshopsQueryKey,
   useListTracks,
+  getListTracksQueryKey,
   getListCertificatesQueryKey,
 } from "@workspace/api-client-react";
 import { AppLayout } from "@/components/layout/AppLayout";
@@ -17,7 +18,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Award, ShieldCheck, Settings, Eye, Users, Sparkles, Check, Sliders, DollarSign, Link2, Layers, Star, Plus, Trash2 } from "lucide-react";
+import { Award, ShieldCheck, Settings, Eye, Users, Sparkles, Check, Sliders, DollarSign, Link2, Layers, Star, Plus, Trash2, Download } from "lucide-react";
 import { Link } from "wouter";
 
 export default function AdminCertificatesPage() {
@@ -35,7 +36,9 @@ export default function AdminCertificatesPage() {
   const workshopsList = Array.isArray(workshops) ? workshops : (workshops && Array.isArray((workshops as any).data) ? (workshops as any).data : []);
   const tracksList = Array.isArray(tracks) ? tracks : (tracks && Array.isArray((tracks as any).data) ? (tracks as any).data : []);
 
-  const [selectedWorkshopId, setSelectedWorkshopId] = useState<number | null>(null);
+  // Entity selection for template designer (workshop or track)
+  const [targetType, setTargetType] = useState<"workshop" | "track">("workshop");
+  const [selectedEntityId, setSelectedEntityId] = useState<number | null>(null);
 
   // Certificate Settings state (per-level pricing, shape, linked entity)
   const [certSettings, setCertSettings] = useState({
@@ -67,48 +70,107 @@ export default function AdminCertificatesPage() {
   const [manualLevel, setManualLevel] = useState<number>(3); // default to 3 (Professional)
   const [manualIssuing, setManualIssuing] = useState(false);
 
-  const selectedWorkshop = workshopsList.find((w: any) => w.id === selectedWorkshopId);
+  const selectedWorkshop = workshopsList.find((w: any) => w.id === selectedEntityId);
+  const selectedTrack = tracksList.find((t: any) => t.id === selectedEntityId);
+  const selectedEntity = targetType === "workshop" ? selectedWorkshop : selectedTrack;
 
-  // Sync state with selected workshop
+  // Sync form state with selected entity
   useEffect(() => {
-    if (selectedWorkshop) {
+    if (selectedEntity) {
       setCertForm({
-        certSignTitle: selectedWorkshop.certSignTitle || "رئيس الهيئة / Board Chairman",
-        certSignName: selectedWorkshop.certSignName || "أحمد الرشيدي / Ahmed Al-Rashidi",
-        certEkey: selectedWorkshop.certEkey || "MHARAT-SECURE-ESIGN-88192-VERIFIED"
+        certSignTitle: selectedEntity.certSignTitle || "رئيس الهيئة / Board Chairman",
+        certSignName: selectedEntity.certSignName || "أحمد الرشيدي / Ahmed Al-Rashidi",
+        certEkey: selectedEntity.certEkey || "MHARAT-SECURE-ESIGN-88192-VERIFIED"
       });
     }
-  }, [selectedWorkshop]);
+  }, [selectedEntityId, targetType, workshopsList, tracksList]);
 
-  // Select first workshop by default
+  // Select first item by default when list or targetType changes
   useEffect(() => {
-    if (workshopsList.length > 0 && selectedWorkshopId === null) {
-      setSelectedWorkshopId(workshopsList[0].id);
+    if (targetType === "workshop" && workshopsList.length > 0 && (selectedEntityId === null || !selectedWorkshop)) {
+      setSelectedEntityId(workshopsList[0].id);
+    } else if (targetType === "track" && tracksList.length > 0 && (selectedEntityId === null || !selectedTrack)) {
+      setSelectedEntityId(tracksList[0].id);
     }
-  }, [workshopsList, selectedWorkshopId]);
+  }, [targetType, workshopsList, tracksList, selectedEntityId]);
 
   const handleSaveTemplate = async () => {
-    if (!selectedWorkshopId) return;
+    if (!selectedEntityId) return;
+    setSavingSettings(true);
     try {
-      await updateWorkshop.mutateAsync({
-        id: selectedWorkshopId,
-        data: {
-          certSignTitle: certForm.certSignTitle,
-          certSignName: certForm.certSignName,
-          certEkey: certForm.certEkey
-        }
-      });
+      if (targetType === "workshop") {
+        await updateWorkshop.mutateAsync({
+          id: selectedEntityId,
+          data: {
+            certSignTitle: certForm.certSignTitle,
+            certSignName: certForm.certSignName,
+            certEkey: certForm.certEkey
+          }
+        });
+      } else {
+        const response = await fetch(`/api/tracks/${selectedEntityId}`, {
+          method: "PATCH",
+          headers: { 
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${localStorage.getItem("mharat-token")}`
+          },
+          body: JSON.stringify({
+            certSignTitle: certForm.certSignTitle,
+            certSignName: certForm.certSignName,
+            certEkey: certForm.certEkey
+          })
+        });
+        if (!response.ok) throw new Error("Failed to update track template");
+      }
+
       toast({ 
         title: isAr ? "تم الحفظ بنجاح!" : "Template Saved!", 
-        description: isAr ? "تم تحديث التواقيع وبصمة التحقق لقالب هذه الشهادة." : "Certificate template signatures and verification hash updated successfully."
+        description: isAr ? "تم تحديث التواقيع وبصمة التحقق لقالب هذه الشهادة." : "Certificate template updated successfully."
       });
       queryClient.invalidateQueries({ queryKey: getListWorkshopsQueryKey() });
+      queryClient.invalidateQueries({ queryKey: getListTracksQueryKey() });
     } catch (err: any) {
       toast({ 
         title: isAr ? "خطأ في الحفظ" : "Save Error", 
         description: err.message, 
         variant: "destructive" 
       });
+    } finally {
+      setSavingSettings(false);
+    }
+  };
+
+  const handleRemoveTemplate = async () => {
+    if (!selectedEntityId) return;
+    setUploading(true);
+    try {
+      const endpoint = targetType === "workshop" 
+        ? `/api/workshops/${selectedEntityId}/template`
+        : `/api/tracks/${selectedEntityId}/template`;
+      
+      const response = await fetch(endpoint, {
+        method: "DELETE",
+        headers: {
+          "Authorization": `Bearer ${localStorage.getItem("mharat-token")}`
+        }
+      });
+      if (!response.ok) throw new Error("Failed to remove template");
+
+      queryClient.invalidateQueries({ queryKey: getListWorkshopsQueryKey() });
+      queryClient.invalidateQueries({ queryKey: getListTracksQueryKey() });
+
+      toast({
+        title: isAr ? "تم إزالة القالب" : "Template Removed",
+        description: isAr ? "تم التراجع إلى القالب التفاعلي الافتراضي" : "Reverted to standard template"
+      });
+    } catch (err: any) {
+      toast({
+        title: isAr ? "خطأ في الإزالة" : "Removal Failed",
+        description: err.message,
+        variant: "destructive"
+      });
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -185,51 +247,78 @@ export default function AdminCertificatesPage() {
   // Helper variables for rendering preview templates cleanly
   const isImageUrl = (url?: string) => {
     if (!url) return false;
-    const lower = url.toLowerCase();
-    return lower.endsWith(".png") || lower.endsWith(".jpg") || lower.endsWith(".jpeg") || lower.endsWith(".svg");
+    const cleanUrl = url.split("?")[0].split("#")[0].toLowerCase();
+    return cleanUrl.endsWith(".png") || cleanUrl.endsWith(".jpg") || cleanUrl.endsWith(".jpeg") || cleanUrl.endsWith(".svg");
   };
-  const isImageTemplate = !!selectedWorkshop?.certTemplateUrl && (
-    selectedWorkshop.certTemplateType === "png" ||
-    selectedWorkshop.certTemplateType === "jpg" ||
-    selectedWorkshop.certTemplateType === "jpeg" ||
-    selectedWorkshop.certTemplateType === "svg" ||
-    isImageUrl(selectedWorkshop?.certTemplateUrl)
+  const isImageTemplate = !!selectedEntity?.certTemplateUrl && (
+    selectedEntity.certTemplateType === "png" ||
+    selectedEntity.certTemplateType === "jpg" ||
+    selectedEntity.certTemplateType === "jpeg" ||
+    selectedEntity.certTemplateType === "svg" ||
+    isImageUrl(selectedEntity?.certTemplateUrl)
   );
-  const isDocTemplate = !!selectedWorkshop?.certTemplateUrl && !isImageTemplate;
+  const isDocTemplate = !!selectedEntity?.certTemplateUrl && !isImageTemplate;
 
   const renderPreview = () => {
-    if (!selectedWorkshop) return null;
+    if (!selectedEntity) return null;
 
-    if (isDocTemplate) {
-      return (
-        <div className="border border-dashed border-border bg-card/60 p-12 text-center rounded-3xl space-y-4">
-          <Award className="w-12 h-12 mx-auto text-primary opacity-60" />
-          <h4 className="text-sm font-bold text-foreground">
-            {isAr ? "تم تعيين مستند قالب مخصص (PDF / Word)" : "Custom Document Template Configured"}
-          </h4>
-          <p className="text-xs text-muted-foreground max-w-sm mx-auto">
-            {isAr 
-              ? `هذه الورشة مخصصة لطباعة مستند القالب المرفوع مباشرة: ${selectedWorkshop.certTemplateUrl?.split("/").pop() || ""}`
-              : `This workshop will download the custom document directly: ${selectedWorkshop.certTemplateUrl?.split("/").pop() || ""}`}
-          </p>
-          <a href={selectedWorkshop.certTemplateUrl || "#"} download target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 text-xs font-bold text-primary underline">
-            {isAr ? "تحميل ومعاينة القالب" : "Download & Preview Template"}
-          </a>
-        </div>
-      );
-    }
+    const cacheBuster = (selectedEntity as any)?.updatedAt ? new Date((selectedEntity as any).updatedAt).getTime() : "1";
 
     return (
-      <div 
-        className="relative w-full overflow-hidden bg-[#FAF8F5] text-slate-800 p-6 sm:p-10 rounded-none border border-stone-850 shadow-2xl aspect-[1.414/1] flex flex-col justify-between font-serif select-none max-w-full print:border-none print:shadow-none" 
-        style={{ 
-          fontFamily: "'Lora', 'Georgia', serif", 
-          backgroundImage: isImageTemplate ? `url(${selectedWorkshop?.certTemplateUrl}?v=${(selectedWorkshop as any)?.updatedAt ? new Date((selectedWorkshop as any).updatedAt).getTime() : "1"})` : "radial-gradient(circle at 50% 50%, transparent 60%, rgba(217, 119, 6, 0.01) 100%), repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(120, 110, 90, 0.02) 3px, rgba(120, 110, 90, 0.02) 5px)",
-          backgroundSize: isImageTemplate ? "cover" : undefined,
-          backgroundPosition: isImageTemplate ? "center" : undefined,
-          borderColor: "#d6d3d1"
-        }}
-      >
+      <div className="space-y-4">
+        {/* Banner if PDF/Document is attached */}
+        {isDocTemplate && (
+          <div className="bg-amber-500/10 border border-amber-500/30 p-3 sm:p-4 rounded-2xl flex items-center justify-between gap-3 text-xs">
+            <div className="flex items-center gap-2.5 text-amber-700 dark:text-amber-400 font-bold min-w-0">
+              <Award className="w-5 h-5 flex-shrink-0" />
+              <div className="min-w-0">
+                <p className="truncate font-extrabold">{isAr ? "تم تعيين مستند قالب مخصص (PDF / Word)" : "Custom Document Template Attached"}</p>
+                <p className="text-[10px] text-amber-600/80 font-mono truncate">{selectedEntity.certTemplateUrl?.split("/").pop()}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <a href={selectedEntity.certTemplateUrl} target="_blank" rel="noreferrer">
+                <Button size="sm" variant="outline" className="h-8 gap-1.5 text-xs font-bold border-amber-500/30 text-amber-700 dark:text-amber-300">
+                  <Download className="w-3.5 h-3.5" />
+                  <span>{isAr ? "تحميل" : "Download"}</span>
+                </Button>
+              </a>
+              <Button size="sm" variant="destructive" onClick={handleRemoveTemplate} disabled={uploading} className="h-8 gap-1 text-xs font-bold">
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>{isAr ? "إزالة القالب" : "Remove"}</span>
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Banner if Custom Image Template is attached */}
+        {isImageTemplate && (
+          <div className="bg-emerald-500/10 border border-emerald-500/30 p-3 sm:p-4 rounded-2xl flex items-center justify-between gap-3 text-xs">
+            <div className="flex items-center gap-2.5 text-emerald-700 dark:text-emerald-400 font-bold min-w-0">
+              <Sparkles className="w-5 h-5 flex-shrink-0" />
+              <div className="min-w-0">
+                <p className="truncate font-extrabold">{isAr ? "تم تعيين قالب صورة مخصص (PNG / JPG)" : "Custom Image Template Background Active"}</p>
+                <p className="text-[10px] text-emerald-600/80 font-mono truncate">{selectedEntity.certTemplateUrl?.split("/").pop()}</p>
+              </div>
+            </div>
+            <Button size="sm" variant="destructive" onClick={handleRemoveTemplate} disabled={uploading} className="h-8 gap-1 text-xs font-bold flex-shrink-0">
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>{isAr ? "إزالة القالب" : "Remove"}</span>
+            </Button>
+          </div>
+        )}
+
+        {/* Visual Certificate Canvas */}
+        <div 
+          className="relative w-full overflow-hidden bg-[#FAF8F5] text-slate-800 p-6 sm:p-10 rounded-none border border-stone-850 shadow-2xl aspect-[1.414/1] flex flex-col justify-between font-serif select-none max-w-full print:border-none print:shadow-none" 
+          style={{ 
+            fontFamily: "'Lora', 'Georgia', serif", 
+            backgroundImage: isImageTemplate ? `url(${selectedEntity.certTemplateUrl}?v=${cacheBuster})` : "radial-gradient(circle at 50% 50%, transparent 60%, rgba(217, 119, 6, 0.01) 100%), repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(120, 110, 90, 0.02) 3px, rgba(120, 110, 90, 0.02) 5px)",
+            backgroundSize: isImageTemplate ? "cover" : undefined,
+            backgroundPosition: isImageTemplate ? "center" : undefined,
+            borderColor: "#d6d3d1"
+          }}
+        >
         {/* Double Border Frame with Sharp Corners - Hidden on custom image templates */}
         {!isImageTemplate && (
           <>
@@ -306,7 +395,7 @@ export default function AdminCertificatesPage() {
           </p>
 
           <h4 className="text-[10px] sm:text-xs font-bold text-stone-800 font-serif max-w-md mx-auto leading-tight">
-            "{selectedWorkshop.title}"
+            "{selectedEntity.title}"
           </h4>
 
           <p className="text-[9px] font-bold text-stone-900 font-sans tracking-wide mt-1">
@@ -376,6 +465,7 @@ export default function AdminCertificatesPage() {
           </p>
         </div>
       </div>
+    </div>
     );
   };
 
@@ -426,34 +516,78 @@ export default function AdminCertificatesPage() {
               <div className="p-5 rounded-2xl border border-border/50 bg-card/60 backdrop-blur-sm shadow-sm space-y-4">
                 <h2 className="font-extrabold text-sm text-foreground flex items-center gap-1.5 border-b border-border/40 pb-2">
                   <Eye className="w-4 h-4 text-primary" />
-                  {isAr ? "اختر قالب الشهادة" : "Select Certificate Template"}
+                  {isAr ? "اختر نوع وقالب الشهادة" : "Select Certificate Template"}
                 </h2>
+
+                <div className="grid grid-cols-2 gap-1.5 p-1 bg-muted/60 rounded-xl">
+                  <Button
+                    type="button"
+                    variant={targetType === "workshop" ? "default" : "ghost"}
+                    onClick={() => {
+                      setTargetType("workshop");
+                      if (workshopsList.length > 0) setSelectedEntityId(workshopsList[0].id);
+                    }}
+                    className="h-8 text-xs font-bold rounded-lg"
+                  >
+                    {isAr ? "ورش العمل" : "Workshops"}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={targetType === "track" ? "default" : "ghost"}
+                    onClick={() => {
+                      setTargetType("track");
+                      if (tracksList.length > 0) setSelectedEntityId(tracksList[0].id);
+                    }}
+                    className="h-8 text-xs font-bold rounded-lg"
+                  >
+                    {isAr ? "المسارات التعليمية" : "Tracks"}
+                  </Button>
+                </div>
                 
-                {loadingWorkshops ? (
-                  <div className="space-y-2">
-                    {[1, 2].map(i => <Skeleton key={i} className="h-11 rounded-xl bg-muted/65" />)}
-                  </div>
+                {targetType === "workshop" ? (
+                  loadingWorkshops ? (
+                    <div className="space-y-2">
+                      {[1, 2].map(i => <Skeleton key={i} className="h-11 rounded-xl bg-muted/65" />)}
+                    </div>
+                  ) : (
+                    <div className="space-y-2 max-h-[250px] overflow-y-auto pr-1">
+                      {workshopsList.map((w: any) => (
+                        <button
+                          key={w.id}
+                          onClick={() => setSelectedEntityId(w.id)}
+                          className={`w-full text-right p-3 rounded-xl transition-all duration-200 border flex items-center justify-between ${
+                            selectedEntityId === w.id
+                              ? "border-primary bg-primary/5 shadow-sm font-semibold"
+                              : "border-border/40 hover:border-primary/40 bg-background/50"
+                          }`}
+                        >
+                          <span className="text-xs font-bold text-foreground line-clamp-1">{w.title}</span>
+                          <span className="text-[9.5px] text-muted-foreground font-semibold">MH-{w.id}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )
                 ) : (
                   <div className="space-y-2 max-h-[250px] overflow-y-auto pr-1">
-                    {workshopsList.map((w: any) => (
+                    {tracksList.map((t: any) => (
                       <button
-                        key={w.id}
-                        onClick={() => setSelectedWorkshopId(w.id)}
-                        className={`w-full text-left p-3 rounded-xl transition-all duration-200 border flex flex-col gap-0.5 ${
-                          selectedWorkshopId === w.id
+                        key={t.id}
+                        onClick={() => setSelectedEntityId(t.id)}
+                        className={`w-full text-right p-3 rounded-xl transition-all duration-200 border flex items-center justify-between ${
+                          selectedEntityId === t.id
                             ? "border-primary bg-primary/5 shadow-sm font-semibold"
                             : "border-border/40 hover:border-primary/40 bg-background/50"
                         }`}
                       >
-                        <span className="text-xs font-bold text-foreground line-clamp-1">{w.title}</span>
-                        <span className="text-[9.5px] text-muted-foreground font-semibold">MH-{w.id}</span>
+                        <span className="text-xs font-bold text-foreground line-clamp-1">{t.title}</span>
+                        <span className="text-[9.5px] text-muted-foreground font-semibold">TRK-{t.id}</span>
                       </button>
                     ))}
                   </div>
                 )}
               </div>
 
-              {selectedWorkshop && (
+              {selectedEntity && (
                 <div className="p-5 rounded-2xl border border-border/50 bg-card/60 backdrop-blur-sm shadow-sm space-y-4">
                   <h3 className="font-extrabold text-sm text-foreground flex items-center gap-1.5 border-b border-border/40 pb-2">
                     {isAr ? "معلومات جهة التوقيع" : "Signatory Details"}
@@ -487,9 +621,9 @@ export default function AdminCertificatesPage() {
                       />
                     </div>
 
-                    <Button onClick={handleSaveTemplate} className="w-full gap-2 rounded-xl font-bold h-10 text-xs shadow-md mt-2">
+                    <Button onClick={handleSaveTemplate} disabled={savingSettings} className="w-full gap-2 rounded-xl font-bold h-10 text-xs shadow-md mt-2">
                       <Check className="w-4 h-4" />
-                      <span>{isAr ? "حفظ وتثبيت التغييرات" : "Save Template"}</span>
+                      <span>{savingSettings ? (isAr ? "جاري الحفظ..." : "Saving...") : (isAr ? "حفظ وتثبيت التغييرات" : "Save Template Settings")}</span>
                     </Button>
                   </div>
 
@@ -500,11 +634,11 @@ export default function AdminCertificatesPage() {
                     </Label>
                     
                     <div className="flex flex-col gap-2">
-                      {selectedWorkshop?.certTemplateUrl ? (
+                      {selectedEntity?.certTemplateUrl ? (
                         <div className="bg-primary/5 border border-primary/20 p-3 rounded-xl flex items-center justify-between text-xs font-semibold text-foreground">
-                          <span className="truncate max-w-[170px]">{selectedWorkshop.certTemplateUrl.split("/").pop()}</span>
+                          <span className="truncate max-w-[170px]">{selectedEntity.certTemplateUrl.split("/").pop()}</span>
                           <Badge variant="secondary" className="text-[9px] uppercase font-bold px-1.5 py-0">
-                            {selectedWorkshop.certTemplateType}
+                            {selectedEntity.certTemplateType}
                           </Badge>
                         </div>
                       ) : (
@@ -516,10 +650,10 @@ export default function AdminCertificatesPage() {
                       <div className="relative mt-1">
                         <Input
                           type="file"
-                          accept=".pdf,.docx,.png,.jpg,.jpeg"
+                          accept=".pdf,.docx,.png,.jpg,.jpeg,.svg"
                           onChange={async (e) => {
                             const file = e.target.files?.[0];
-                            if (!file || !selectedWorkshopId) return;
+                            if (!file || !selectedEntityId) return;
                             
                             if (file.size > 15 * 1024 * 1024) {
                               toast({
@@ -537,7 +671,11 @@ export default function AdminCertificatesPage() {
                               reader.onload = async () => {
                                 const base64Data = reader.result as string;
                                 const fileType = file.name.split('.').pop()?.toLowerCase() || 'pdf';
-                                const response = await fetch(`/api/workshops/${selectedWorkshopId}/template`, {
+                                const endpoint = targetType === "workshop" 
+                                  ? `/api/workshops/${selectedEntityId}/template`
+                                  : `/api/tracks/${selectedEntityId}/template`;
+
+                                const response = await fetch(endpoint, {
                                   method: "POST",
                                   headers: { 
                                     "Content-Type": "application/json",
@@ -554,12 +692,13 @@ export default function AdminCertificatesPage() {
                                   throw new Error("Failed to upload template");
                                 }
                                 
-                                const updatedW = await response.json();
+                                const updated = await response.json();
                                 queryClient.invalidateQueries({ queryKey: getListWorkshopsQueryKey() });
+                                queryClient.invalidateQueries({ queryKey: getListTracksQueryKey() });
                                 
                                 toast({
                                   title: isAr ? "تم رفع القالب بنجاح" : "Template Uploaded",
-                                  description: isAr ? `تم تعيين القالب لورشة ${updatedW.title}` : `Template set for ${updatedW.title}`,
+                                  description: isAr ? `تم تعيين القالب لـ ${updated.title}` : `Template set for ${updated.title}`,
                                 });
                               };
                             } catch (err: any) {
@@ -596,10 +735,10 @@ export default function AdminCertificatesPage() {
             </div>
 
             <div className="lg:col-span-8">
-              {selectedWorkshop ? renderPreview() : (
+              {selectedEntity ? renderPreview() : (
                 <div className="border border-dashed border-border/60 p-20 text-center rounded-2xl bg-card/45">
                   <Award className="w-12 h-12 mx-auto opacity-20 text-primary mb-3" />
-                  <p className="text-xs font-bold text-muted-foreground">{isAr ? "اختر ورشة عمل لعرض الشهادة." : "Select a workshop to preview template."}</p>
+                  <p className="text-xs font-bold text-muted-foreground">{isAr ? "اختر برنامجا لعرض وتعديل الشهادة." : "Select a program to preview template."}</p>
                 </div>
               )}
             </div>

@@ -1,5 +1,5 @@
 import { useRoute, Link } from "wouter";
-import { useGetCertificate, getGetCertificateQueryKey, useGetWorkshop, getGetWorkshopQueryKey } from "@workspace/api-client-react";
+import { useGetCertificate, getGetCertificateQueryKey, useGetWorkshop, getGetWorkshopQueryKey, useListTracks } from "@workspace/api-client-react";
 import { ArrowLeft, Printer, Award, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -15,38 +15,38 @@ const getThemeDetails = (level: number) => {
     case 1: // Master Expert
       return {
         bg: "radial-gradient(circle at 50% 50%, #FCFAF5 0%, #FAF0DF 100%)",
-        borderColor: "border-amber-500",
-        stoneColor: "text-amber-950",
-        flourishColor: "text-amber-700",
+        borderColor: "border-amber-400",
+        stoneColor: "text-amber-900",
+        flourishColor: "text-amber-800/80",
         frameColor: "border-amber-600/70",
-        doubleFrameColor: "border-amber-800/50",
-        stampColor: "text-amber-600",
+        doubleFrameColor: "border-amber-700/50",
+        stampColor: "text-amber-700",
         accentLine: "bg-amber-600",
-        badge: "Level 1: Master Expert",
-        badgeAr: "المستوى 1: خبير متقدم (Master)"
+        badge: "Level 1: Master Expert Certification",
+        badgeAr: "المستوى 1: شهادة خبير متقدم (Master)"
       };
     case 2: // Expert Specialist
       return {
-        bg: "radial-gradient(circle at 50% 50%, #FAF5FC 0%, #F1E5F7 100%)",
-        borderColor: "border-purple-600",
-        stoneColor: "text-purple-900",
-        flourishColor: "text-purple-700",
+        bg: "radial-gradient(circle at 50% 50%, #FAF5FF 0%, #F3E8FF 100%)",
+        borderColor: "border-purple-400",
+        stoneColor: "text-purple-950",
+        flourishColor: "text-purple-800/80",
         frameColor: "border-purple-600/70",
-        doubleFrameColor: "border-purple-800/50",
-        stampColor: "text-purple-600",
+        doubleFrameColor: "border-purple-700/50",
+        stampColor: "text-purple-700",
         accentLine: "bg-purple-600",
-        badge: "Level 2: Expert Specialist",
-        badgeAr: "المستوى 2: خبير متخصص (Expert)"
+        badge: "Level 2: Expert Specialist Certification",
+        badgeAr: "المستوى 2: شهادة خبير متخصص (Expert)"
       };
     case 3: // Professional Specialist
       return {
-        bg: "radial-gradient(circle at 50% 50%, #F4F8FD 0%, #E6EEFA 100%)",
-        borderColor: "border-blue-600",
-        stoneColor: "text-blue-900",
-        flourishColor: "text-blue-700",
+        bg: "radial-gradient(circle at 50% 50%, #F0F9FF 0%, #E0F2FE 100%)",
+        borderColor: "border-blue-400",
+        stoneColor: "text-blue-950",
+        flourishColor: "text-blue-800/80",
         frameColor: "border-blue-600/70",
-        doubleFrameColor: "border-blue-800/50",
-        stampColor: "text-blue-600",
+        doubleFrameColor: "border-blue-700/50",
+        stampColor: "text-blue-700",
         accentLine: "bg-blue-600",
         badge: "Level 3: Professional Specialist",
         badgeAr: "المستوى 3: أخصائي محترف (Professional)"
@@ -73,6 +73,10 @@ export default function CertificateViewPage() {
   const certId = parseInt(params?.id || "0", 10);
   const { data: cert, isLoading } = useGetCertificate(certId, { query: { enabled: !!certId, queryKey: getGetCertificateQueryKey(certId) } });
   const { data: workshop } = useGetWorkshop(cert?.workshopId || 0, { query: { enabled: !!cert?.workshopId, queryKey: getGetWorkshopQueryKey(cert?.workshopId || 0) } });
+  const { data: tracks } = useListTracks();
+  const tracksList = Array.isArray(tracks) ? tracks : (tracks && Array.isArray((tracks as any).data) ? (tracks as any).data : []);
+  const track = cert?.trackId ? tracksList.find((t: any) => t.id === cert.trackId) : null;
+  const program: any = cert?.trackId ? track : workshop;
   const { language } = useLanguage();
   const isAr = language === "ar";
 
@@ -107,18 +111,18 @@ export default function CertificateViewPage() {
   if (!cert) return <AppLayout><p className="text-center text-muted-foreground mt-16 font-bold">{isAr ? "الشهادة غير موجودة" : "Certificate not found"}</p></AppLayout>;
 
   // Detect custom template options
-  const hasCustomTemplate = !!workshop?.certTemplateUrl;
+  const hasCustomTemplate = !!program?.certTemplateUrl;
   const isImageUrl = (url?: string | null) => {
     if (!url) return false;
-    const lower = url.toLowerCase();
-    return lower.endsWith(".png") || lower.endsWith(".jpg") || lower.endsWith(".jpeg") || lower.endsWith(".svg");
+    const cleanUrl = url.split("?")[0].split("#")[0].toLowerCase();
+    return cleanUrl.endsWith(".png") || cleanUrl.endsWith(".jpg") || cleanUrl.endsWith(".jpeg") || cleanUrl.endsWith(".svg");
   };
   const isImageTemplate = hasCustomTemplate && (
-    workshop?.certTemplateType === "png" ||
-    workshop?.certTemplateType === "jpg" ||
-    workshop?.certTemplateType === "jpeg" ||
-    workshop?.certTemplateType === "svg" ||
-    isImageUrl(workshop?.certTemplateUrl)
+    program?.certTemplateType === "png" ||
+    program?.certTemplateType === "jpg" ||
+    program?.certTemplateType === "jpeg" ||
+    program?.certTemplateType === "svg" ||
+    isImageUrl(program?.certTemplateUrl)
   );
   const isDocTemplate = hasCustomTemplate && !isImageTemplate;
 
@@ -135,7 +139,7 @@ export default function CertificateViewPage() {
         <div className="flex gap-2">
           {isDocTemplate && (
             <a 
-              href={workshop?.certTemplateUrl || "#"} 
+              href={program?.certTemplateUrl || "#"} 
               download 
               target="_blank"
               rel="noopener noreferrer"
@@ -186,7 +190,7 @@ export default function CertificateViewPage() {
         className="max-w-4xl mx-auto p-8 sm:p-14 text-slate-800 border-2 shadow-2xl relative overflow-hidden aspect-[1.414/1] flex flex-col justify-between my-8 print:my-0 print:shadow-none print:border-none select-none rounded-none certificate-print-container" 
         style={{ 
           fontFamily: "'Lora', 'Georgia', serif", 
-          backgroundImage: isImageTemplate ? `url(${workshop?.certTemplateUrl}?v=${(workshop as any)?.updatedAt ? new Date((workshop as any).updatedAt).getTime() : "1"})` : "radial-gradient(circle at 50% 50%, #FCFAF5 0%, #FAF0DF 100%)",
+          backgroundImage: isImageTemplate ? `url(${program?.certTemplateUrl}?v=${(program as any)?.updatedAt ? new Date((program as any).updatedAt).getTime() : "1"})` : "radial-gradient(circle at 50% 50%, #FCFAF5 0%, #FAF0DF 100%)",
           backgroundSize: isImageTemplate ? "cover" : undefined,
           backgroundPosition: isImageTemplate ? "center" : undefined,
           borderColor: "#d6d3d1"
@@ -350,10 +354,10 @@ export default function CertificateViewPage() {
               </div>
               <div className="border-t border-stone-800 pt-0.5 font-sans">
                 <p className="font-extrabold text-[7px] uppercase tracking-wider text-stone-500">
-                  {workshop?.certSignTitle || (isAr ? "المدرب" : "TRAINER")}
+                  {program?.certSignTitle || (isAr ? "المدرب" : "TRAINER")}
                 </p>
                 <p className="text-[8px] font-bold text-stone-700 mt-0.5">
-                  {workshop?.certSignName || "Ahmed Joudah Ghafil"}
+                  {program?.certSignName || "Ahmed Joudah Ghafil"}
                 </p>
               </div>
             </div>
@@ -369,10 +373,10 @@ export default function CertificateViewPage() {
             <span>YOUR VERIFICATION CODE: {cert.verificationCode || "MHARAT-EVAL-XXXX"}</span>
             <span>•</span>
             <span>HASH: {cert.signatureHash || "MHARAT-SECURE-ESIGN-88192-VERIFIED"}</span>
-            {workshop?.certEkey && (
+            {program?.certEkey && (
               <>
                 <span>•</span>
-                <span>E-KEY: {workshop.certEkey}</span>
+                <span>E-KEY: {program.certEkey}</span>
               </>
             )}
           </div>

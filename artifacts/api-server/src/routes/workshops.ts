@@ -623,6 +623,30 @@ router.post("/workshops/:id/template", requireAuth, requireRole(["admin", "instr
   }
 });
 
+router.delete("/workshops/:id/template", requireAuth, requireRole(["admin", "instructor"]), async (req: AuthenticatedRequest, res): Promise<void> => {
+  const workshopId = parseInt(req.params.id as string || "0", 10);
+  if (isNaN(workshopId) || workshopId <= 0) {
+    res.status(400).json({ error: "Invalid workshop id" });
+    return;
+  }
+
+  const [updatedW] = await db
+    .update(workshopsTable)
+    .set({
+      certTemplateUrl: null,
+      certTemplateType: "default"
+    })
+    .where(eq(workshopsTable.id, workshopId))
+    .returning();
+
+  if (!updatedW) {
+    res.status(404).json({ error: "Workshop not found" });
+    return;
+  }
+
+  res.json(serializeWorkshop(updatedW));
+});
+
 router.post("/workshops/:id/image", requireAuth, requireRole(["admin", "instructor"]), workshopUploadRateLimit, async (req: AuthenticatedRequest, res): Promise<void> => {
   const workshopId = parseInt(req.params.id as string, 10);
   if (isNaN(workshopId) || workshopId <= 0) {

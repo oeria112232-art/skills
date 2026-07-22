@@ -20,6 +20,11 @@ export const tracksTable = pgTable("tracks", {
   certType: text("cert_type").notNull().default("track"), // "track" or "participation"
   certLevel: integer("cert_level").notNull().default(3), // 1=Participation, 2=Professional, 3=Expert, 4=Master
   certCost: integer("cert_cost").notNull().default(250), // Points to claim the certificate
+  certSignTitle: text("cert_sign_title").notNull().default("رئيس الهيئة / Board Chairman"),
+  certSignName: text("cert_sign_name").notNull().default("أحمد الرشيدي / Ahmed Al-Rashidi"),
+  certEkey: text("cert_ekey").notNull().default("MHARAT-SECURE-ESIGN-88192-VERIFIED"),
+  certTemplateUrl: text("cert_template_url"),
+  certTemplateType: text("cert_template_type").notNull().default("default"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 }, (table) => ({
   instructorIdx: index("tracks_instructor_idx").on(table.instructorId),
