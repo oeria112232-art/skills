@@ -13,6 +13,7 @@ interface CertificatePreviewModalProps {
   recipientName?: string;
   certTemplateUrl?: string | null;
   certTemplateType?: string | null;
+  updatedAt?: string | null;
 }
 
 export function CertificatePreviewModal({
@@ -26,11 +27,12 @@ export function CertificatePreviewModal({
   recipientName,
   certTemplateUrl,
   certTemplateType,
+  updatedAt,
 }: CertificatePreviewModalProps) {
   const isImageUrl = (url?: string | null) => {
     if (!url) return false;
-    const lower = url.toLowerCase();
-    return lower.endsWith(".png") || lower.endsWith(".jpg") || lower.endsWith(".jpeg") || lower.endsWith(".svg");
+    const cleanUrl = url.split("?")[0].split("#")[0].toLowerCase();
+    return cleanUrl.endsWith(".png") || cleanUrl.endsWith(".jpg") || cleanUrl.endsWith(".jpeg") || cleanUrl.endsWith(".svg");
   };
   const isImageTemplate = !!certTemplateUrl && (
     certTemplateType === "png" ||
@@ -94,7 +96,7 @@ export function CertificatePreviewModal({
           className="relative w-full overflow-hidden text-slate-800 p-8 sm:p-14 border-2 shadow-2xl aspect-[1.414/1] flex flex-col justify-between select-none rounded-none certificate-print-container"
           style={{ 
             fontFamily: "'Lora', 'Georgia', serif", 
-            backgroundImage: isImageTemplate ? `url(${certTemplateUrl})` : "radial-gradient(circle at 50% 50%, #FCFAF5 0%, #FAF0DF 100%)",
+            backgroundImage: isImageTemplate ? `url(${certTemplateUrl}?v=${updatedAt ? new Date(updatedAt).getTime() : "1"})` : "radial-gradient(circle at 50% 50%, #FCFAF5 0%, #FAF0DF 100%)",
             backgroundSize: isImageTemplate ? "cover" : undefined,
             backgroundPosition: isImageTemplate ? "center" : undefined,
             borderColor: isImageTemplate ? "transparent" : "#d6d3d1"

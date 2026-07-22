@@ -856,7 +856,7 @@ export default function AdminCertificatesLevelPage() {
                 <div 
                   className="relative w-full overflow-hidden text-slate-800 p-6 sm:p-10 rounded-none border-2 shadow-2xl aspect-[1.414/1] flex flex-col justify-between font-serif select-none max-w-full print:border-none print:shadow-none" 
                   style={{ 
-                    backgroundImage: isImageTemplate ? `url(${selectedWorkshop.certTemplateUrl})` : undefined,
+                    backgroundImage: isImageTemplate ? `url(${selectedWorkshop.certTemplateUrl}?v=${(selectedWorkshop as any).updatedAt ? new Date((selectedWorkshop as any).updatedAt).getTime() : "1"})` : undefined,
                     backgroundSize: isImageTemplate ? "cover" : undefined,
                     backgroundPosition: isImageTemplate ? "center" : undefined,
                     background: !isImageTemplate ? (

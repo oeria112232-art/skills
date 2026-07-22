@@ -186,7 +186,7 @@ export default function CertificateViewPage() {
         className="max-w-4xl mx-auto p-8 sm:p-14 text-slate-800 border-2 shadow-2xl relative overflow-hidden aspect-[1.414/1] flex flex-col justify-between my-8 print:my-0 print:shadow-none print:border-none select-none rounded-none certificate-print-container" 
         style={{ 
           fontFamily: "'Lora', 'Georgia', serif", 
-          backgroundImage: isImageTemplate ? `url(${workshop?.certTemplateUrl})` : "radial-gradient(circle at 50% 50%, #FCFAF5 0%, #FAF0DF 100%)",
+          backgroundImage: isImageTemplate ? `url(${workshop?.certTemplateUrl}?v=${(workshop as any)?.updatedAt ? new Date((workshop as any).updatedAt).getTime() : "1"})` : "radial-gradient(circle at 50% 50%, #FCFAF5 0%, #FAF0DF 100%)",
           backgroundSize: isImageTemplate ? "cover" : undefined,
           backgroundPosition: isImageTemplate ? "center" : undefined,
           borderColor: "#d6d3d1"

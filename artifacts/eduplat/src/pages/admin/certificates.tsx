@@ -223,9 +223,11 @@ export default function AdminCertificatesPage() {
       <div 
         className="relative w-full overflow-hidden bg-[#FAF8F5] text-slate-800 p-6 sm:p-10 rounded-none border border-stone-850 shadow-2xl aspect-[1.414/1] flex flex-col justify-between font-serif select-none max-w-full print:border-none print:shadow-none" 
         style={{ 
-          backgroundImage: isImageTemplate ? `url(${selectedWorkshop?.certTemplateUrl})` : "radial-gradient(circle at 50% 50%, transparent 60%, rgba(217, 119, 6, 0.01) 100%), repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(120, 110, 90, 0.02) 3px, rgba(120, 110, 90, 0.02) 5px)",
+          fontFamily: "'Lora', 'Georgia', serif", 
+          backgroundImage: isImageTemplate ? `url(${selectedWorkshop?.certTemplateUrl}?v=${(selectedWorkshop as any)?.updatedAt ? new Date((selectedWorkshop as any).updatedAt).getTime() : "1"})` : "radial-gradient(circle at 50% 50%, transparent 60%, rgba(217, 119, 6, 0.01) 100%), repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(120, 110, 90, 0.02) 3px, rgba(120, 110, 90, 0.02) 5px)",
           backgroundSize: isImageTemplate ? "cover" : undefined,
-          backgroundPosition: isImageTemplate ? "center" : undefined
+          backgroundPosition: isImageTemplate ? "center" : undefined,
+          borderColor: "#d6d3d1"
         }}
       >
         {/* Double Border Frame with Sharp Corners - Hidden on custom image templates */}

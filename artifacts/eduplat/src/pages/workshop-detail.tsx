@@ -1064,6 +1064,7 @@ export default function WorkshopDetailPage() {
           recipientName={hasEarnedCert ? user?.name : undefined}
           certTemplateUrl={workshop.certTemplateUrl}
           certTemplateType={workshop.certTemplateType}
+          updatedAt={(workshop as any).updatedAt}
         />
       )}
     </AppLayout>
