@@ -449,8 +449,7 @@ router.post("/tracks/:id/template", requireAuth, requireRole(["admin", "instruct
       .update(tracksTable)
       .set({
         certTemplateUrl: publicUrl,
-        certTemplateType: normalizedType,
-        updatedAt: new Date()
+        certTemplateType: normalizedType
       })
       .where(eq(tracksTable.id, trackId))
       .returning();
@@ -472,8 +471,7 @@ router.delete("/tracks/:id/template", requireAuth, requireRole(["admin", "instru
     .update(tracksTable)
     .set({
       certTemplateUrl: null,
-      certTemplateType: "default",
-      updatedAt: new Date()
+      certTemplateType: "default"
     })
     .where(eq(tracksTable.id, trackId))
     .returning();

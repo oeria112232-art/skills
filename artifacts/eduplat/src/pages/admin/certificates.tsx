@@ -20,6 +20,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Award, ShieldCheck, Settings, Eye, Users, Sparkles, Check, Sliders, DollarSign, Link2, Layers, Star, Plus, Trash2, Download } from "lucide-react";
 import { Link } from "wouter";
+import { OfficialCertificate } from "@/components/shared/OfficialCertificate";
 
 export default function AdminCertificatesPage() {
   const { language } = useLanguage();
@@ -316,164 +317,21 @@ export default function AdminCertificatesPage() {
           </div>
         )}
 
-        {/* Visual Certificate Canvas */}
-        <div 
-          className="relative w-full overflow-hidden bg-[#FAF8F5] text-slate-800 p-6 sm:p-10 rounded-none border border-stone-850 shadow-2xl aspect-[1.414/1] flex flex-col justify-between font-serif select-none max-w-full print:border-none print:shadow-none" 
-          style={{ 
-            fontFamily: "'Lora', 'Georgia', serif", 
-            backgroundImage: isImageTemplate ? `url(${selectedEntity.certTemplateUrl}?v=${cacheBuster})` : "radial-gradient(circle at 50% 50%, transparent 60%, rgba(217, 119, 6, 0.01) 100%), repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(120, 110, 90, 0.02) 3px, rgba(120, 110, 90, 0.02) 5px)",
-            backgroundSize: isImageTemplate ? "cover" : undefined,
-            backgroundPosition: isImageTemplate ? "center" : undefined,
-            borderColor: "#d6d3d1"
-          }}
-        >
-        {/* Double Border Frame with Sharp Corners - Hidden on custom image templates */}
-        {!isImageTemplate && (
-          <>
-            <div className="absolute inset-3 border border-stone-800 pointer-events-none rounded-none" />
-            <div className="absolute inset-4 border-2 border-double border-stone-850 pointer-events-none rounded-none" />
-          </>
-        )}
-
-        {/* Victorian flourishes - Hidden on custom image templates */}
-        {!isImageTemplate && (
-          <>
-            <div className="absolute top-5 left-5 pointer-events-none opacity-90">
-              <svg viewBox="0 0 100 100" className="w-12 h-12 text-stone-850">
-                <path d="M5,5 C35,5 45,12 55,25 C45,35 30,30 20,20 C35,35 25,55 5,55" fill="none" stroke="currentColor" strokeWidth="1.2" />
-                <path d="M5,5 C5,25 12,45 25,55 C35,45 30,30 20,20 C35,35 55,25 55,5" fill="none" stroke="currentColor" strokeWidth="1.2" />
-              </svg>
-            </div>
-            <div className="absolute top-5 right-5 pointer-events-none scale-x-[-1] opacity-90">
-              <svg viewBox="0 0 100 100" className="w-12 h-12 text-stone-850">
-                <path d="M5,5 C35,5 45,12 55,25 C45,35 30,30 20,20 C35,35 25,55 5,55" fill="none" stroke="currentColor" strokeWidth="1.2" />
-                <path d="M5,5 C5,25 12,45 25,55 C35,45 30,30 20,20 C35,35 55,25 55,5" fill="none" stroke="currentColor" strokeWidth="1.2" />
-              </svg>
-            </div>
-            <div className="absolute bottom-5 left-5 pointer-events-none scale-y-[-1] opacity-90">
-              <svg viewBox="0 0 100 100" className="w-12 h-12 text-stone-850">
-                <path d="M5,5 C35,5 45,12 55,25 C45,35 30,30 20,20 C35,35 25,55 5,55" fill="none" stroke="currentColor" strokeWidth="1.2" />
-                <path d="M5,5 C5,25 12,45 25,55 C35,45 30,30 20,20 C35,35 55,25 55,5" fill="none" stroke="currentColor" strokeWidth="1.2" />
-              </svg>
-            </div>
-            <div className="absolute bottom-5 right-5 pointer-events-none scale-x-[-1] scale-y-[-1] opacity-90">
-              <svg viewBox="0 0 100 100" className="w-12 h-12 text-stone-850">
-                <path d="M5,5 C35,5 45,12 55,25 C45,35 30,30 20,20 C35,35 25,55 5,55" fill="none" stroke="currentColor" strokeWidth="1.2" />
-                <path d="M5,5 C5,25 12,45 25,55 C35,45 30,30 20,20 C35,35 55,25 55,5" fill="none" stroke="currentColor" strokeWidth="1.2" />
-              </svg>
-            </div>
-          </>
-        )}
-
-        {/* Top Header - Hidden on custom image templates */}
-        {!isImageTemplate ? (
-          <div className="text-center mt-4 z-10 flex flex-col items-center">
-            <h3 className="text-sm sm:text-base font-bold font-serif border-b border-stone-850 pb-0.5 px-4 uppercase tracking-wide text-stone-900 leading-tight">
-              Skills of youth
-            </h3>
-            <span className="text-[7.5px] text-stone-600 font-serif mt-0.5 tracking-wider font-medium">
-              For educational and
-            </span>
-          </div>
-        ) : (
-          <div className="h-4" />
-        )}
-
-        {/* Title - Hidden on custom image templates */}
-        {!isImageTemplate && (
-          <div className="text-center my-1 z-10">
-            <h2 className="text-base sm:text-[22px] font-medium text-stone-600 tracking-wide font-serif leading-none">
-              Certificate of participation
-            </h2>
-          </div>
-        )}
-
-        {/* Text body */}
-        <div className={`text-center max-w-lg mx-auto space-y-2 z-10 ${isImageTemplate ? 'mt-16 sm:mt-24' : ''}`}>
-          <p className="text-[9px] text-stone-500 italic font-serif">
-            This is to certify that
-          </p>
-
-          <h3 className="text-xs sm:text-lg font-bold text-stone-850 font-serif my-0.5">
-            (Student Name - Sample)
-          </h3>
-
-          <p className="text-[9px] text-stone-600 font-serif">
-            Has successfully participated in the training webinar entitled
-          </p>
-
-          <h4 className="text-[10px] sm:text-xs font-bold text-stone-800 font-serif max-w-md mx-auto leading-tight">
-            "{selectedEntity.title}"
-          </h4>
-
-          <p className="text-[9px] font-bold text-stone-900 font-sans tracking-wide mt-1">
-            30 June. 2026
-          </p>
-        </div>
-
-        {/* Signatures - Hidden on custom image templates */}
-        {!isImageTemplate ? (
-          <div className="pt-2 grid grid-cols-3 gap-6 items-end text-center z-10 px-4">
-            {/* Left Signatory */}
-            <div className="space-y-0.5">
-              <div className="h-7 flex items-center justify-center">
-                <svg viewBox="0 0 100 40" className="w-20 h-7 text-stone-800">
-                  <path d="M 5,30 Q 30,28 65,32 T 95,28" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
-                  <path d="M 10,25 C 25,20 30,10 40,8 C 50,6 55,12 50,18 C 45,24 35,28 32,25 C 28,20 42,12 60,18 C 75,22 80,12 78,8 C 75,4 70,8 72,15 C 75,25 90,20 85,25" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </div>
-              <div className="border-t border-stone-800 pt-0.5 font-sans">
-                <p className="font-bold text-[7px] uppercase tracking-wider text-stone-500">
-                  CEO OF SKILLS
-                </p>
-                <p className="text-[8px] font-bold text-stone-700">
-                  Ahmed Joudah Ghafil
-                </p>
-              </div>
-            </div>
-
-            {/* Central Logo Stamp */}
-            <div className="flex flex-col items-center justify-center pb-0.5">
-              <svg viewBox="0 0 100 100" className="w-10 h-10 text-stone-750">
-                <path d="M50,4 C55,4 58,10 63,12 C68,14 74,12 77,16 C80,20 78,26 80,31 C82,36 88,38 88,43 C88,48 82,50 80,55 C78,60 80,66 77,70 C74,74 68,72 63,74 C58,76 55,82 50,82 C45,82 42,76 37,74 C32,72 26,74 23,70 C20,66 22,60 20,55 C18,50 12,48 12,43 C12,38 18,36 20,31 C22,26 20,20 23,16 C26,12 32,14 37,12 C42,10 45,4 50,4 Z" fill="currentColor" />
-                <rect x="33" y="24" width="34" height="6" rx="3" fill="white" />
-                <rect x="33" y="34" width="34" height="6" rx="3" fill="white" />
-                <rect x="33" y="44" width="34" height="6" rx="3" fill="white" />
-                <text x="50" y="65" textAnchor="middle" fill="white" fontSize="9.5" fontWeight="900" letterSpacing="1" fontFamily="sans-serif">SKILLS</text>
-              </svg>
-            </div>
-
-            {/* Right Signatory */}
-            <div className="space-y-0.5">
-              <div className="h-7 flex items-center justify-center">
-                <svg viewBox="0 0 100 40" className="w-20 h-7 text-stone-800">
-                  <path d="M 5,30 Q 30,28 65,32 T 95,28" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
-                  <path d="M 10,25 C 25,20 30,10 40,8 C 50,6 55,12 50,18 C 45,24 35,28 32,25 C 28,20 42,12 60,18 C 75,22 80,12 78,8 C 75,4 70,8 72,15 C 75,25 90,20 85,25" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </div>
-              <div className="border-t border-stone-800 pt-0.5 font-sans">
-                <p className="font-bold text-[7px] uppercase tracking-wider text-stone-500">
-                  TRAINER
-                </p>
-                <p className="text-[8px] font-bold text-stone-700">
-                  {certForm.certSignName.split(" / ")[0]}
-                </p>
-              </div>
-            </div>
-          </div>
-        ) : (
-          <div className="h-10" />
-        )}
-
-        {/* Cryptographic verification footer */}
-        <div className="text-center font-mono text-[6px] sm:text-[7px] text-slate-400/80 border-t border-dashed border-slate-200/50 pt-1.5 mt-1 select-all">
-          <p className="font-bold uppercase tracking-wider">Mharat Iraq Verification Hash</p>
-          <p className="font-bold tracking-tight text-slate-500 truncate max-w-md mx-auto">
-            CODE: MH-VFY-XXXXXX-YYYY • HASH: {certForm.certEkey}
-          </p>
-        </div>
+        {/* Official Certificate Visual Canvas (100% Match to Skills of Youth Template) */}
+        <OfficialCertificate
+          recipientName={isAr ? "مقتدى علي منصور (نموذج)" : "Muqtada Ali Mansour (Sample)"}
+          workshopTitle={selectedEntity.title}
+          issueDate={new Date().toLocaleDateString(isAr ? "ar-EG" : "en-US", { day: "numeric", month: "short", year: "numeric" })}
+          certSignTitle={certForm.certSignTitle.split(" / ")[0]}
+          certSignName={certForm.certSignName.split(" / ")[0]}
+          certEkey={certForm.certEkey}
+          certTemplateUrl={selectedEntity.certTemplateUrl}
+          certTemplateType={selectedEntity.certTemplateType}
+          updatedAt={(selectedEntity as any)?.updatedAt}
+          isAr={isAr}
+          certType={targetType === "track" ? "track" : "participation"}
+        />
       </div>
-    </div>
     );
   };
 
