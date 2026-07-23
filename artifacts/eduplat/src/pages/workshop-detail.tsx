@@ -1061,7 +1061,7 @@ export default function WorkshopDetailPage() {
           certSignName={workshop.certSignName || (isAr ? "أحمد الرشيدي / Ahmed Al-Rashidi" : "Ahmed Al-Rashidi")}
           certEkey={workshop.certEkey || "MHARAT-SECURE-ESIGN-88192-VERIFIED"}
           isAr={isAr}
-          recipientName={hasEarnedCert ? user?.name : undefined}
+          recipientName={user?.name || undefined}
           certTemplateUrl={workshop.certTemplateUrl}
           certTemplateType={workshop.certTemplateType}
           updatedAt={(workshop as any).updatedAt}

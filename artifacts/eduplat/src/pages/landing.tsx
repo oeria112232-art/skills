@@ -559,7 +559,7 @@ export function HeroInteractiveHub({ isAr }: { isAr: boolean }) {
           >
             {/* Inner glass ring */}
             <div className="absolute inset-1.5 rounded-full border border-white/5" />
-            <img src="/codemaster_logo.jpg" alt="Code Master Logo" className="w-full h-full object-cover scale-105" />
+            <img src="/codemaster_logo.png" alt="Code Master Logo" className="w-full h-full object-cover scale-105" />
           </motion.div>
           
           {/* Glowing partnership label badge */}

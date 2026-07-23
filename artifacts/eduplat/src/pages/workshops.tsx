@@ -9,6 +9,7 @@ import { useLanguage } from "@/components/layout/LanguageContext";
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { CertificatePreviewModal } from "@/components/shared/CertificatePreviewModal";
+import { useAuth } from "@/components/layout/AuthContext";
 
 const statusColors: Record<string, string> = {
   upcoming: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20",
@@ -43,6 +44,7 @@ export default function WorkshopsPage() {
   const workshops = Array.isArray(workshopsData) ? workshopsData : (workshopsData && Array.isArray((workshopsData as any).data) ? (workshopsData as any).data : []);
   const { language } = useLanguage();
   const isAr = language === "ar";
+  const { user } = useAuth();
   const [previewWorkshop, setPreviewWorkshop] = useState<any | null>(null);
 
   return (
@@ -189,6 +191,10 @@ export default function WorkshopsPage() {
           certSignName={previewWorkshop.certSignName || (isAr ? "أحمد الرشيدي / Ahmed Al-Rashidi" : "Ahmed Al-Rashidi")}
           certEkey={previewWorkshop.certEkey || "MHARAT-SECURE-ESIGN-88192-VERIFIED"}
           isAr={isAr}
+          recipientName={user?.name || undefined}
+          certTemplateUrl={previewWorkshop.certTemplateUrl}
+          certTemplateType={previewWorkshop.certTemplateType}
+          updatedAt={previewWorkshop.updatedAt}
         />
       )}
     </AppLayout>

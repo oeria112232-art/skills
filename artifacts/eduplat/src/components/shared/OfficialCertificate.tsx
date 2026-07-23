@@ -43,8 +43,6 @@ export const OfficialCertificate: React.FC<OfficialCertificateProps> = ({
     );
   };
 
-  const isOverlayOnly = !!certTemplateType && certTemplateType.startsWith("overlay");
-
   const hasCustomImage = !!certTemplateUrl && (
     certTemplateType === "png" ||
     certTemplateType === "jpg" ||
@@ -56,13 +54,24 @@ export const OfficialCertificate: React.FC<OfficialCertificateProps> = ({
     isImageUrl(certTemplateUrl)
   );
 
+  const isOverlayOnly = hasCustomImage;
+
   const cacheBuster = updatedAt ? new Date(updatedAt).getTime() : Date.now();
 
-  const formattedDate = issueDate || new Date().toLocaleDateString(isAr ? "ar-EG" : "en-US", {
-    day: "numeric",
-    month: "long",
-    year: "numeric"
-  });
+  const parseAndFormatDate = (dateVal: any) => {
+    if (!dateVal) return "";
+    const d = new Date(dateVal);
+    if (!isNaN(d.getTime())) {
+      const day = d.getDate();
+      const months = ["Jan", "Feb", "Mar", "Apr", "May", "June", "July", "Aug", "Sept", "Oct", "Nov", "Dec"];
+      const month = months[d.getMonth()];
+      const year = d.getFullYear();
+      return `${day} ${month}. ${year}`;
+    }
+    return String(dateVal).replace(/[٠-٩]/g, d => "٠١٢٣٤٥٦٧٨٩".indexOf(d).toString());
+  };
+
+  const formattedDate = parseAndFormatDate(issueDate) || parseAndFormatDate(new Date());
 
   const displayRecipient = recipientName || (isAr ? "مقتدى علي منصور" : "Muqtada Ali Mansour");
   const displayWorkshop = workshopTitle || (isAr ? "مهارات التوظيف وبناء المسار المهني" : "Recruitment skills and career path building");
@@ -241,10 +250,10 @@ export const OfficialCertificate: React.FC<OfficialCertificateProps> = ({
 
           <h2 className="text-lg sm:text-3xl font-medium text-[#2b2723] font-serif mt-4 sm:mt-6 tracking-wide leading-none">
             {certType === "track"
-              ? (isAr ? "شهادة إتمام مسار" : "Certificate of achievement")
+              ? "Certificate of achievement"
               : certType === "achievement"
-                ? (isAr ? "شهادة اجتياز ورشة عمل" : "Certificate of achievement")
-                : (isAr ? "شهادة مشاركة وحضور" : "Certificate of participation")}
+                ? "Certificate of achievement"
+                : "Certificate of participation"}
           </h2>
         </div>
       ) : (
@@ -254,7 +263,7 @@ export const OfficialCertificate: React.FC<OfficialCertificateProps> = ({
       {/* Main Certificate Body */}
       <div className={`text-center max-w-xl mx-auto space-y-3 sm:space-y-4 z-10 ${hasCustomImage ? 'mt-24 sm:mt-32' : 'mt-4'}`}>
         <p className="text-[10px] sm:text-xs text-[#3a3530] font-sans font-bold uppercase tracking-wider">
-          {isAr ? "نشهد أن المتدرب(ة):" : "This is to certify that"}
+          This is to certify that
         </p>
 
         <h3 className="text-lg sm:text-3xl font-extrabold text-[#111111] font-sans my-1 tracking-wide">
@@ -263,10 +272,10 @@ export const OfficialCertificate: React.FC<OfficialCertificateProps> = ({
 
         <p className="text-[10px] sm:text-xs text-[#3a3530] font-sans font-bold leading-relaxed max-w-md mx-auto">
           {certType === "track"
-            ? (isAr ? "قد أكمل بنجاح المسار التعليمي المعتمد والموثق بعنوان:" : "Has successfully completed the verified learning track entitled")
+            ? "Has successfully completed the verified learning track entitled"
             : certType === "achievement"
-              ? (isAr ? "قد اجتاز بنجاح الورشة التدريبية والاختبار التقييمي المعتمد لـ:" : "Has successfully completed and passed the exam for")
-              : (isAr ? "قد شارك بنجاح في الورشة التدريبية بعنوان:" : "Has successfully participated in the training webinar entitled")}
+              ? "Has successfully completed and passed the exam for"
+              : "Has successfully participated in the training webinar entitled"}
         </p>
 
         <h4 className="text-xs sm:text-xl font-extrabold text-[#000000] font-serif max-w-lg mx-auto leading-normal px-2">
