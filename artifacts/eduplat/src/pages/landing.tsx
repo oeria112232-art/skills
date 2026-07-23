@@ -398,6 +398,10 @@ export function HeroInteractiveHub({ isAr }: { isAr: boolean }) {
             <feGaussianBlur stdDeviation="8" result="blur" />
             <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
           </filter>
+          <linearGradient id="partnershipGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#3b82f6" />
+            <stop offset="100%" stopColor="#6366f1" />
+          </linearGradient>
         </defs>
 
         {/* Deep background ambient disc */}
@@ -425,6 +429,19 @@ export function HeroInteractiveHub({ isAr }: { isAr: boolean }) {
         <line x1="200" y1="200" x2="312" y2="88" stroke="rgba(234,179,8,0.3)" strokeWidth="1.5" strokeDasharray="5,5" />
         <line x1="200" y1="200" x2="312" y2="312" stroke="rgba(16,185,129,0.3)" strokeWidth="1.5" strokeDasharray="5,5" />
         <line x1="200" y1="200" x2="88" y2="312" stroke="rgba(245,158,11,0.3)" strokeWidth="1.5" strokeDasharray="5,5" />
+
+        {/* Partnership Infinity Path & pulsing yellow dot */}
+        <path
+          d="M 200 200 C 150 160, 150 240, 200 200 C 250 160, 250 240, 200 200 Z"
+          fill="none"
+          stroke="url(#partnershipGradient)"
+          strokeWidth="1.8"
+          opacity="0.8"
+          filter="url(#blueGlow)"
+        />
+        <circle r="3" fill="#facc15" opacity="0.95" filter="url(#blueGlow)">
+          <animateMotion dur="5.5s" repeatCount="indefinite" path="M 200 200 C 150 160, 150 240, 200 200 C 250 160, 250 240, 200 200 Z" />
+        </circle>
 
         {/* Central hub glow ring */}
         <circle cx="200" cy="200" r="55" stroke="rgba(59,130,246,0.35)" strokeWidth="1.5" fill="none" filter="url(#blueGlow)" />
@@ -503,33 +520,56 @@ export function HeroInteractiveHub({ isAr }: { isAr: boolean }) {
       </svg>
 
       {/* Central Hub */}
-      <div className="relative z-20">
+      <div className="relative z-20 flex items-center justify-center">
         {/* Pulsing outer ring */}
         <motion.div
           animate={{ scale: [1, 1.18, 1], opacity: [0.4, 0.1, 0.4] }}
           transition={{ repeat: Infinity, duration: 3.5, ease: "easeInOut" }}
-          className="absolute inset-0 -m-5 rounded-full border border-primary/40"
+          className="absolute inset-0 -m-5 rounded-full border border-primary/40 pointer-events-none"
         />
         {/* Second pulsing ring */}
         <motion.div
           animate={{ scale: [1, 1.35, 1], opacity: [0.3, 0.05, 0.3] }}
           transition={{ repeat: Infinity, duration: 3.5, ease: "easeInOut", delay: 0.5 }}
-          className="absolute inset-0 -m-8 rounded-full border border-blue-400/25"
+          className="absolute inset-0 -m-8 rounded-full border border-blue-400/25 pointer-events-none"
         />
-        <motion.div 
-          animate={{ scale: [1, 1.05, 1] }}
-          transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}
-          className="w-28 h-28 rounded-full flex items-center justify-center relative"
-          style={{
-            background: "radial-gradient(circle at 38% 35%, #1e3a8a 0%, #0f172a 60%, #020617 100%)",
-            boxShadow: "0 0 0 2px rgba(59,130,246,0.5), 0 0 30px rgba(59,130,246,0.35), 0 0 80px rgba(59,130,246,0.15), inset 0 1px 0 rgba(255,255,255,0.08)"
-          }}
-        >
-          {/* Inner glass ring */}
-          <div className="absolute inset-2 rounded-full border border-white/8" />
-          <div className="absolute inset-0 rounded-full" style={{ background: "linear-gradient(135deg, rgba(255,255,255,0.05) 0%, transparent 60%)" }} />
-          <SkillsLogo className="w-14 h-14 relative z-10" showBg={false} />
-        </motion.div>
+
+        <div className="flex items-center gap-1.5 relative select-none">
+          {/* Skills Core */}
+          <motion.div 
+            animate={{ y: [0, -3, 0], rotate: [0, 2, 0] }}
+            transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}
+            className="w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center relative border border-primary/40 shadow-lg shadow-primary/25 bg-[#0f172a]/90 backdrop-blur-md"
+          >
+            {/* Inner glass ring */}
+            <div className="absolute inset-1.5 rounded-full border border-white/5" />
+            <SkillsLogo className="w-8 h-8 sm:w-10 sm:h-10 relative z-10" showBg={false} />
+          </motion.div>
+
+          {/* Plus connector / link icon */}
+          <div className="w-5 h-5 rounded-full bg-slate-950 border border-slate-800 flex items-center justify-center z-20 -mx-3 shadow-md">
+            <span className="text-[10px] font-extrabold text-primary animate-pulse">+</span>
+          </div>
+
+          {/* Code Master Core */}
+          <motion.div 
+            animate={{ y: [0, 3, 0], rotate: [0, -2, 0] }}
+            transition={{ repeat: Infinity, duration: 4, ease: "easeInOut", delay: 0.5 }}
+            className="w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center relative border border-blue-500/30 shadow-lg shadow-blue-500/25 bg-[#0f172a] overflow-hidden"
+          >
+            {/* Inner glass ring */}
+            <div className="absolute inset-1.5 rounded-full border border-white/5" />
+            <img src="/codemaster_logo.jpg" alt="Code Master Logo" className="w-full h-full object-cover scale-105" />
+          </motion.div>
+          
+          {/* Glowing partnership label badge */}
+          <div className="absolute bottom-[-24px] left-1/2 -translate-x-1/2 z-20 flex items-center gap-1 bg-gradient-to-r from-primary to-blue-600 border border-primary/30 px-3 py-1 rounded-full shadow-lg shadow-primary/20">
+            <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+            <span className="text-[9px] font-extrabold text-white tracking-wide whitespace-nowrap">
+              {isAr ? "شريك التدريب: كود ماستر" : "Training Partner: Code Master"}
+            </span>
+          </div>
+        </div>
       </div>
 
       {/* Interactive Satellite Nodes */}
