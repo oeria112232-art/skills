@@ -75,7 +75,7 @@ export const OfficialCertificate: React.FC<OfficialCertificateProps> = ({
         backgroundColor: "#FAF7F2",
         backgroundImage: hasCustomImage
           ? `url(${certTemplateUrl}?v=${cacheBuster})`
-          : `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25'%3E%3Cdefs%3E%3Cpattern id='wavePattern' width='200' height='20' patternUnits='userSpaceOnUse'%3E%3Cpath d='M 0,10 Q 50,0 100,10 T 200,10' fill='none' stroke='%23e0d8cc' stroke-width='0.6' opacity='0.35'/%3E%3C/pattern%3E%3C/defs%3E%3Crect width='100%25' height='100%25' fill='%23FAF7F2'/%3E%3Crect width='100%25' height='100%25' fill='url(%23wavePattern)'/%3E%3C/svg%3E")`,
+          : `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25'%3E%3Cdefs%3E%3Cpattern id='guillochePattern' width='120' height='30' patternUnits='userSpaceOnUse' patternTransform='rotate(10)'%3E%3Cpath d='M0,10 C30,0 60,20 90,10 S120,0 150,10' fill='none' stroke='%23e4dacb' stroke-width='0.5' opacity='0.55'/%3E%3Cpath d='M0,20 C30,10 60,30 90,20 S120,10 150,20' fill='none' stroke='%23e4dacb' stroke-width='0.5' opacity='0.55'/%3E%3C/pattern%3E%3C/defs%3E%3Crect width='100%25' height='100%25' fill='%23FCFAF6'/%3E%3Crect width='100%25' height='100%25' fill='url(%23guillochePattern)'/%3E%3C/svg%3E")`,
         backgroundSize: hasCustomImage ? "cover" : "auto",
         backgroundPosition: hasCustomImage ? "center" : "top left",
         borderColor: "#4a443e",
@@ -85,55 +85,71 @@ export const OfficialCertificate: React.FC<OfficialCertificateProps> = ({
       {!hasCustomImage && (
         <>
           {/* Outer Border */}
-          <div className="absolute inset-3 border-2 border-[#4a443e] pointer-events-none rounded-none" />
+          <div className="absolute inset-4 border-2 border-[#4a443e] pointer-events-none rounded-none" />
           {/* Inner Thin Border */}
-          <div className="absolute inset-4.5 border border-[#5c544a] pointer-events-none rounded-none" />
+          <div className="absolute inset-5.5 border border-[#5c544a] pointer-events-none rounded-none" />
 
           {/* Top-Left Corner Flourish */}
-          <div className="absolute top-5 left-5 pointer-events-none text-[#4a443e]">
-            <svg viewBox="0 0 100 100" className="w-14 h-14 sm:w-16 sm:h-16 text-current">
-              <path d="M5,5 C35,5 45,12 55,25 C45,35 30,30 20,20 C35,35 25,55 5,55" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-              <path d="M5,5 C5,25 12,45 25,55 C35,45 30,30 20,20 C35,35 55,25 55,5" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-              <circle cx="20" cy="20" r="4" fill="none" stroke="currentColor" strokeWidth="1.2" />
-              <circle cx="20" cy="20" r="1.5" fill="currentColor" />
-              <circle cx="5" cy="5" r="2.5" fill="currentColor" />
-              <path d="M12,20 C10,35 25,40 35,30 C40,20 30,12 20,12" fill="none" stroke="currentColor" strokeWidth="0.8" />
+          <div className="absolute top-6.5 left-6.5 pointer-events-none text-[#4a443e]">
+            <svg viewBox="0 0 120 120" className="w-16 h-16 sm:w-20 sm:h-20 text-current">
+              <path d="M10,10 C30,10 50,15 65,22 C55,28 40,24 30,18 C45,30 35,48 20,48 C22,35 28,26 35,22" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+              <path d="M10,10 C10,30 15,50 22,65 C28,55 24,40 18,30 C30,45 48,35 48,20 C35,22 26,28 22,35" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+              <path d="M22,22 C35,35 45,45 55,55 C48,60 38,50 32,42 C42,52 32,70 18,70 C16,55 20,44 28,38" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+              <path d="M10,10 Q25,25 35,35 C38,32 42,32 45,35 C48,38 48,42 45,45 C42,48 38,48 35,45 Z" fill="none" stroke="currentColor" strokeWidth="1.2" />
+              <circle cx="40" cy="40" r="2" fill="currentColor" />
+              <circle cx="10" cy="10" r="3" fill="currentColor" />
+              <path d="M65,22 C80,26 95,20 105,10 C95,10 88,14 82,18" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M22,65 C26,80 20,95 10,105 C10,95 14,88 18,82" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+              <circle cx="105" cy="10" r="2" fill="currentColor" />
+              <circle cx="10" cy="105" r="2" fill="currentColor" />
             </svg>
           </div>
 
           {/* Top-Right Corner Flourish */}
-          <div className="absolute top-5 right-5 pointer-events-none scale-x-[-1] text-[#4a443e]">
-            <svg viewBox="0 0 100 100" className="w-14 h-14 sm:w-16 sm:h-16 text-current">
-              <path d="M5,5 C35,5 45,12 55,25 C45,35 30,30 20,20 C35,35 25,55 5,55" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-              <path d="M5,5 C5,25 12,45 25,55 C35,45 30,30 20,20 C35,35 55,25 55,5" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-              <circle cx="20" cy="20" r="4" fill="none" stroke="currentColor" strokeWidth="1.2" />
-              <circle cx="20" cy="20" r="1.5" fill="currentColor" />
-              <circle cx="5" cy="5" r="2.5" fill="currentColor" />
-              <path d="M12,20 C10,35 25,40 35,30 C40,20 30,12 20,12" fill="none" stroke="currentColor" strokeWidth="0.8" />
+          <div className="absolute top-6.5 right-6.5 pointer-events-none scale-x-[-1] text-[#4a443e]">
+            <svg viewBox="0 0 120 120" className="w-16 h-16 sm:w-20 sm:h-20 text-current">
+              <path d="M10,10 C30,10 50,15 65,22 C55,28 40,24 30,18 C45,30 35,48 20,48 C22,35 28,26 35,22" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+              <path d="M10,10 C10,30 15,50 22,65 C28,55 24,40 18,30 C30,45 48,35 48,20 C35,22 26,28 22,35" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+              <path d="M22,22 C35,35 45,45 55,55 C48,60 38,50 32,42 C42,52 32,70 18,70 C16,55 20,44 28,38" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+              <path d="M10,10 Q25,25 35,35 C38,32 42,32 45,35 C48,38 48,42 45,45 C42,48 38,48 35,45 Z" fill="none" stroke="currentColor" strokeWidth="1.2" />
+              <circle cx="40" cy="40" r="2" fill="currentColor" />
+              <circle cx="10" cy="10" r="3" fill="currentColor" />
+              <path d="M65,22 C80,26 95,20 105,10 C95,10 88,14 82,18" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M22,65 C26,80 20,95 10,105 C10,95 14,88 18,82" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+              <circle cx="105" cy="10" r="2" fill="currentColor" />
+              <circle cx="10" cy="105" r="2" fill="currentColor" />
             </svg>
           </div>
 
           {/* Bottom-Left Corner Flourish */}
-          <div className="absolute bottom-5 left-5 pointer-events-none scale-y-[-1] text-[#4a443e]">
-            <svg viewBox="0 0 100 100" className="w-14 h-14 sm:w-16 sm:h-16 text-current">
-              <path d="M5,5 C35,5 45,12 55,25 C45,35 30,30 20,20 C35,35 25,55 5,55" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-              <path d="M5,5 C5,25 12,45 25,55 C35,45 30,30 20,20 C35,35 55,25 55,5" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-              <circle cx="20" cy="20" r="4" fill="none" stroke="currentColor" strokeWidth="1.2" />
-              <circle cx="20" cy="20" r="1.5" fill="currentColor" />
-              <circle cx="5" cy="5" r="2.5" fill="currentColor" />
-              <path d="M12,20 C10,35 25,40 35,30 C40,20 30,12 20,12" fill="none" stroke="currentColor" strokeWidth="0.8" />
+          <div className="absolute bottom-6.5 left-6.5 pointer-events-none scale-y-[-1] text-[#4a443e]">
+            <svg viewBox="0 0 120 120" className="w-16 h-16 sm:w-20 sm:h-20 text-current">
+              <path d="M10,10 C30,10 50,15 65,22 C55,28 40,24 30,18 C45,30 35,48 20,48 C22,35 28,26 35,22" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+              <path d="M10,10 C10,30 15,50 22,65 C28,55 24,40 18,30 C30,45 48,35 48,20 C35,22 26,28 22,35" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+              <path d="M22,22 C35,35 45,45 55,55 C48,60 38,50 32,42 C42,52 32,70 18,70 C16,55 20,44 28,38" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+              <path d="M10,10 Q25,25 35,35 C38,32 42,32 45,35 C48,38 48,42 45,45 C42,48 38,48 35,45 Z" fill="none" stroke="currentColor" strokeWidth="1.2" />
+              <circle cx="40" cy="40" r="2" fill="currentColor" />
+              <circle cx="10" cy="10" r="3" fill="currentColor" />
+              <path d="M65,22 C80,26 95,20 105,10 C95,10 88,14 82,18" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M22,65 C26,80 20,95 10,105 C10,95 14,88 18,82" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+              <circle cx="105" cy="10" r="2" fill="currentColor" />
+              <circle cx="10" cy="105" r="2" fill="currentColor" />
             </svg>
           </div>
 
           {/* Bottom-Right Corner Flourish */}
-          <div className="absolute bottom-5 right-5 pointer-events-none scale-x-[-1] scale-y-[-1] text-[#4a443e]">
-            <svg viewBox="0 0 100 100" className="w-14 h-14 sm:w-16 sm:h-16 text-current">
-              <path d="M5,5 C35,5 45,12 55,25 C45,35 30,30 20,20 C35,35 25,55 5,55" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-              <path d="M5,5 C5,25 12,45 25,55 C35,45 30,30 20,20 C35,35 55,25 55,5" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-              <circle cx="20" cy="20" r="4" fill="none" stroke="currentColor" strokeWidth="1.2" />
-              <circle cx="20" cy="20" r="1.5" fill="currentColor" />
-              <circle cx="5" cy="5" r="2.5" fill="currentColor" />
-              <path d="M12,20 C10,35 25,40 35,30 C40,20 30,12 20,12" fill="none" stroke="currentColor" strokeWidth="0.8" />
+          <div className="absolute bottom-6.5 right-6.5 pointer-events-none scale-x-[-1] scale-y-[-1] text-[#4a443e]">
+            <svg viewBox="0 0 120 120" className="w-16 h-16 sm:w-20 sm:h-20 text-current">
+              <path d="M10,10 C30,10 50,15 65,22 C55,28 40,24 30,18 C45,30 35,48 20,48 C22,35 28,26 35,22" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+              <path d="M10,10 C10,30 15,50 22,65 C28,55 24,40 18,30 C30,45 48,35 48,20 C35,22 26,28 22,35" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+              <path d="M22,22 C35,35 45,45 55,55 C48,60 38,50 32,42 C42,52 32,70 18,70 C16,55 20,44 28,38" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+              <path d="M10,10 Q25,25 35,35 C38,32 42,32 45,35 C48,38 48,42 45,45 C42,48 38,48 35,45 Z" fill="none" stroke="currentColor" strokeWidth="1.2" />
+              <circle cx="40" cy="40" r="2" fill="currentColor" />
+              <circle cx="10" cy="10" r="3" fill="currentColor" />
+              <path d="M65,22 C80,26 95,20 105,10 C95,10 88,14 82,18" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M22,65 C26,80 20,95 10,105 C10,95 14,88 18,82" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+              <circle cx="105" cy="10" r="2" fill="currentColor" />
+              <circle cx="10" cy="105" r="2" fill="currentColor" />
             </svg>
           </div>
         </>
@@ -141,17 +157,17 @@ export const OfficialCertificate: React.FC<OfficialCertificateProps> = ({
 
       {/* Header Section: Skills of Youth */}
       {!hasCustomImage ? (
-        <div className="text-center pt-2 sm:pt-4 z-10 flex flex-col items-center">
-          <div className="inline-block border-b-2 border-[#1f1d1a] pb-0.5">
+        <div className="text-center pt-3 sm:pt-6 z-10 flex flex-col items-center">
+          <div className="inline-block border-b border-[#1f1d1a] pb-0.5 mb-1">
             <h1 className="text-xl sm:text-3xl font-extrabold text-[#1a1816] tracking-tight font-serif">
               Skills of youth
             </h1>
           </div>
-          <p className="text-[9px] sm:text-xs text-[#4d473f] font-serif mt-1 font-medium tracking-wide">
-            For educational and pedagogical services
+          <p className="text-[10px] sm:text-xs text-[#4d473f] font-serif font-medium tracking-wide">
+            For educational and
           </p>
 
-          <h2 className="text-lg sm:text-2xl font-bold text-[#2b2723] font-sans mt-3 sm:mt-4 tracking-wide">
+          <h2 className="text-lg sm:text-3xl font-medium text-[#2b2723] font-serif mt-4 sm:mt-6 tracking-wide leading-none">
             {certType === "track"
               ? (isAr ? "شهادة إتمام مسار" : "Certificate of achievement")
               : certType === "achievement"
@@ -164,16 +180,16 @@ export const OfficialCertificate: React.FC<OfficialCertificateProps> = ({
       )}
 
       {/* Main Certificate Body */}
-      <div className={`text-center max-w-xl mx-auto space-y-2 sm:space-y-3 z-10 ${hasCustomImage ? 'mt-24 sm:mt-32' : ''}`}>
-        <p className="text-[10px] sm:text-xs text-[#332f2a] font-sans font-bold uppercase tracking-wider">
+      <div className={`text-center max-w-xl mx-auto space-y-3 sm:space-y-4 z-10 ${hasCustomImage ? 'mt-24 sm:mt-32' : 'mt-4'}`}>
+        <p className="text-[10px] sm:text-xs text-[#3a3530] font-sans font-bold uppercase tracking-wider">
           {isAr ? "نشهد أن المتدرب(ة):" : "This is to certify that"}
         </p>
 
-        <h3 className="text-base sm:text-2xl font-extrabold text-[#111111] font-serif my-1">
+        <h3 className="text-lg sm:text-3xl font-extrabold text-[#111111] font-sans my-1 tracking-wide">
           ({displayRecipient})
         </h3>
 
-        <p className="text-[10px] sm:text-xs text-[#332f2a] font-serif font-medium leading-relaxed max-w-md mx-auto">
+        <p className="text-[10px] sm:text-xs text-[#3a3530] font-sans font-bold leading-relaxed max-w-md mx-auto">
           {certType === "track"
             ? (isAr ? "قد أكمل بنجاح المسار التعليمي المعتمد والموثق بعنوان:" : "Has successfully completed the verified learning track entitled")
             : certType === "achievement"
@@ -181,11 +197,11 @@ export const OfficialCertificate: React.FC<OfficialCertificateProps> = ({
               : (isAr ? "قد شارك بنجاح في الورشة التدريبية بعنوان:" : "Has successfully participated in the training webinar entitled")}
         </p>
 
-        <h4 className="text-xs sm:text-base font-extrabold text-[#000000] font-serif max-w-lg mx-auto leading-normal px-2">
+        <h4 className="text-xs sm:text-xl font-extrabold text-[#000000] font-serif max-w-lg mx-auto leading-normal px-2">
           " {displayWorkshop} "
         </h4>
 
-        <p className="text-xs sm:text-sm font-extrabold text-[#1a1816] font-sans tracking-wide mt-2">
+        <p className="text-xs sm:text-base font-extrabold text-[#1a1816] font-sans tracking-wide mt-2">
           {formattedDate}
         </p>
       </div>
@@ -195,10 +211,11 @@ export const OfficialCertificate: React.FC<OfficialCertificateProps> = ({
         <div className="grid grid-cols-3 gap-2 sm:gap-6 items-end text-center z-10 pb-1 sm:pb-3 px-4 sm:px-12">
           {/* Left Signature: CEO */}
           <div className="space-y-1">
-            <div className="h-10 flex items-center justify-center">
-              <svg viewBox="0 0 120 45" className="w-24 sm:w-28 h-10 text-[#1a1816]">
-                <path d="M 10,35 Q 35,30 75,36 T 110,30" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                <path d="M 15,28 C 30,22 38,12 48,10 C 60,8 65,15 58,22 C 50,30 40,32 36,28 C 30,22 48,12 70,20 C 88,26 95,14 90,9 C 85,4 80,9 82,18 C 85,30 102,22 98,28" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            <div className="h-12 flex items-center justify-center">
+              <svg viewBox="0 0 120 50" className="w-28 h-12 text-[#1a1816]">
+                <path d="M 10,38 C 40,34 75,36 110,34" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                <path d="M 20,32 C 15,28 35,10 45,8 C 55,6 60,18 45,26 C 30,34 25,25 35,20 C 50,12 70,14 85,22 C 95,27 100,18 92,12 C 85,6 78,12 80,22 C 82,32 105,24 95,30" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M 68,16 L 78,28 M 74,15 L 84,27" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
               </svg>
             </div>
             <div className="border-t border-[#38332c] pt-1 font-sans">
@@ -219,21 +236,22 @@ export const OfficialCertificate: React.FC<OfficialCertificateProps> = ({
                 <path d="M50,4 C54,4 57,9 61,10 C65,11 70,9 73,12 C76,15 75,20 78,24 C81,27 86,28 88,32 C90,36 87,41 88,45 C89,49 92,54 91,58 C90,62 85,65 84,69 C83,73 85,78 82,81 C79,84 74,83 70,85 C66,87 63,91 59,92 C55,93 50,89 46,89 C42,89 37,93 33,92 C29,91 26,87 22,85 C18,83 13,84 10,81 C7,78 9,73 8,69 C7,65 2,62 1,58 C0,54 3,49 4,45 C5,41 2,36 4,32 C6,28 11,27 14,24 C17,20 27,11 31,10 C35,9 38,4 42,4 Z" fill="currentColor" />
                 <circle cx="50" cy="48" r="38" fill="none" stroke="white" strokeWidth="1" opacity="0.2" />
                 {/* Triple bar icon */}
-                <rect x="32" y="24" width="36" height="6.5" rx="3.25" fill="white" />
-                <rect x="32" y="35" width="36" height="6.5" rx="3.25" fill="white" />
-                <rect x="32" y="46" width="36" height="6.5" rx="3.25" fill="white" />
+                <rect x="32" y="25" width="36" height="6" rx="3" fill="white" />
+                <rect x="32" y="35" width="36" height="6" rx="3" fill="white" />
+                <rect x="32" y="45" width="36" height="6" rx="3" fill="white" />
                 {/* SKILLS text */}
-                <text x="50" y="70" textAnchor="middle" fill="white" fontSize="10.5" fontWeight="900" letterSpacing="1.5" fontFamily="sans-serif">SKILLS</text>
+                <text x="50" y="68" textAnchor="middle" fill="white" fontSize="10" fontWeight="900" letterSpacing="1.5" fontFamily="sans-serif">SKILLS</text>
               </svg>
             </div>
           </div>
 
           {/* Right Signature: Trainer */}
           <div className="space-y-1">
-            <div className="h-10 flex items-center justify-center">
-              <svg viewBox="0 0 120 45" className="w-24 sm:w-28 h-10 text-[#1a1816]">
-                <path d="M 10,35 Q 35,30 75,36 T 110,30" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                <path d="M 15,28 C 30,22 38,12 48,10 C 60,8 65,15 58,22 C 50,30 40,32 36,28 C 30,22 48,12 70,20 C 88,26 95,14 90,9 C 85,4 80,9 82,18 C 85,30 102,22 98,28" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            <div className="h-12 flex items-center justify-center">
+              <svg viewBox="0 0 120 50" className="w-28 h-12 text-[#1a1816]">
+                <path d="M 10,38 C 40,34 75,36 110,34" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                <path d="M 20,32 C 15,28 35,10 45,8 C 55,6 60,18 45,26 C 30,34 25,25 35,20 C 50,12 70,14 85,22 C 95,27 100,18 92,12 C 85,6 78,12 80,22 C 82,32 105,24 95,30" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M 68,16 L 78,28 M 74,15 L 84,27" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
               </svg>
             </div>
             <div className="border-t border-[#38332c] pt-1 font-sans">

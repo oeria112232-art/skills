@@ -24,6 +24,7 @@ import {
   Sliders, DollarSign, Link2, Layers, Star, Trash2, Plus, 
   ChevronLeft, AlertCircle, FileText, UploadCloud, ShieldAlert
 } from "lucide-react";
+import { OfficialCertificate } from "@/components/shared/OfficialCertificate";
 
 // Get level configurations
 const getLevelMetadata = (levelNum: number, isAr: boolean) => {
@@ -853,102 +854,19 @@ export default function AdminCertificatesLevelPage() {
             {/* Template visual preview */}
             <div className="lg:col-span-8">
               {selectedWorkshop ? (
-                <div 
-                  className="relative w-full overflow-hidden text-slate-800 p-6 sm:p-10 rounded-none border-2 shadow-2xl aspect-[1.414/1] flex flex-col justify-between font-serif select-none max-w-full print:border-none print:shadow-none" 
-                  style={{ 
-                    backgroundImage: isImageTemplate ? `url(${selectedWorkshop.certTemplateUrl}?v=${(selectedWorkshop as any).updatedAt ? new Date((selectedWorkshop as any).updatedAt).getTime() : "1"})` : undefined,
-                    backgroundSize: isImageTemplate ? "cover" : undefined,
-                    backgroundPosition: isImageTemplate ? "center" : undefined,
-                    background: !isImageTemplate ? (
-                      levelNum === 4 ? "radial-gradient(circle at 50% 50%, #FCF8F2 0%, #F6ECE5 100%)" :
-                      levelNum === 3 ? "radial-gradient(circle at 50% 50%, #FAF5FC 0%, #F1E5F7 100%)" :
-                      levelNum === 2 ? "radial-gradient(circle at 50% 50%, #F4F8FD 0%, #E6EEFA 100%)" :
-                      "radial-gradient(circle at 50% 50%, #FAF8F5 0%, #F5F1EC 100%)"
-                    ) : undefined,
-                    borderColor: levelNum === 4 ? "#d97706" : levelNum === 3 ? "#9333ea" : levelNum === 2 ? "#2563eb" : "#78716c"
-                  }}
-                >
-                  {/* Double Border Frame - Hidden on custom image templates */}
-                  {!isImageTemplate && (
-                    <div className="absolute inset-4 border pointer-events-none rounded-none opacity-40" style={{ borderColor: levelNum === 4 ? "#d97706" : levelNum === 3 ? "#9333ea" : levelNum === 2 ? "#2563eb" : "#78716c" }} />
-                  )}
-                  
-                  {/* Top Header - Hidden on custom image templates */}
-                  {!isImageTemplate ? (
-                    <div className="text-center mt-4 z-10 flex flex-col items-center">
-                      <h3 className="text-sm sm:text-base font-bold font-serif border-b pb-0.5 px-4 uppercase tracking-wide text-stone-900 leading-tight">
-                        Skills of youth
-                      </h3>
-                      <span className="text-[7.5px] text-stone-600 font-serif mt-0.5 tracking-wider font-medium">
-                        For educational and professional youth empowerment
-                      </span>
-                      <Badge variant="secondary" className="mt-1 text-[8px] font-black uppercase">
-                        {isAr ? meta.titleAr : meta.titleEn}
-                      </Badge>
-                    </div>
-                  ) : (
-                    <div className="h-4" />
-                  )}
-
-                  {/* Title - Hidden on custom image templates */}
-                  {!isImageTemplate && (
-                    <div className="text-center my-1 z-10">
-                      <h2 className="text-base sm:text-[22px] font-medium text-stone-600 tracking-wide font-serif leading-none">
-                        Certificate of Achievement
-                      </h2>
-                    </div>
-                  )}
-
-                  {/* Text body - shifted down if image template */}
-                  <div className={`text-center max-w-lg mx-auto space-y-2 z-10 ${isImageTemplate ? 'mt-16 sm:mt-24' : ''}`}>
-                    <p className="text-[9px] text-stone-500 italic font-serif">This is to certify that</p>
-                    <h3 className="text-xs sm:text-lg font-bold text-stone-850 font-serif my-0.5">(Trainee Name - Sample)</h3>
-                    <p className="text-[9px] text-stone-600 font-serif">Has successfully completed the verified training webinar entitled</p>
-                    <h4 className="text-[10px] sm:text-xs font-bold text-stone-800 font-serif max-w-md mx-auto leading-tight">"{selectedWorkshop.title}"</h4>
-                    <p className="text-[9px] font-bold text-stone-900 font-sans tracking-wide mt-1">30 June. 2026</p>
-                  </div>
-
-                  {/* Signatures - Hidden on custom image templates */}
-                  {!isImageTemplate ? (
-                    <div className="pt-2 grid grid-cols-3 gap-6 items-end text-center z-10 px-4">
-                      <div className="space-y-0.5">
-                        <div className="h-7 flex items-center justify-center">
-                          <svg viewBox="0 0 100 40" className="w-20 h-7 text-stone-800">
-                            <path d="M 5,30 Q 30,28 65,32 T 95,28" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
-                            <path d="M 10,25 C 25,20 30,10 40,8 C 50,6 55,12 50,18 C 45,24 35,28 32,25 C 28,20 42,12 60,18 C 75,22 80,12 78,8 C 75,4 70,8 72,15 C 75,25 90,20 85,25" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                          </svg>
-                        </div>
-                        <div className="border-t border-stone-850 pt-0.5 font-sans text-[7px] text-stone-500 font-bold">CEO OF SKILLS</div>
-                      </div>
-                      
-                      <div className="flex flex-col items-center justify-center pb-0.5">
-                        <svg viewBox="0 0 100 100" className="w-8 h-8 text-primary">
-                          <path d="M50,4 C55,4 58,10 63,12 C68,14 74,12 77,16 C80,20 78,26 80,31 C82,36 88,38 88,43 C88,48 82,50 80,55 C78,60 80,66 77,70 C74,74 68,72 63,74 C58,76 55,82 50,82 C45,82 42,76 37,74 C32,72 26,74 23,70 C20,66 22,60 20,55 C18,50 12,48 12,43 C12,38 18,36 20,31 C22,26 20,20 23,16 C26,12 32,14 37,12 C42,10 45,4 50,4 Z" fill="currentColor" />
-                          <rect x="33" y="24" width="34" height="6" rx="3" fill="white" />
-                          <rect x="33" y="34" width="34" height="6" rx="3" fill="white" />
-                          <rect x="33" y="44" width="34" height="6" rx="3" fill="white" />
-                          <text x="50" y="65" textAnchor="middle" fill="white" fontSize="9.5" fontWeight="900" letterSpacing="1" fontFamily="sans-serif">SKILLS</text>
-                        </svg>
-                      </div>
-
-                      <div className="space-y-0.5">
-                        <div className="h-7 flex items-center justify-center">
-                          <svg viewBox="0 0 100 40" className="w-20 h-7 text-stone-800">
-                            <path d="M 5,30 Q 30,28 65,32 T 95,28" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
-                            <path d="M 10,25 C 25,20 30,10 40,8 C 50,6 55,12 50,18 C 45,24 35,28 32,25 C 28,20 42,12 60,18 C 75,22 80,12 78,8 C 75,4 70,8 72,15 C 75,25 90,20 85,25" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                          </svg>
-                        </div>
-                        <div className="border-t border-stone-850 pt-0.5 font-sans text-[7px] text-stone-700 font-bold truncate">{certForm.certSignName.split(" / ")[0]}</div>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="h-16" />
-                  )}
-
-                  <div className="text-center font-mono text-[6px] text-stone-400 border-t border-dashed border-stone-300 pt-1 mt-1 truncate">
-                    HASH: {certForm.certEkey}
-                  </div>
-                </div>
+        <OfficialCertificate
+          recipientName={isAr ? "اسم المتدرب (نموذج)" : "Trainee Name (Sample)"}
+          workshopTitle={selectedWorkshop.title}
+          issueDate="30 June. 2026"
+          certSignTitle={certForm.certSignTitle.split(" / ")[0]}
+          certSignName={certForm.certSignName.split(" / ")[0]}
+          certEkey={certForm.certEkey}
+          certTemplateUrl={selectedWorkshop.certTemplateUrl}
+          certTemplateType={selectedWorkshop.certTemplateType}
+          updatedAt={(selectedWorkshop as any)?.updatedAt}
+          isAr={isAr}
+          certType="participation"
+        />
               ) : (
                 <div className="border border-dashed border-border/60 p-20 text-center rounded-2xl bg-card/45">
                   <Award className="w-12 h-12 mx-auto opacity-20 text-primary mb-3" />
