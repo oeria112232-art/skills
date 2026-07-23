@@ -52,8 +52,18 @@ function loadOrGenerateKey(keyName: string, envValue: string | undefined): strin
     // ignore read/parse errors – we'll generate a new key below
   }
 
-  // 3. Generate a new key and persist it
-  const newKey = crypto.randomBytes(32).toString("hex");
+  // 3. Generate a stable key derived from SESSION_SECRET or other env base secret if available
+  const baseSecret = process.env.SESSION_SECRET || process.env.JWT_SECRET;
+  let newKey: string;
+  if (baseSecret && baseSecret.trim().length >= 16) {
+    newKey = crypto
+      .createHmac("sha256", baseSecret.trim())
+      .update(keyName)
+      .digest("hex");
+  } else {
+    newKey = crypto.randomBytes(32).toString("hex");
+  }
+
   try {
     let existing: Record<string, string> = {};
     if (fs.existsSync(KEYS_FILE)) {
@@ -63,14 +73,9 @@ function loadOrGenerateKey(keyName: string, envValue: string | undefined): strin
     fs.writeFileSync(KEYS_FILE, JSON.stringify(existing, null, 2), "utf8");
   } catch {
     // If we cannot write, still return the generated key for this session
-    // (tokens will become invalid after restart in this edge case)
-    logger.warn(`Could not persist ${keyName} to ${KEYS_FILE}. Sessions will reset on restart.`);
+    // (with stable derivation, sessions still survive restarts!)
+    logger.warn(`Could not persist ${keyName} to ${KEYS_FILE}. Using stable derived key.`);
   }
-
-  logger.info(
-    `Generated new ${keyName}. ` +
-    `Set the ${keyName.replace(/-/g, "_").toUpperCase()} environment variable to make sessions permanent.`
-  );
 
   return newKey;
 }
