@@ -1,5 +1,39 @@
 import React from "react";
 
+export const parseCertOverlaySettings = (typeStr: string | null | undefined) => {
+  const defaults = {
+    name: { top: 44.5, left: 50, width: 60, height: 6 },
+    title: { top: 62, left: 50, width: 70, height: 6 },
+    date: { top: 76.5, left: 50, width: 40, height: 5 },
+    color: "#FAF7F2"
+  };
+
+  if (!typeStr || !typeStr.startsWith("overlay")) {
+    return defaults;
+  }
+
+  if (typeStr === "overlay") {
+    return defaults;
+  }
+
+  try {
+    const parts = typeStr.split("|");
+    const nameCoords = parts[1].split(",").map(Number);
+    const titleCoords = parts[2].split(",").map(Number);
+    const dateCoords = parts[3].split(",").map(Number);
+    const color = parts[4] || "#FAF7F2";
+
+    return {
+      name: { top: nameCoords[0], left: nameCoords[1] ?? 50, width: nameCoords[2], height: nameCoords[3] },
+      title: { top: titleCoords[0], left: titleCoords[1] ?? 50, width: titleCoords[2], height: titleCoords[3] },
+      date: { top: dateCoords[0], left: dateCoords[1] ?? 50, width: dateCoords[2], height: dateCoords[3] },
+      color
+    };
+  } catch (e) {
+    return defaults;
+  }
+};
+
 export interface OfficialCertificateProps {
   recipientName?: string | null;
   workshopTitle?: string | null;
@@ -54,7 +88,7 @@ export const OfficialCertificate: React.FC<OfficialCertificateProps> = ({
     isImageUrl(certTemplateUrl)
   );
 
-  const isOverlayOnly = hasCustomImage;
+  const isOverlayOnly = hasCustomImage && (certTemplateType?.startsWith("overlay") || false);
 
   const cacheBuster = updatedAt ? new Date(updatedAt).getTime() : Date.now();
 
@@ -80,6 +114,7 @@ export const OfficialCertificate: React.FC<OfficialCertificateProps> = ({
   const displayEkey = certEkey || "MHARAT-SECURE-ESIGN-88192-VERIFIED";
 
   if (isOverlayOnly) {
+    const settings = parseCertOverlaySettings(certTemplateType);
     return (
       <div
         className="relative w-full overflow-hidden aspect-[1.414/1] select-none rounded-none print:border-none print:shadow-none certificate-print-container"
@@ -90,13 +125,20 @@ export const OfficialCertificate: React.FC<OfficialCertificateProps> = ({
           backgroundPosition: "center",
         }}
       >
-        {/* Trainee / Recipient Name Overlay */}
+        {/* Trainee / Recipient Name Overlay Cover & Text */}
         <div 
-          className="absolute w-full text-center flex items-center justify-center pointer-events-none"
-          style={{ top: "44.5%", transform: "translateY(-50%)" }}
+          className="absolute text-center flex items-center justify-center pointer-events-none"
+          style={{ 
+            top: `${settings.name.top}%`, 
+            left: `${settings.name.left}%`, 
+            width: `${settings.name.width}%`, 
+            height: `${settings.name.height}%`,
+            transform: "translate(-50%, -50%)",
+            backgroundColor: settings.color,
+          }}
         >
           <span 
-            className="font-extrabold text-[#111111] tracking-wide"
+            className="font-extrabold text-[#111111] tracking-wide pointer-events-none"
             style={{
               fontSize: "min(3.2vw, 28px)",
               fontFamily: "'Lora', 'Georgia', 'Times New Roman', serif"
@@ -106,13 +148,20 @@ export const OfficialCertificate: React.FC<OfficialCertificateProps> = ({
           </span>
         </div>
 
-        {/* Workshop/Track Title Overlay */}
+        {/* Workshop/Track Title Overlay Cover & Text */}
         <div 
-          className="absolute w-full text-center flex items-center justify-center px-12 sm:px-20 pointer-events-none"
-          style={{ top: "62%", transform: "translateY(-50%)" }}
+          className="absolute text-center flex items-center justify-center pointer-events-none"
+          style={{ 
+            top: `${settings.title.top}%`, 
+            left: `${settings.title.left}%`, 
+            width: `${settings.title.width}%`, 
+            height: `${settings.title.height}%`,
+            transform: "translate(-50%, -50%)",
+            backgroundColor: settings.color,
+          }}
         >
           <span 
-            className="font-extrabold text-[#000000] leading-normal"
+            className="font-extrabold text-[#000000] leading-normal pointer-events-none"
             style={{
               fontSize: "min(2.1vw, 19px)",
               fontFamily: "'Lora', 'Georgia', 'Times New Roman', serif"
@@ -122,13 +171,20 @@ export const OfficialCertificate: React.FC<OfficialCertificateProps> = ({
           </span>
         </div>
 
-        {/* Date Overlay */}
+        {/* Date Overlay Cover & Text */}
         <div 
-          className="absolute w-full text-center flex items-center justify-center pointer-events-none"
-          style={{ top: "76.5%", transform: "translateY(-50%)" }}
+          className="absolute text-center flex items-center justify-center pointer-events-none"
+          style={{ 
+            top: `${settings.date.top}%`, 
+            left: `${settings.date.left}%`, 
+            width: `${settings.date.width}%`, 
+            height: `${settings.date.height}%`,
+            transform: "translate(-50%, -50%)",
+            backgroundColor: settings.color,
+          }}
         >
           <span 
-            className="font-bold text-[#1a1816] tracking-wide"
+            className="font-bold text-[#1a1816] tracking-wide pointer-events-none"
             style={{
               fontSize: "min(1.8vw, 16px)",
               fontFamily: "'Inter', 'Montserrat', sans-serif"

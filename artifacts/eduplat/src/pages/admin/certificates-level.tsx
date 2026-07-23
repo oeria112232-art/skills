@@ -141,6 +141,69 @@ export default function AdminCertificatesLevelPage() {
   });
   const [uploading, setUploading] = useState(false);
 
+  const [overlayCoords, setOverlayCoords] = useState({
+    nameTop: 44.5,
+    nameLeft: 50,
+    nameWidth: 60,
+    nameHeight: 6,
+    titleTop: 62,
+    titleLeft: 50,
+    titleWidth: 70,
+    titleHeight: 6,
+    dateTop: 76.5,
+    dateLeft: 50,
+    dateWidth: 40,
+    dateHeight: 5,
+    color: "#FAF7F2"
+  });
+
+  const parseCoords = (typeStr?: string | null) => {
+    const defaults = {
+      nameTop: 44.5,
+      nameLeft: 50,
+      nameWidth: 60,
+      nameHeight: 6,
+      titleTop: 62,
+      titleLeft: 50,
+      titleWidth: 70,
+      titleHeight: 6,
+      dateTop: 76.5,
+      dateLeft: 50,
+      dateWidth: 40,
+      dateHeight: 5,
+      color: "#FAF7F2"
+    };
+
+    if (!typeStr || !typeStr.startsWith("overlay")) return defaults;
+    if (typeStr === "overlay") return defaults;
+
+    try {
+      const parts = typeStr.split("|");
+      const name = parts[1].split(",").map(Number);
+      const title = parts[2].split(",").map(Number);
+      const date = parts[3].split(",").map(Number);
+      const color = parts[4] || "#FAF7F2";
+
+      return {
+        nameTop: name[0],
+        nameLeft: name[1] ?? 50,
+        nameWidth: name[2],
+        nameHeight: name[3],
+        titleTop: title[0],
+        titleLeft: title[1] ?? 50,
+        titleWidth: title[2],
+        titleHeight: title[3],
+        dateTop: date[0],
+        dateLeft: date[1] ?? 50,
+        dateWidth: date[2],
+        dateHeight: date[3],
+        color
+      };
+    } catch {
+      return defaults;
+    }
+  };
+
   const selectedWorkshop = workshopsList.find((w: any) => w.id === selectedTemplateWorkshopId);
 
   // Sync state with selected workshop template
@@ -152,6 +215,7 @@ export default function AdminCertificatesLevelPage() {
         certEkey: selectedWorkshop.certEkey || "MHARAT-SECURE-ESIGN-88192-VERIFIED",
         certTemplateType: selectedWorkshop.certTemplateType || "default"
       });
+      setOverlayCoords(parseCoords(selectedWorkshop.certTemplateType));
     }
   }, [selectedWorkshop]);
 
@@ -300,6 +364,11 @@ export default function AdminCertificatesLevelPage() {
   // Handle Save Template Details
   const handleSaveTemplate = async () => {
     if (!selectedTemplateWorkshopId) return;
+    const isOverlay = certForm.certTemplateType?.startsWith("overlay");
+    const serializedType = isOverlay
+      ? `overlay|${overlayCoords.nameTop},${overlayCoords.nameLeft},${overlayCoords.nameWidth},${overlayCoords.nameHeight}|${overlayCoords.titleTop},${overlayCoords.titleLeft},${overlayCoords.titleWidth},${overlayCoords.titleHeight}|${overlayCoords.dateTop},${overlayCoords.dateLeft},${overlayCoords.dateWidth},${overlayCoords.dateHeight}|${overlayCoords.color}`
+      : (selectedWorkshop.certTemplateType?.replace("overlay_", "") || "png");
+
     try {
       await updateWorkshop.mutateAsync({
         id: selectedTemplateWorkshopId,
@@ -307,7 +376,7 @@ export default function AdminCertificatesLevelPage() {
           certSignTitle: certForm.certSignTitle,
           certSignName: certForm.certSignName,
           certEkey: certForm.certEkey,
-          certTemplateType: certForm.certTemplateType
+          certTemplateType: serializedType
         }
       });
       toast({ 
@@ -750,25 +819,123 @@ export default function AdminCertificatesLevelPage() {
                     </div>
 
                     {selectedWorkshop?.certTemplateUrl && isImageTemplate && (
-                      <div className="flex items-start gap-2 pt-2.5 border-t border-border/40 mt-1">
-                        <input
-                          type="checkbox"
-                          id="overlay-only-checkbox-level"
-                          checked={certForm.certTemplateType?.startsWith("overlay") || false}
-                          onChange={(e) => {
-                            const isChecked = e.target.checked;
-                            const currentType = selectedWorkshop.certTemplateType || "png";
-                            const cleanType = currentType.replace("overlay_", "");
-                            const newType = isChecked ? `overlay_${cleanType}` : cleanType;
-                            setCertForm(f => ({ ...f, certTemplateType: newType }));
-                          }}
-                          className="w-4 h-4 rounded border-border text-primary focus:ring-primary mt-0.5"
-                        />
-                        <Label htmlFor="overlay-only-checkbox-level" className="text-xs font-bold text-foreground cursor-pointer select-none leading-normal">
-                          {isAr 
-                            ? "طباعة النصوص فقط فوق القالب (إخفاء الإطار الافتراضي والترويسة والتواقيع)" 
-                            : "Overlay text only (hides default frame, header, signatures, and stamp)"}
-                        </Label>
+                      <div className="flex flex-col gap-2 pt-2.5 border-t border-border/40 mt-1">
+                        <div className="flex items-start gap-2">
+                          <input
+                            type="checkbox"
+                            id="overlay-only-checkbox-level"
+                            checked={certForm.certTemplateType?.startsWith("overlay") || false}
+                            onChange={(e) => {
+                              const isChecked = e.target.checked;
+                              const currentType = selectedWorkshop.certTemplateType || "png";
+                              const cleanType = currentType.replace("overlay_", "");
+                              const newType = isChecked ? `overlay_${cleanType}` : cleanType;
+                              setCertForm(f => ({ ...f, certTemplateType: newType }));
+                            }}
+                            className="w-4 h-4 rounded border-border text-primary focus:ring-primary mt-0.5"
+                          />
+                          <Label htmlFor="overlay-only-checkbox-level" className="text-xs font-bold text-foreground cursor-pointer select-none leading-normal">
+                            {isAr 
+                              ? "تفعيل طباعة البيانات والتحكم بمكان تغطية النصوص" 
+                              : "Enable text overlay and cover box settings"}
+                          </Label>
+                        </div>
+
+                        {certForm.certTemplateType?.startsWith("overlay") && (
+                          <div className="space-y-3 bg-muted/20 border border-border/50 rounded-xl p-3 mt-1 text-start">
+                            <p className="text-[10px] font-extrabold text-primary border-b border-border/40 pb-1">
+                              {isAr ? "تحجيم وتحديد موقع التغطية والنصوص (%)" : "Coordinate & Overlay Box Tuning (%)"}
+                            </p>
+                            
+                            {/* Color Picker */}
+                            <div className="space-y-1">
+                              <Label className="text-[9.5px] font-bold text-muted-foreground block">{isAr ? "لون صندوق التغطية" : "Cover Box Color"}</Label>
+                              <div className="flex gap-2 items-center">
+                                <Input 
+                                  type="color" 
+                                  value={overlayCoords.color} 
+                                  onChange={e => setOverlayCoords(c => ({ ...c, color: e.target.value }))}
+                                  className="w-8 h-8 p-0 border border-border rounded-lg cursor-pointer"
+                                />
+                                <Input 
+                                  type="text" 
+                                  value={overlayCoords.color} 
+                                  onChange={e => setOverlayCoords(c => ({ ...c, color: e.target.value }))}
+                                  className="h-8 font-mono text-[10px] font-bold rounded-lg bg-background/50"
+                                />
+                              </div>
+                            </div>
+
+                            {/* Name tuning */}
+                            <div className="space-y-1 pt-1 border-t border-border/30">
+                              <Label className="text-[9.5px] font-bold text-foreground block">{isAr ? "تغطية وموقع الاسم" : "Name Coordinates"}</Label>
+                              <div className="grid grid-cols-2 gap-2 text-[9px] font-semibold text-muted-foreground">
+                                <div>
+                                  <span>{isAr ? "الارتفاع (Top)" : "Top"}: {overlayCoords.nameTop}%</span>
+                                  <input type="range" min="0" max="100" step="0.5" value={overlayCoords.nameTop} onChange={e => setOverlayCoords(c => ({ ...c, nameTop: Number(e.target.value) }))} className="w-full h-1" />
+                                </div>
+                                <div>
+                                  <span>{isAr ? "اليسار (Left)" : "Left"}: {overlayCoords.nameLeft}%</span>
+                                  <input type="range" min="0" max="100" step="0.5" value={overlayCoords.nameLeft} onChange={e => setOverlayCoords(c => ({ ...c, nameLeft: Number(e.target.value) }))} className="w-full h-1" />
+                                </div>
+                                <div>
+                                  <span>{isAr ? "العرض (Width)" : "Width"}: {overlayCoords.nameWidth}%</span>
+                                  <input type="range" min="0" max="100" step="0.5" value={overlayCoords.nameWidth} onChange={e => setOverlayCoords(c => ({ ...c, nameWidth: Number(e.target.value) }))} className="w-full h-1" />
+                                </div>
+                                <div>
+                                  <span>{isAr ? "الارتفاع (Height)" : "Height"}: {overlayCoords.nameHeight}%</span>
+                                  <input type="range" min="0" max="25" step="0.5" value={overlayCoords.nameHeight} onChange={e => setOverlayCoords(c => ({ ...c, nameHeight: Number(e.target.value) }))} className="w-full h-1" />
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Title tuning */}
+                            <div className="space-y-1 pt-1 border-t border-border/30">
+                              <Label className="text-[9.5px] font-bold text-foreground block">{isAr ? "تغطية وموقع العنوان" : "Title Coordinates"}</Label>
+                              <div className="grid grid-cols-2 gap-2 text-[9px] font-semibold text-muted-foreground">
+                                <div>
+                                  <span>{isAr ? "الارتفاع (Top)" : "Top"}: {overlayCoords.titleTop}%</span>
+                                  <input type="range" min="0" max="100" step="0.5" value={overlayCoords.titleTop} onChange={e => setOverlayCoords(c => ({ ...c, titleTop: Number(e.target.value) }))} className="w-full h-1" />
+                                </div>
+                                <div>
+                                  <span>{isAr ? "اليسار (Left)" : "Left"}: {overlayCoords.titleLeft}%</span>
+                                  <input type="range" min="0" max="100" step="0.5" value={overlayCoords.titleLeft} onChange={e => setOverlayCoords(c => ({ ...c, titleLeft: Number(e.target.value) }))} className="w-full h-1" />
+                                </div>
+                                <div>
+                                  <span>{isAr ? "العرض (Width)" : "Width"}: {overlayCoords.titleWidth}%</span>
+                                  <input type="range" min="0" max="100" step="0.5" value={overlayCoords.titleWidth} onChange={e => setOverlayCoords(c => ({ ...c, titleWidth: Number(e.target.value) }))} className="w-full h-1" />
+                                </div>
+                                <div>
+                                  <span>{isAr ? "الارتفاع (Height)" : "Height"}: {overlayCoords.titleHeight}%</span>
+                                  <input type="range" min="0" max="25" step="0.5" value={overlayCoords.titleHeight} onChange={e => setOverlayCoords(c => ({ ...c, titleHeight: Number(e.target.value) }))} className="w-full h-1" />
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Date tuning */}
+                            <div className="space-y-1 pt-1 border-t border-border/30">
+                              <Label className="text-[9.5px] font-bold text-foreground block">{isAr ? "تغطية وموقع التاريخ" : "Date Coordinates"}</Label>
+                              <div className="grid grid-cols-2 gap-2 text-[9px] font-semibold text-muted-foreground">
+                                <div>
+                                  <span>{isAr ? "الارتفاع (Top)" : "Top"}: {overlayCoords.dateTop}%</span>
+                                  <input type="range" min="0" max="100" step="0.5" value={overlayCoords.dateTop} onChange={e => setOverlayCoords(c => ({ ...c, dateTop: Number(e.target.value) }))} className="w-full h-1" />
+                                </div>
+                                <div>
+                                  <span>{isAr ? "اليسار (Left)" : "Left"}: {overlayCoords.dateLeft}%</span>
+                                  <input type="range" min="0" max="100" step="0.5" value={overlayCoords.dateLeft} onChange={e => setOverlayCoords(c => ({ ...c, dateLeft: Number(e.target.value) }))} className="w-full h-1" />
+                                </div>
+                                <div>
+                                  <span>{isAr ? "العرض (Width)" : "Width"}: {overlayCoords.dateWidth}%</span>
+                                  <input type="range" min="0" max="100" step="0.5" value={overlayCoords.dateWidth} onChange={e => setOverlayCoords(c => ({ ...c, dateWidth: Number(e.target.value) }))} className="w-full h-1" />
+                                </div>
+                                <div>
+                                  <span>{isAr ? "الارتفاع (Height)" : "Height"}: {overlayCoords.dateHeight}%</span>
+                                  <input type="range" min="0" max="25" step="0.5" value={overlayCoords.dateHeight} onChange={e => setOverlayCoords(c => ({ ...c, dateHeight: Number(e.target.value) }))} className="w-full h-1" />
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     )}
 
@@ -891,7 +1058,11 @@ export default function AdminCertificatesLevelPage() {
           certSignName={certForm.certSignName.split(" / ")[0]}
           certEkey={certForm.certEkey}
           certTemplateUrl={selectedWorkshop.certTemplateUrl}
-          certTemplateType={certForm.certTemplateType}
+          certTemplateType={
+            certForm.certTemplateType?.startsWith("overlay")
+              ? `overlay|${overlayCoords.nameTop},${overlayCoords.nameLeft},${overlayCoords.nameWidth},${overlayCoords.nameHeight}|${overlayCoords.titleTop},${overlayCoords.titleLeft},${overlayCoords.titleWidth},${overlayCoords.titleHeight}|${overlayCoords.dateTop},${overlayCoords.dateLeft},${overlayCoords.dateWidth},${overlayCoords.dateHeight}|${overlayCoords.color}`
+              : certForm.certTemplateType
+          }
           updatedAt={(selectedWorkshop as any)?.updatedAt}
           isAr={isAr}
           certType="participation"
