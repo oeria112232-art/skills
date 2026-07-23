@@ -136,7 +136,8 @@ export default function AdminCertificatesLevelPage() {
   const [certForm, setCertForm] = useState({
     certSignTitle: "رئيس الهيئة / Board Chairman",
     certSignName: "أحمد الرشيدي / Ahmed Al-Rashidi",
-    certEkey: "MHARAT-SECURE-ESIGN-88192-VERIFIED"
+    certEkey: "MHARAT-SECURE-ESIGN-88192-VERIFIED",
+    certTemplateType: "default"
   });
   const [uploading, setUploading] = useState(false);
 
@@ -148,7 +149,8 @@ export default function AdminCertificatesLevelPage() {
       setCertForm({
         certSignTitle: selectedWorkshop.certSignTitle || "رئيس الهيئة / Board Chairman",
         certSignName: selectedWorkshop.certSignName || "أحمد الرشيدي / Ahmed Al-Rashidi",
-        certEkey: selectedWorkshop.certEkey || "MHARAT-SECURE-ESIGN-88192-VERIFIED"
+        certEkey: selectedWorkshop.certEkey || "MHARAT-SECURE-ESIGN-88192-VERIFIED",
+        certTemplateType: selectedWorkshop.certTemplateType || "default"
       });
     }
   }, [selectedWorkshop]);
@@ -163,6 +165,9 @@ export default function AdminCertificatesLevelPage() {
     selectedWorkshop.certTemplateType === "jpg" ||
     selectedWorkshop.certTemplateType === "jpeg" ||
     selectedWorkshop.certTemplateType === "svg" ||
+    selectedWorkshop.certTemplateType === "webp" ||
+    selectedWorkshop.certTemplateType?.startsWith("image/") ||
+    selectedWorkshop.certTemplateType?.startsWith("overlay") ||
     isImageUrl(selectedWorkshop?.certTemplateUrl)
   );
 
@@ -301,7 +306,8 @@ export default function AdminCertificatesLevelPage() {
         data: {
           certSignTitle: certForm.certSignTitle,
           certSignName: certForm.certSignName,
-          certEkey: certForm.certEkey
+          certEkey: certForm.certEkey,
+          certTemplateType: certForm.certTemplateType
         }
       });
       toast({ 
@@ -743,6 +749,29 @@ export default function AdminCertificatesLevelPage() {
                       />
                     </div>
 
+                    {selectedWorkshop?.certTemplateUrl && isImageTemplate && (
+                      <div className="flex items-start gap-2 pt-2.5 border-t border-border/40 mt-1">
+                        <input
+                          type="checkbox"
+                          id="overlay-only-checkbox-level"
+                          checked={certForm.certTemplateType?.startsWith("overlay") || false}
+                          onChange={(e) => {
+                            const isChecked = e.target.checked;
+                            const currentType = selectedWorkshop.certTemplateType || "png";
+                            const cleanType = currentType.replace("overlay_", "");
+                            const newType = isChecked ? `overlay_${cleanType}` : cleanType;
+                            setCertForm(f => ({ ...f, certTemplateType: newType }));
+                          }}
+                          className="w-4 h-4 rounded border-border text-primary focus:ring-primary mt-0.5"
+                        />
+                        <Label htmlFor="overlay-only-checkbox-level" className="text-xs font-bold text-foreground cursor-pointer select-none leading-normal">
+                          {isAr 
+                            ? "طباعة النصوص فقط فوق القالب (إخفاء الإطار الافتراضي والترويسة والتواقيع)" 
+                            : "Overlay text only (hides default frame, header, signatures, and stamp)"}
+                        </Label>
+                      </div>
+                    )}
+
                     <Button onClick={handleSaveTemplate} className="w-full gap-2 rounded-xl font-bold h-10 text-xs shadow-md mt-2">
                       <Check className="w-4 h-4" />
                       <span>{isAr ? "حفظ وتثبيت التغييرات" : "Save Template"}</span>
@@ -862,7 +891,7 @@ export default function AdminCertificatesLevelPage() {
           certSignName={certForm.certSignName.split(" / ")[0]}
           certEkey={certForm.certEkey}
           certTemplateUrl={selectedWorkshop.certTemplateUrl}
-          certTemplateType={selectedWorkshop.certTemplateType}
+          certTemplateType={certForm.certTemplateType}
           updatedAt={(selectedWorkshop as any)?.updatedAt}
           isAr={isAr}
           certType="participation"

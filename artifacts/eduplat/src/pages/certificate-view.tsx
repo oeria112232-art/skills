@@ -123,6 +123,7 @@ export default function CertificateViewPage() {
     program?.certTemplateType === "jpg" ||
     program?.certTemplateType === "jpeg" ||
     program?.certTemplateType === "svg" ||
+    program?.certTemplateType?.startsWith("overlay") ||
     isImageUrl(program?.certTemplateUrl)
   );
   const isDocTemplate = hasCustomTemplate && !isImageTemplate;

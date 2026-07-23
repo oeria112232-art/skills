@@ -61,7 +61,8 @@ export default function AdminCertificatesPage() {
   const [certForm, setCertForm] = useState({
     certSignTitle: "",
     certSignName: "",
-    certEkey: ""
+    certEkey: "",
+    certTemplateType: "default"
   });
 
   // Manual Issuance State
@@ -81,7 +82,8 @@ export default function AdminCertificatesPage() {
       setCertForm({
         certSignTitle: selectedEntity.certSignTitle || "رئيس الهيئة / Board Chairman",
         certSignName: selectedEntity.certSignName || "أحمد الرشيدي / Ahmed Al-Rashidi",
-        certEkey: selectedEntity.certEkey || "MHARAT-SECURE-ESIGN-88192-VERIFIED"
+        certEkey: selectedEntity.certEkey || "MHARAT-SECURE-ESIGN-88192-VERIFIED",
+        certTemplateType: selectedEntity.certTemplateType || "default"
       });
     }
   }, [selectedEntityId, targetType, workshopsList, tracksList]);
@@ -105,7 +107,8 @@ export default function AdminCertificatesPage() {
           data: {
             certSignTitle: certForm.certSignTitle,
             certSignName: certForm.certSignName,
-            certEkey: certForm.certEkey
+            certEkey: certForm.certEkey,
+            certTemplateType: certForm.certTemplateType
           }
         });
       } else {
@@ -118,7 +121,8 @@ export default function AdminCertificatesPage() {
           body: JSON.stringify({
             certSignTitle: certForm.certSignTitle,
             certSignName: certForm.certSignName,
-            certEkey: certForm.certEkey
+            certEkey: certForm.certEkey,
+            certTemplateType: certForm.certTemplateType
           })
         });
         if (!response.ok) throw new Error("Failed to update track template");
@@ -264,6 +268,7 @@ export default function AdminCertificatesPage() {
     selectedEntity.certTemplateType === "svg" ||
     selectedEntity.certTemplateType === "webp" ||
     selectedEntity.certTemplateType?.startsWith("image/") ||
+    selectedEntity.certTemplateType?.startsWith("overlay") ||
     isImageUrl(selectedEntity?.certTemplateUrl)
   );
   const isDocTemplate = !!selectedEntity?.certTemplateUrl && !isImageTemplate;
@@ -326,7 +331,7 @@ export default function AdminCertificatesPage() {
           certSignName={certForm.certSignName.split(" / ")[0]}
           certEkey={certForm.certEkey}
           certTemplateUrl={selectedEntity.certTemplateUrl}
-          certTemplateType={selectedEntity.certTemplateType}
+          certTemplateType={certForm.certTemplateType}
           updatedAt={(selectedEntity as any)?.updatedAt}
           isAr={isAr}
           certType={targetType === "track" ? "track" : "participation"}
@@ -486,6 +491,29 @@ export default function AdminCertificatesPage() {
                         className="rounded-xl text-xs font-semibold h-10 font-mono bg-background/50 border-border/60" 
                       />
                     </div>
+
+                    {selectedEntity?.certTemplateUrl && isImageTemplate && (
+                      <div className="flex items-start gap-2 pt-2.5 border-t border-border/40 mt-1">
+                        <input
+                          type="checkbox"
+                          id="overlay-only-checkbox"
+                          checked={certForm.certTemplateType?.startsWith("overlay") || false}
+                          onChange={(e) => {
+                            const isChecked = e.target.checked;
+                            const currentType = selectedEntity.certTemplateType || "png";
+                            const cleanType = currentType.replace("overlay_", "");
+                            const newType = isChecked ? `overlay_${cleanType}` : cleanType;
+                            setCertForm(f => ({ ...f, certTemplateType: newType }));
+                          }}
+                          className="w-4 h-4 rounded border-border text-primary focus:ring-primary mt-0.5"
+                        />
+                        <Label htmlFor="overlay-only-checkbox" className="text-xs font-bold text-foreground cursor-pointer select-none leading-normal">
+                          {isAr 
+                            ? "طباعة النصوص فقط فوق القالب (إخفاء الإطار الافتراضي والترويسة والتواقيع)" 
+                            : "Overlay text only (hides default frame, header, signatures, and stamp)"}
+                        </Label>
+                      </div>
+                    )}
 
                     <Button onClick={handleSaveTemplate} disabled={savingSettings} className="w-full gap-2 rounded-xl font-bold h-10 text-xs shadow-md mt-2">
                       <Check className="w-4 h-4" />

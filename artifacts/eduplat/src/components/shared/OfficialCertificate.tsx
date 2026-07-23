@@ -43,6 +43,8 @@ export const OfficialCertificate: React.FC<OfficialCertificateProps> = ({
     );
   };
 
+  const isOverlayOnly = !!certTemplateType && certTemplateType.startsWith("overlay");
+
   const hasCustomImage = !!certTemplateUrl && (
     certTemplateType === "png" ||
     certTemplateType === "jpg" ||
@@ -50,6 +52,7 @@ export const OfficialCertificate: React.FC<OfficialCertificateProps> = ({
     certTemplateType === "svg" ||
     certTemplateType === "webp" ||
     certTemplateType?.startsWith("image/") ||
+    certTemplateType?.startsWith("overlay") ||
     isImageUrl(certTemplateUrl)
   );
 
@@ -66,6 +69,75 @@ export const OfficialCertificate: React.FC<OfficialCertificateProps> = ({
   const displaySignTitle = certSignTitle || "TRAINER";
   const displaySignName = certSignName || "Ahmed Joudah Ghafil";
   const displayEkey = certEkey || "MHARAT-SECURE-ESIGN-88192-VERIFIED";
+
+  if (isOverlayOnly) {
+    return (
+      <div
+        className="relative w-full overflow-hidden aspect-[1.414/1] select-none rounded-none print:border-none print:shadow-none certificate-print-container"
+        style={{
+          backgroundColor: "#FAF7F2",
+          backgroundImage: `url(${certTemplateUrl}?v=${cacheBuster})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+        }}
+      >
+        {/* Trainee / Recipient Name Overlay */}
+        <div 
+          className="absolute w-full text-center flex items-center justify-center pointer-events-none"
+          style={{ top: "44.5%", transform: "translateY(-50%)" }}
+        >
+          <span 
+            className="font-extrabold text-[#111111] tracking-wide"
+            style={{
+              fontSize: "min(3.2vw, 28px)",
+              fontFamily: "'Lora', 'Georgia', 'Times New Roman', serif"
+            }}
+          >
+            ({displayRecipient})
+          </span>
+        </div>
+
+        {/* Workshop/Track Title Overlay */}
+        <div 
+          className="absolute w-full text-center flex items-center justify-center px-12 sm:px-20 pointer-events-none"
+          style={{ top: "62%", transform: "translateY(-50%)" }}
+        >
+          <span 
+            className="font-extrabold text-[#000000] leading-normal"
+            style={{
+              fontSize: "min(2.1vw, 19px)",
+              fontFamily: "'Lora', 'Georgia', 'Times New Roman', serif"
+            }}
+          >
+            " {displayWorkshop} "
+          </span>
+        </div>
+
+        {/* Date Overlay */}
+        <div 
+          className="absolute w-full text-center flex items-center justify-center pointer-events-none"
+          style={{ top: "76.5%", transform: "translateY(-50%)" }}
+        >
+          <span 
+            className="font-bold text-[#1a1816] tracking-wide"
+            style={{
+              fontSize: "min(1.8vw, 16px)",
+              fontFamily: "'Inter', 'Montserrat', sans-serif"
+            }}
+          >
+            {formattedDate}
+          </span>
+        </div>
+
+        {/* Subtle Cryptographic E-Key Footer */}
+        <div className="absolute bottom-[2.5%] left-0 right-0 text-center font-mono text-[6px] sm:text-[7.5px] text-[#857b6e]/80 select-all no-print pointer-events-auto">
+          <span className="font-bold tracking-tight">
+            HASH: {signatureHash || displayEkey} • VERIFICATION CODE: {verificationCode || "MH-VFY-SECURE-88192"}
+          </span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
