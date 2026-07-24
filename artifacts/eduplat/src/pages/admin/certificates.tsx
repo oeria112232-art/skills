@@ -70,14 +70,17 @@ export default function AdminCertificatesPage() {
     nameLeft: 50,
     nameWidth: 60,
     nameHeight: 6,
+    nameFontSize: 28,
     titleTop: 62,
     titleLeft: 50,
     titleWidth: 70,
     titleHeight: 6,
+    titleFontSize: 19,
     dateTop: 76.5,
     dateLeft: 50,
     dateWidth: 40,
     dateHeight: 5,
+    dateFontSize: 16,
     color: "#FAF7F2"
   });
 
@@ -87,14 +90,17 @@ export default function AdminCertificatesPage() {
       nameLeft: 50,
       nameWidth: 60,
       nameHeight: 6,
+      nameFontSize: 28,
       titleTop: 62,
       titleLeft: 50,
       titleWidth: 70,
       titleHeight: 6,
+      titleFontSize: 19,
       dateTop: 76.5,
       dateLeft: 50,
       dateWidth: 40,
       dateHeight: 5,
+      dateFontSize: 16,
       color: "#FAF7F2"
     };
 
@@ -113,14 +119,17 @@ export default function AdminCertificatesPage() {
         nameLeft: name[1] ?? 50,
         nameWidth: name[2],
         nameHeight: name[3],
+        nameFontSize: name[4] || 28,
         titleTop: title[0],
         titleLeft: title[1] ?? 50,
         titleWidth: title[2],
         titleHeight: title[3],
+        titleFontSize: title[4] || 19,
         dateTop: date[0],
         dateLeft: date[1] ?? 50,
         dateWidth: date[2],
         dateHeight: date[3],
+        dateFontSize: date[4] || 16,
         color
       };
     } catch {
@@ -142,13 +151,19 @@ export default function AdminCertificatesPage() {
   // Sync form state with selected entity
   useEffect(() => {
     if (selectedEntity) {
+      const defaultType = selectedEntity.certTemplateType || "default";
+      const isCustomImage = !!selectedEntity.certTemplateUrl && defaultType !== "default";
+      const initialType = (isCustomImage && !defaultType.startsWith("overlay"))
+        ? "overlay"
+        : defaultType;
+
       setCertForm({
         certSignTitle: selectedEntity.certSignTitle || "رئيس الهيئة / Board Chairman",
         certSignName: selectedEntity.certSignName || "أحمد الرشيدي / Ahmed Al-Rashidi",
         certEkey: selectedEntity.certEkey || "MHARAT-SECURE-ESIGN-88192-VERIFIED",
-        certTemplateType: selectedEntity.certTemplateType || "default"
+        certTemplateType: initialType
       });
-      setOverlayCoords(parseCoords(selectedEntity.certTemplateType));
+      setOverlayCoords(parseCoords(selectedEntity.certTemplateType || initialType));
     }
   }, [selectedEntityId, targetType, workshopsList, tracksList]);
 
@@ -167,7 +182,7 @@ export default function AdminCertificatesPage() {
     try {
       const isOverlay = certForm.certTemplateType?.startsWith("overlay");
       const serializedType = isOverlay
-        ? `overlay|${overlayCoords.nameTop},${overlayCoords.nameLeft},${overlayCoords.nameWidth},${overlayCoords.nameHeight}|${overlayCoords.titleTop},${overlayCoords.titleLeft},${overlayCoords.titleWidth},${overlayCoords.titleHeight}|${overlayCoords.dateTop},${overlayCoords.dateLeft},${overlayCoords.dateWidth},${overlayCoords.dateHeight}|${overlayCoords.color}`
+        ? `overlay|${overlayCoords.nameTop},${overlayCoords.nameLeft},${overlayCoords.nameWidth},${overlayCoords.nameHeight},${overlayCoords.nameFontSize}|${overlayCoords.titleTop},${overlayCoords.titleLeft},${overlayCoords.titleWidth},${overlayCoords.titleHeight},${overlayCoords.titleFontSize}|${overlayCoords.dateTop},${overlayCoords.dateLeft},${overlayCoords.dateWidth},${overlayCoords.dateHeight},${overlayCoords.dateFontSize}|${overlayCoords.color}`
         : (selectedEntity.certTemplateType?.replace("overlay_", "") || "png");
 
       if (targetType === "workshop") {
@@ -402,7 +417,7 @@ export default function AdminCertificatesPage() {
           certTemplateUrl={selectedEntity.certTemplateUrl}
           certTemplateType={
             certForm.certTemplateType?.startsWith("overlay")
-              ? `overlay|${overlayCoords.nameTop},${overlayCoords.nameLeft},${overlayCoords.nameWidth},${overlayCoords.nameHeight}|${overlayCoords.titleTop},${overlayCoords.titleLeft},${overlayCoords.titleWidth},${overlayCoords.titleHeight}|${overlayCoords.dateTop},${overlayCoords.dateLeft},${overlayCoords.dateWidth},${overlayCoords.dateHeight}|${overlayCoords.color}`
+              ? `overlay|${overlayCoords.nameTop},${overlayCoords.nameLeft},${overlayCoords.nameWidth},${overlayCoords.nameHeight},${overlayCoords.nameFontSize}|${overlayCoords.titleTop},${overlayCoords.titleLeft},${overlayCoords.titleWidth},${overlayCoords.titleHeight},${overlayCoords.titleFontSize}|${overlayCoords.dateTop},${overlayCoords.dateLeft},${overlayCoords.dateWidth},${overlayCoords.dateHeight},${overlayCoords.dateFontSize}|${overlayCoords.color}`
               : certForm.certTemplateType
           }
           updatedAt={(selectedEntity as any)?.updatedAt}
@@ -615,7 +630,7 @@ export default function AdminCertificatesPage() {
 
                             {/* Name tuning */}
                             <div className="space-y-1 pt-1 border-t border-border/30">
-                              <Label className="text-[9.5px] font-bold text-foreground block">{isAr ? "تغطية وموقع الاسم" : "Name Coordinates"}</Label>
+                              <Label className="text-[9.5px] font-bold text-foreground block">{isAr ? "تغطية وموقع الاسم (صندوق الاسم)" : "Name Cover Box & Coordinates"}</Label>
                               <div className="grid grid-cols-2 gap-2 text-[9px] font-semibold text-muted-foreground">
                                 <div>
                                   <span>{isAr ? "الارتفاع (Top)" : "Top"}: {overlayCoords.nameTop}%</span>
@@ -633,12 +648,16 @@ export default function AdminCertificatesPage() {
                                   <span>{isAr ? "الارتفاع (Height)" : "Height"}: {overlayCoords.nameHeight}%</span>
                                   <input type="range" min="0" max="25" step="0.5" value={overlayCoords.nameHeight} onChange={e => setOverlayCoords(c => ({ ...c, nameHeight: Number(e.target.value) }))} className="w-full h-1" />
                                 </div>
+                                <div className="col-span-2">
+                                  <span>{isAr ? "حجم الخط (Size)" : "Font Size"}: {overlayCoords.nameFontSize}px</span>
+                                  <input type="range" min="8" max="72" step="1" value={overlayCoords.nameFontSize} onChange={e => setOverlayCoords(c => ({ ...c, nameFontSize: Number(e.target.value) }))} className="w-full h-1" />
+                                </div>
                               </div>
                             </div>
 
                             {/* Title tuning */}
                             <div className="space-y-1 pt-1 border-t border-border/30">
-                              <Label className="text-[9.5px] font-bold text-foreground block">{isAr ? "تغطية وموقع العنوان" : "Title Coordinates"}</Label>
+                              <Label className="text-[9.5px] font-bold text-foreground block">{isAr ? "تغطية وموقع الدورة (صندوق الدورة)" : "Title Cover Box & Coordinates"}</Label>
                               <div className="grid grid-cols-2 gap-2 text-[9px] font-semibold text-muted-foreground">
                                 <div>
                                   <span>{isAr ? "الارتفاع (Top)" : "Top"}: {overlayCoords.titleTop}%</span>
@@ -656,12 +675,16 @@ export default function AdminCertificatesPage() {
                                   <span>{isAr ? "الارتفاع (Height)" : "Height"}: {overlayCoords.titleHeight}%</span>
                                   <input type="range" min="0" max="25" step="0.5" value={overlayCoords.titleHeight} onChange={e => setOverlayCoords(c => ({ ...c, titleHeight: Number(e.target.value) }))} className="w-full h-1" />
                                 </div>
+                                <div className="col-span-2">
+                                  <span>{isAr ? "حجم الخط (Size)" : "Font Size"}: {overlayCoords.titleFontSize}px</span>
+                                  <input type="range" min="8" max="72" step="1" value={overlayCoords.titleFontSize} onChange={e => setOverlayCoords(c => ({ ...c, titleFontSize: Number(e.target.value) }))} className="w-full h-1" />
+                                </div>
                               </div>
                             </div>
 
                             {/* Date tuning */}
                             <div className="space-y-1 pt-1 border-t border-border/30">
-                              <Label className="text-[9.5px] font-bold text-foreground block">{isAr ? "تغطية وموقع التاريخ" : "Date Coordinates"}</Label>
+                              <Label className="text-[9.5px] font-bold text-foreground block">{isAr ? "تغطية وموقع التاريخ (صندوق التاريخ)" : "Date Cover Box & Coordinates"}</Label>
                               <div className="grid grid-cols-2 gap-2 text-[9px] font-semibold text-muted-foreground">
                                 <div>
                                   <span>{isAr ? "الارتفاع (Top)" : "Top"}: {overlayCoords.dateTop}%</span>
@@ -678,6 +701,10 @@ export default function AdminCertificatesPage() {
                                 <div>
                                   <span>{isAr ? "الارتفاع (Height)" : "Height"}: {overlayCoords.dateHeight}%</span>
                                   <input type="range" min="0" max="25" step="0.5" value={overlayCoords.dateHeight} onChange={e => setOverlayCoords(c => ({ ...c, dateHeight: Number(e.target.value) }))} className="w-full h-1" />
+                                </div>
+                                <div className="col-span-2">
+                                  <span>{isAr ? "حجم الخط (Size)" : "Font Size"}: {overlayCoords.dateFontSize}px</span>
+                                  <input type="range" min="8" max="72" step="1" value={overlayCoords.dateFontSize} onChange={e => setOverlayCoords(c => ({ ...c, dateFontSize: Number(e.target.value) }))} className="w-full h-1" />
                                 </div>
                               </div>
                             </div>

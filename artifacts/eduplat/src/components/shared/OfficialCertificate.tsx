@@ -2,9 +2,9 @@ import React from "react";
 
 export const parseCertOverlaySettings = (typeStr: string | null | undefined) => {
   const defaults = {
-    name: { top: 44.5, left: 50, width: 60, height: 6 },
-    title: { top: 62, left: 50, width: 70, height: 6 },
-    date: { top: 76.5, left: 50, width: 40, height: 5 },
+    name: { top: 44.5, left: 50, width: 60, height: 6, fontSize: 28 },
+    title: { top: 62, left: 50, width: 70, height: 6, fontSize: 19 },
+    date: { top: 76.5, left: 50, width: 40, height: 5, fontSize: 16 },
     color: "#FAF7F2"
   };
 
@@ -24,9 +24,27 @@ export const parseCertOverlaySettings = (typeStr: string | null | undefined) => 
     const color = parts[4] || "#FAF7F2";
 
     return {
-      name: { top: nameCoords[0], left: nameCoords[1] ?? 50, width: nameCoords[2], height: nameCoords[3] },
-      title: { top: titleCoords[0], left: titleCoords[1] ?? 50, width: titleCoords[2], height: titleCoords[3] },
-      date: { top: dateCoords[0], left: dateCoords[1] ?? 50, width: dateCoords[2], height: dateCoords[3] },
+      name: { 
+        top: nameCoords[0], 
+        left: nameCoords[1] ?? 50, 
+        width: nameCoords[2], 
+        height: nameCoords[3],
+        fontSize: nameCoords[4] || 28 
+      },
+      title: { 
+        top: titleCoords[0], 
+        left: titleCoords[1] ?? 50, 
+        width: titleCoords[2], 
+        height: titleCoords[3],
+        fontSize: titleCoords[4] || 19 
+      },
+      date: { 
+        top: dateCoords[0], 
+        left: dateCoords[1] ?? 50, 
+        width: dateCoords[2], 
+        height: dateCoords[3],
+        fontSize: dateCoords[4] || 16 
+      },
       color
     };
   } catch (e) {
@@ -88,7 +106,7 @@ export const OfficialCertificate: React.FC<OfficialCertificateProps> = ({
     isImageUrl(certTemplateUrl)
   );
 
-  const isOverlayOnly = hasCustomImage && (certTemplateType?.startsWith("overlay") || false);
+  const isOverlayOnly = hasCustomImage;
 
   const cacheBuster = updatedAt ? new Date(updatedAt).getTime() : Date.now();
 
@@ -140,7 +158,7 @@ export const OfficialCertificate: React.FC<OfficialCertificateProps> = ({
           <span 
             className="font-extrabold text-[#111111] tracking-wide pointer-events-none"
             style={{
-              fontSize: "min(3.2vw, 28px)",
+              fontSize: `min(3.2vw, ${settings.name.fontSize}px)`,
               fontFamily: "'Lora', 'Georgia', 'Times New Roman', serif"
             }}
           >
@@ -163,7 +181,7 @@ export const OfficialCertificate: React.FC<OfficialCertificateProps> = ({
           <span 
             className="font-extrabold text-[#000000] leading-normal pointer-events-none"
             style={{
-              fontSize: "min(2.1vw, 19px)",
+              fontSize: `min(2.1vw, ${settings.title.fontSize}px)`,
               fontFamily: "'Lora', 'Georgia', 'Times New Roman', serif"
             }}
           >
@@ -186,7 +204,7 @@ export const OfficialCertificate: React.FC<OfficialCertificateProps> = ({
           <span 
             className="font-bold text-[#1a1816] tracking-wide pointer-events-none"
             style={{
-              fontSize: "min(1.8vw, 16px)",
+              fontSize: `min(1.8vw, ${settings.date.fontSize}px)`,
               fontFamily: "'Inter', 'Montserrat', sans-serif"
             }}
           >
