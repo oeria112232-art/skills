@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "Contract Signing"
+description = "A responsive enterprise contract management and e-signature app. Admins create and track digital contracts, while clients review, sign, and receive a verified finalized copy through a focused public contract link."
+version = "1.0.0"
+id = "artifacts/contract-signing"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 23703
+
+[services.development]
+run = "pnpm --filter @workspace/contract-signing run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/contract-signing", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/contract-signing/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "23703"
+BASE_PATH = "/"

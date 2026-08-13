@@ -1,0 +1,1 @@
+- [Generated validator compatibility](generated-validator-compatibility.md) — keep OpenAPI constraints portable because generated Zod helpers follow the installed runtime.

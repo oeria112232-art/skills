@@ -10,6 +10,10 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: contracts
+    description: Contract management and signing
+  - name: dashboard
+    description: Dashboard summaries
 paths:
   /healthz:
     get:
@@ -24,7 +28,130 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /contracts:
+    get:
+      operationId: listContracts
+      tags: [contracts]
+      summary: List contracts
+      responses:
+        "200":
+          description: Contract list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Contract"
+    post:
+      operationId: createContract
+      tags: [contracts]
+      summary: Create a contract
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ContractInput"
+      responses:
+        "201":
+          description: Created contract
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Contract"
+  /contracts/{id}:
+    get:
+      operationId: getContract
+      tags: [contracts]
+      summary: Get a contract
+      parameters:
+        - $ref: "#/components/parameters/ContractId"
+      responses:
+        "200":
+          description: Contract
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Contract"
+        "404":
+          description: Contract not found
+    patch:
+      operationId: updateContract
+      tags: [contracts]
+      summary: Update a contract status
+      parameters:
+        - $ref: "#/components/parameters/ContractId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ContractUpdate"
+      responses:
+        "200":
+          description: Updated contract
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Contract"
+  /contracts/{id}/sign:
+    post:
+      operationId: signContract
+      tags: [contracts]
+      summary: Sign a contract
+      parameters:
+        - $ref: "#/components/parameters/ContractId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SignatureInput"
+      responses:
+        "200":
+          description: Signed contract
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Contract"
+        "400":
+          description: Contract cannot be signed
+        "404":
+          description: Contract not found
+  /contracts/{id}/resend:
+    post:
+      operationId: resendContract
+      tags: [contracts]
+      summary: Resend a contract link
+      parameters:
+        - $ref: "#/components/parameters/ContractId"
+      responses:
+        "200":
+          description: Contract marked as sent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Contract"
+  /dashboard/summary:
+    get:
+      operationId: getDashboardSummary
+      tags: [dashboard]
+      summary: Get dashboard summary
+      responses:
+        "200":
+          description: Dashboard summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
 components:
+  parameters:
+    ContractId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
   schemas:
     HealthStatus:
       type: object
@@ -33,4 +160,61 @@ components:
           type: string
       required:
         - status
+    Contract:
+      type: object
+      required: [id, reference, title, clientName, clientEmail, scope, paymentTerms, expirationDate, status, createdAt, updatedAt, publicUrl]
+      properties:
+        id: { type: string }
+        reference: { type: string }
+        title: { type: string }
+        clientName: { type: string }
+        clientEmail: { type: string }
+        scope: { type: string }
+        paymentTerms: { type: string }
+        expirationDate: { type: string, format: date }
+        status:
+          type: string
+          enum: [draft, sent, viewed, signed, expired]
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        publicUrl: { type: string }
+        signerName: { type: ["string", "null"] }
+        signerTitle: { type: ["string", "null"] }
+        signedAt: { type: ["string", "null"], format: date-time }
+        signerIp: { type: ["string", "null"] }
+        userAgent: { type: ["string", "null"] }
+        verificationHash: { type: ["string", "null"] }
+    ContractInput:
+      type: object
+      required: [title, clientName, clientEmail, scope, paymentTerms, expirationDate]
+      properties:
+        title: { type: string, minLength: 1 }
+        clientName: { type: string, minLength: 1 }
+        clientEmail: { type: string, minLength: 3 }
+        scope: { type: string, minLength: 1 }
+        paymentTerms: { type: string, minLength: 1 }
+        expirationDate: { type: string, format: date }
+    ContractUpdate:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [draft, sent, viewed, signed, expired]
+    SignatureInput:
+      type: object
+      required: [signerName, signerTitle, signatureData, agreedToTerms]
+      properties:
+        signerName: { type: string, minLength: 1 }
+        signerTitle: { type: string, minLength: 1 }
+        signatureData: { type: string, minLength: 1 }
+        agreedToTerms: { type: boolean, const: true }
+    DashboardSummary:
+      type: object
+      required: [total, pending, signed, expiringSoon, totalValue]
+      properties:
+        total: { type: number }
+        pending: { type: number }
+        signed: { type: number }
+        expiringSoon: { type: number }
+        totalValue: { type: number }
 

@@ -1,0 +1,35 @@
+Create a modern, highly professional, responsive web application for a tech company to handle digital contracts and e-signatures. The UI/UX should look clean, trustworthy, and enterprise-grade (similar to DocuSign / PandaDoc).
+
+### Key Features & Application Structure:
+
+1. Dynamic Link & Routing Setup:
+   - Unique Contract URLs for clients (e.g., `/contract/[contract-id]`).
+   - Clean public landing view for the client (No navigation sidebar, focused reading mode).
+
+2. Client Contract View (Public Page):
+   - Header Section: Company Logo, Contract Title, Status Badge (e.g., "Pending Signature", "Signed"), Reference Number, and Issued Date.
+   - Contract Body Section: Styled document view (A4 paper styled card with clean typography, numbered clauses, terms, scope of work, and pricing table).
+   - Interactive Signature Area at the bottom:
+     * Full Name & Official Job Title inputs.
+     * Canvas Pad for drawing a signature (Touch & Mouse support) with 'Clear' and 'Redraw' buttons.
+     * Option to upload a digital stamp or signature image.
+     * Required Checkbox: "I agree to the terms and electronic signature policy".
+   - Primary Action Button: "Sign & Accept Contract" (Disabled until required fields + signature are present).
+
+3. Audit Trail & Verification Footer:
+   - Display dynamic digital sign metadata upon submission: Signer IP Address, Timestamp (UTC), Browser User Agent, and Unique Verification Hash (SHA-256 placeholder).
+
+4. Admin Dashboard (Internal Contract Management):
+   - Contract Creator Tool: Form to input client name, email, project scope, payment terms, and contract expiration date.
+   - Automated Link Generator: Generates a copyable unique link and a "Send directly via Email/WhatsApp" quick action button.
+   - Status Tracker Table: List of contracts showing Status (Draft, Sent, Viewed, Signed), Client Name, Date Created, and Action buttons (View, Download PDF, Resend).
+
+5. Post-Signature & Export Features:
+   - Instant visual update upon signing to a "Success / Signed" state with a green verified checkmark.
+   - Option to download the finalized contract as a PDF document.
+   - Automatic watermarking ("SIGNED & VERIFIED") across the completed contract view.
+
+### Design Guidelines:
+- Styling: Tailwind CSS, modern dark/light mode accents, clean typography, soft shadows, rounded borders.
+- Components: Shadcn UI components (Dialog, Buttons, Cards, Inputs, Canvas, Badges, Tables).
+- Mobile First & Fully Responsive for smooth touch-screen signing on smartphones and tablets.
