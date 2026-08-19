@@ -14,6 +14,8 @@ tags:
     description: Contract management and signing
   - name: dashboard
     description: Dashboard summaries
+  - name: openai
+    description: AI contract formatting
 paths:
   /healthz:
     get:
@@ -144,6 +146,28 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/DashboardSummary"
+  /openai/format-contract:
+    post:
+      operationId: formatContractWithAi
+      tags: [openai]
+      summary: Arrange raw contract text with AI
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FormatContractInput"
+      responses:
+        "200":
+          description: Structured contract draft
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FormattedContract"
+        "400":
+          description: Invalid contract text
+        "401":
+          description: Unauthorized
 components:
   parameters:
     ContractId:
@@ -217,4 +241,20 @@ components:
         signed: { type: number }
         expiringSoon: { type: number }
         totalValue: { type: number }
+    FormatContractInput:
+      type: object
+      required: [rawText]
+      properties:
+        rawText: { type: string, minLength: 20 }
+    FormattedContract:
+      type: object
+      required: [title, clientName, clientEmail, scope, paymentTerms, expirationDate, formattedText]
+      properties:
+        title: { type: string }
+        clientName: { type: string }
+        clientEmail: { type: string }
+        scope: { type: string }
+        paymentTerms: { type: string }
+        expirationDate: { type: string }
+        formattedText: { type: string }
 

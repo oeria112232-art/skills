@@ -1,0 +1,61 @@
+{
+  "users": [
+    {
+      "id": 1,
+      "name": "علي / Ali",
+      "email": "aliop@app.com",
+      "passwordHash": "$2b$10$dwG6KwQPIPLmpeeHTnAhSOiNzdrPK/Lvy9PJaob93yrBJpeu93sf2",
+      "role": "admin",
+      "points": 5000,
+      "streak": 30,
+      "createdAt": "2026-07-15T17:27:05.168Z"
+    },
+    {
+      "id": 2,
+      "name": "أحمد الرشيدي / Ahmed Al-Rashidi",
+      "email": "admin@eduplatform.com",
+      "passwordHash": "$2b$10$RqIcQaYiAi0qLtG/nzFPXecq3/J4Upr6GXZwaMQ2xPTkmfd67cAF.",
+      "role": "admin",
+      "points": 2450,
+      "streak": 14,
+      "createdAt": "2026-07-15T17:27:05.169Z"
+    },
+    {
+      "id": 3,
+      "name": "طالب تجريبي / علي حسين",
+      "email": "student@eduplatform.com",
+      "passwordHash": "$2b$10$2pLXC/Iy0v.M7gLSXQHGp./JvPEKUrrr1yVzHlK8my07seE9e7OMK",
+      "role": "student",
+      "points": 150,
+      "streak": 4,
+      "createdAt": "2026-07-15T17:27:05.169Z"
+    },
+    {
+      "name": "المدير الرئيسي الأعلى / Super Admin Master Root Authority",
+      "email": "super.admin.master.root.security@mharat.platform.com",
+      "passwordHash": "$2b$10$kvckZZ.JRMzKWAhybroCf.Axh8DT31DoCRqe.J5uZxfZDzRps0D7y",
+      "role": "super_admin",
+      "points": 999999,
+      "streak": 100,
+      "allowedPages": [
+        "*"
+      ],
+      "id": 4,
+      "createdAt": "2026-07-27T22:47:30.947Z"
+    }
+  ],
+  "platform_settings": [
+    {
+      "id": 1,
+      "key": "point_price_cents",
+      "value": "100",
+      "createdAt": "2026-07-15T17:27:05.169Z"
+    },
+    {
+      "id": 2,
+      "key": "r2_bucket_name",
+      "value": "mharat-bucket",
+      "createdAt": "2026-07-15T17:27:05.169Z"
+    }
+  ]
+}

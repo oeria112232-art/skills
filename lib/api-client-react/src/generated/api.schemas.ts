@@ -94,3 +94,18 @@ export interface DashboardSummary {
   totalValue: number;
 }
 
+export interface FormatContractInput {
+  /** @minLength 20 */
+  rawText: string;
+}
+
+export interface FormattedContract {
+  title: string;
+  clientName: string;
+  clientEmail: string;
+  scope: string;
+  paymentTerms: string;
+  expirationDate: string;
+  formattedText: string;
+}
+

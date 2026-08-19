@@ -24,6 +24,8 @@ import type {
   ContractInput,
   ContractUpdate,
   DashboardSummary,
+  FormatContractInput,
+  FormattedContract,
   HealthStatus,
   SignatureInput
 } from './api.schemas';
@@ -649,4 +651,75 @@ export function useGetDashboardSummary<TData = Awaited<ReturnType<typeof getDash
 
 
 
+
+export const getFormatContractWithAiUrl = () => {
+
+
+
+
+  return `/api/openai/format-contract`
+}
+
+/**
+ * @summary Arrange raw contract text with AI
+ */
+export const formatContractWithAi = async (formatContractInput: FormatContractInput, options?: Parameters<typeof customFetch>[1]): Promise<FormattedContract> => {
+
+  return customFetch<FormattedContract>(getFormatContractWithAiUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(formatContractInput)
+  }
+);}
+
+
+
+
+
+export const getFormatContractWithAiMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof formatContractWithAi>>, TError,{data: BodyType<FormatContractInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof formatContractWithAi>>, TError,{data: BodyType<FormatContractInput>}, TContext> => {
+
+const mutationKey = ['formatContractWithAi'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof formatContractWithAi>>, {data: BodyType<FormatContractInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  formatContractWithAi(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type FormatContractWithAiMutationResult = NonNullable<Awaited<ReturnType<typeof formatContractWithAi>>>
+    export type FormatContractWithAiMutationBody = BodyType<FormatContractInput>
+    export type FormatContractWithAiMutationError = ErrorType<void>
+
+    /**
+ * @summary Arrange raw contract text with AI
+ */
+export const useFormatContractWithAi = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof formatContractWithAi>>, TError,{data: BodyType<FormatContractInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof formatContractWithAi>>,
+        TError,
+        {data: BodyType<FormatContractInput>},
+        TContext
+      > => {
+      return useMutation(getFormatContractWithAiMutationOptions(options));
+    }
 

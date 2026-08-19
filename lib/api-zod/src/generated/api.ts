@@ -229,3 +229,25 @@ export const GetDashboardSummaryResponse = zod.object({
 })
 
 
+/**
+ * @summary Arrange raw contract text with AI
+ */
+export const formatContractWithAiBodyRawTextMin = 20;
+
+
+
+export const FormatContractWithAiBody = zod.object({
+  "rawText": zod.string().min(formatContractWithAiBodyRawTextMin)
+})
+
+export const FormatContractWithAiResponse = zod.object({
+  "title": zod.string(),
+  "clientName": zod.string(),
+  "clientEmail": zod.string(),
+  "scope": zod.string(),
+  "paymentTerms": zod.string(),
+  "expirationDate": zod.string(),
+  "formattedText": zod.string()
+})
+
+

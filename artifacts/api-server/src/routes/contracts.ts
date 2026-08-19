@@ -10,6 +10,7 @@ import {
 } from "@workspace/api-zod";
 import { contractsTable, db } from "@workspace/db";
 import { desc, eq, sql } from "drizzle-orm";
+import { requireAuth } from "../middlewares/requireAuth";
 
 const router: IRouter = Router();
 const statuses = ["draft", "sent", "viewed", "signed", "expired"] as const;
@@ -27,7 +28,7 @@ function getPublicUrl(id: string) {
   return `/contract/${id}`;
 }
 
-router.get("/contracts", async (req, res) => {
+router.get("/contracts", requireAuth, async (req, res) => {
   const contracts = await db
     .select()
     .from(contractsTable)
@@ -36,7 +37,7 @@ router.get("/contracts", async (req, res) => {
   res.json(contracts.map(toContractResponse));
 });
 
-router.post("/contracts", async (req, res) => {
+router.post("/contracts", requireAuth, async (req, res) => {
   const input = CreateContractBody.parse(req.body);
   const id = randomUUID();
   const now = new Date();
@@ -85,7 +86,7 @@ router.get("/contracts/:id", async (req, res) => {
   res.json(toContractResponse(contract));
 });
 
-router.patch("/contracts/:id", async (req, res) => {
+router.patch("/contracts/:id", requireAuth, async (req, res) => {
   const { id } = UpdateContractParams.parse(req.params);
   const input = UpdateContractBody.parse(req.body);
   if (input.status && !statuses.includes(input.status)) {
@@ -142,7 +143,7 @@ router.post("/contracts/:id/sign", async (req, res) => {
   res.json(toContractResponse(signed));
 });
 
-router.post("/contracts/:id/resend", async (req, res) => {
+router.post("/contracts/:id/resend", requireAuth, async (req, res) => {
   const { id } = GetContractParams.parse(req.params);
   const [updated] = await db
     .update(contractsTable)
@@ -157,7 +158,7 @@ router.post("/contracts/:id/resend", async (req, res) => {
   res.json(toContractResponse(updated));
 });
 
-router.get("/dashboard/summary", async (_req, res) => {
+router.get("/dashboard/summary", requireAuth, async (_req, res) => {
   const [summary] = await db
     .select({
       total: sql<number>`count(*)`,

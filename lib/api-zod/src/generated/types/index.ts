@@ -12,5 +12,7 @@ export * from './contractStatus';
 export * from './contractUpdate';
 export * from './contractUpdateStatus';
 export * from './dashboardSummary';
+export * from './formatContractInput';
+export * from './formattedContract';
 export * from './healthStatus';
 export * from './signatureInput';
