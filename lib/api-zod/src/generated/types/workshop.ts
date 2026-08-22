@@ -34,4 +34,5 @@ export interface Workshop {
   /** @nullable */
   certTemplateUrl?: string | null;
   certTemplateType?: string;
+  price?: number | null;
 }

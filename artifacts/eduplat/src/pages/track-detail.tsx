@@ -122,8 +122,8 @@ export default function TrackDetailPage() {
   const activeIdx = activeStudyMod ? sortedModules.findIndex((m: any) => m.id === activeStudyMod.id) : -1;
   const nextModule = activeIdx >= 0 && activeIdx < sortedModules.length - 1 ? sortedModules[activeIdx + 1] : null;
 
-  const openModule = useCallback((mod: TrackModule, idx: number) => {
-    if (!isModuleAccessible(idx)) {
+  const openModule = useCallback((mod: TrackModule, idx: number, forceAccessible = false) => {
+    if (!forceAccessible && !isModuleAccessible(idx)) {
       if (!isEnrolled) {
         toast({ title: isAr ? "تنبيه" : "Notice", description: isAr ? "الرجاء التسجيل في المسار أولاً" : "Please enroll in the track first.", variant: "destructive" });
       } else {
@@ -204,7 +204,7 @@ export default function TrackDetailPage() {
     if (!completedSet.has(activeStudyMod.id)) await toggleModule(activeStudyMod.id);
     if (nextModule) {
       const nIdx = sortedModules.findIndex(m => m.id === nextModule.id);
-      openModule(nextModule, nIdx);
+      openModule(nextModule, nIdx, true);
     } else {
       setActiveStudyMod(null);
       toast({ title: isAr ? "اكتمل المسار!" : "Track completed!", description: isAr ? "تهانينا، لقد أكملت جميع الوحدات" : "Congratulations, you finished all modules!" });
@@ -242,7 +242,7 @@ export default function TrackDetailPage() {
     if (!completedSet.has(activeStudyMod.id)) await toggleModule(activeStudyMod.id);
     if (nextModule) {
       const nIdx = sortedModules.findIndex(m => m.id === nextModule.id);
-      openModule(nextModule, nIdx);
+      openModule(nextModule, nIdx, true);
     } else {
       setActiveStudyMod(null);
       toast({ title: isAr ? "اكتمل المسار!" : "Track completed!", description: isAr ? "تهانينا، لقد أكملت جميع الوحدات" : "Congratulations, you finished all modules!" });

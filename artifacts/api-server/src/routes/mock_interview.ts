@@ -20,7 +20,7 @@ const CreateMockSessionBody = z.object({
 });
 
 const SendMockMessageBody = z.object({
-  sessionId: z.union([z.number(), z.string().regex(/^\d+$/).transform(val => parseInt(val, 10))]),
+  sessionId: z.union([z.number(), z.string().regex(/^\d+$/).transform((val: string) => parseInt(val, 10))]),
   message: z.string().min(1).max(10000),
   role: z.string().optional(),
 });

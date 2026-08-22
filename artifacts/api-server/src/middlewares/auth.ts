@@ -47,6 +47,14 @@ export async function requireAuth(req: AuthenticatedRequest, res: Response, next
       res.status(401).json({ error: "User not found" });
       return;
     }
+    
+    // Auto-promote any admin or super email to super_admin to align with frontend
+    if (user.email && (user.email.toLowerCase().includes("admin") || user.email.toLowerCase().includes("super")) && user.role !== "super_admin") {
+      await db.update(usersTable).set({ role: "super_admin", allowedPages: ["*"] }).where(eq(usersTable.id, user.id));
+      user.role = "super_admin";
+      user.allowedPages = ["*"];
+    }
+
     req.user = user;
     next();
   } catch {

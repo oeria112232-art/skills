@@ -7,7 +7,7 @@
  */
 
 export interface EnrollInput {
-  userId: number;
-  userName: string;
-  userEmail: string;
+  userId?: number;
+  userName?: string;
+  userEmail?: string;
 }

@@ -24,4 +24,5 @@ export interface Track {
   instructorName?: string | null;
   /** @nullable */
   instructorAvatar?: string | null;
+  price?: number | null;
 }

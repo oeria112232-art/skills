@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { useAuth } from "@/components/layout/AuthContext";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { useLanguage } from "@/components/layout/LanguageContext";
@@ -255,22 +256,21 @@ export default function CVBuilderPage() {
   const updateUser = useUpdateUser();
 
   const [cv, setCV] = useState<CVData>(() => {
+    let result = defaultCV;
     // 1. First priority: Check for saved draft in localStorage
     const savedDraft = localStorage.getItem(LOCAL_DRAFT_KEY);
     if (savedDraft) {
       try {
         const parsed = JSON.parse(savedDraft);
-        return { ...defaultCV, ...parsed };
+        result = { ...defaultCV, ...parsed };
       } catch (e) {
         console.error("Failed to parse local CV draft:", e);
       }
-    }
-
-    // 2. Second priority: Load from authenticated user profile
-    if (user) {
+    } else if (user) {
+      // 2. Second priority: Load from authenticated user profile
       const userCv = (user as any).cv || {};
       const contactInfo = (user as any).contactInfo || {};
-      return {
+      result = {
         ...defaultCV,
         fullName: user.name || "",
         avatarUrl: user.avatarUrl || "",
@@ -280,7 +280,12 @@ export default function CVBuilderPage() {
         ...userCv
       };
     }
-    return defaultCV;
+    
+    // Safety check: guarantee arrays are initialized to prevent rendering crashes
+    result.skills = Array.isArray(result.skills) ? result.skills : [];
+    result.experience = Array.isArray(result.experience) ? result.experience : [];
+    result.education = Array.isArray(result.education) ? result.education : [];
+    return result;
   });
 
   const [zoom, setZoom] = useState(0.85);
@@ -295,15 +300,21 @@ export default function CVBuilderPage() {
     if (user && !localStorage.getItem(LOCAL_DRAFT_KEY)) {
       const userCv = (user as any).cv || {};
       const contactInfo = (user as any).contactInfo || {};
-      setCV(prev => ({
-        ...prev,
-        fullName: prev.fullName || user.name || "",
-        avatarUrl: prev.avatarUrl || user.avatarUrl || "",
-        phone: prev.phone || contactInfo.phone || "",
-        email: prev.email || user.email || "",
-        address: prev.address || contactInfo.address || "",
-        ...userCv
-      }));
+      setCV(prev => {
+        const next = {
+          ...prev,
+          fullName: prev.fullName || user.name || "",
+          avatarUrl: prev.avatarUrl || user.avatarUrl || "",
+          phone: prev.phone || contactInfo.phone || "",
+          email: prev.email || user.email || "",
+          address: prev.address || contactInfo.address || "",
+          ...userCv
+        };
+        next.skills = Array.isArray(next.skills) ? next.skills : [];
+        next.experience = Array.isArray(next.experience) ? next.experience : [];
+        next.education = Array.isArray(next.education) ? next.education : [];
+        return next;
+      });
     }
   }, [user]);
 
@@ -365,7 +376,31 @@ export default function CVBuilderPage() {
   };
 
   const handleDownloadPDF = () => {
-    window.print();
+    const runHtml2pdf = () => {
+      const element = document.getElementById("resume-print-sheet") || document.getElementById("resume-preview-sheet");
+      if (!element) return;
+      
+      const opt = {
+        margin:       0,
+        filename:     `${cv.fullName || "CV"}.pdf`,
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2, useCORS: true, letterRendering: true },
+        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      };
+      
+      (window as any).html2pdf().from(element).set(opt).save();
+    };
+
+    if ((window as any).html2pdf) {
+      runHtml2pdf();
+    } else {
+      const script = document.createElement("script");
+      script.src = "https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js";
+      script.onload = () => {
+        runHtml2pdf();
+      };
+      document.body.appendChild(script);
+    }
   };
 
   const handleManualSave = () => {
@@ -533,7 +568,7 @@ export default function CVBuilderPage() {
     >
       {/* TEMPLATE 1: CREATIVE (إبداعي عصري) */}
       {cv.template === "creative" && (
-        <div className="h-full flex flex-col justify-between p-2">
+        <div className="h-full flex flex-col justify-start text-start p-2">
           <div className="grid grid-cols-12 gap-6 h-full items-stretch">
             <div className="col-span-8 space-y-6 text-slate-700">
               {cv.summary && (
@@ -585,7 +620,7 @@ export default function CVBuilderPage() {
               </div>
             </div>
 
-            <div className="col-span-4 rounded-2xl p-5 text-white flex flex-col justify-between items-center text-center space-y-6 shadow-md" style={{ backgroundColor: "#1E2229" }}>
+            <div className="col-span-4 rounded-2xl p-5 text-white flex flex-col justify-start items-center text-center space-y-6 shadow-md" style={{ backgroundColor: "#1E2229" }}>
               <div className="space-y-4 w-full flex flex-col items-center">
                 {cv.avatarUrl ? (
                   <img src={cv.avatarUrl} alt="Profile" className="w-24 h-24 rounded-2xl object-cover border-2 shadow-md" style={{ borderColor: colorHex }} />
@@ -624,7 +659,7 @@ export default function CVBuilderPage() {
 
       {/* TEMPLATE 2: EXECUTIVE (تنفيذي فاخر) */}
       {cv.template === "executive" && (
-        <div className="h-full flex flex-col justify-between space-y-6 font-serif">
+        <div className="h-full flex flex-col justify-start space-y-5 font-serif text-start">
           <div className="text-center space-y-2 border-b-4 border-double pb-4" style={{ borderColor: colorHex }}>
             <h1 className={`font-black text-slate-900 tracking-wide uppercase ${selectedFontSize.h1}`}>{cv.fullName}</h1>
             <p className="text-xs font-bold uppercase tracking-widest text-slate-600 font-sans">{cv.targetTitle}</p>
@@ -695,9 +730,9 @@ export default function CVBuilderPage() {
 
       {/* TEMPLATE 3: TECH & ENGINEERING (تقني حداثي) */}
       {cv.template === "tech" && (
-        <div className="h-full flex flex-col justify-between p-1">
+        <div className="h-full flex flex-col justify-start text-start p-1">
           <div className="grid grid-cols-12 gap-6 h-full items-stretch">
-            <div className="col-span-4 bg-slate-900 rounded-2xl p-5 text-white flex flex-col justify-between items-center text-center space-y-6 shadow-md">
+            <div className="col-span-4 bg-slate-900 rounded-2xl p-5 text-white flex flex-col justify-start items-center text-center space-y-6 shadow-sm">
               <div className="space-y-4 w-full flex flex-col items-center">
                 {cv.avatarUrl ? (
                   <img src={cv.avatarUrl} alt="Avatar" className="w-20 h-20 rounded-full object-cover border-2 border-emerald-400 shadow-md" />
@@ -770,7 +805,7 @@ export default function CVBuilderPage() {
 
       {/* TEMPLATE 4: COLORED HEADER BANNER (ترويسة ملونة) */}
       {cv.template === "colored_header" && (
-        <div className="h-full flex flex-col justify-between">
+        <div className="h-full flex flex-col justify-start text-start">
           <div className="-mx-8 -mt-8 p-8 text-white flex flex-col items-center text-center space-y-3 shadow-md" style={{ backgroundColor: colorHex }}>
             {cv.avatarUrl && (
               <img src={cv.avatarUrl} alt="Avatar" className="w-20 h-20 rounded-full object-cover border-2 border-white/80 shadow-lg" />
@@ -853,7 +888,7 @@ export default function CVBuilderPage() {
 
       {/* TEMPLATE 5: BOXES (صناديق كانفا) */}
       {cv.template === "boxes" && (
-        <div className="h-full flex flex-col justify-between space-y-6">
+        <div className="h-full flex flex-col justify-start text-start space-y-6">
           <div className="p-6 bg-slate-900 text-white rounded-3xl flex justify-between items-center shadow-md">
             <div>
               <h1 className={`font-black tracking-tight ${selectedFontSize.h1}`}>{cv.fullName}</h1>
@@ -922,7 +957,7 @@ export default function CVBuilderPage() {
 
       {/* TEMPLATE 6, 7, 8: MODERN GRID / COMPACT / CLASSIC */}
       {cv.template !== "creative" && cv.template !== "colored_header" && cv.template !== "boxes" && cv.template !== "executive" && cv.template !== "tech" && (
-        <div className="h-full flex flex-col justify-between space-y-6">
+        <div className="h-full flex flex-col justify-start text-start space-y-6">
           <div className={`space-y-3 ${cv.template === "classic" || cv.template === "compact" ? "text-center" : ""}`}>
             <div className="flex flex-col md:flex-row md:justify-between items-center gap-4 border-b-2 pb-4" style={{ borderColor: `${colorHex}40` }}>
               <div className="space-y-1">
@@ -1077,9 +1112,12 @@ export default function CVBuilderPage() {
         `}} />
         
         {/* ISOLATED PRINT PORTAL NODE */}
-        <div id="cv-print-portal" className="hidden print:block">
-          {renderResumeSheet(true)}
-        </div>
+        {typeof document !== "undefined" && createPortal(
+          <div id="cv-print-portal" className="hidden print:block">
+            {renderResumeSheet(true)}
+          </div>,
+          document.body
+        )}
 
         {/* Top Sticky Hub Header Bar */}
         <div className="bg-card border-b sticky top-0 z-40 px-6 py-4 shadow-sm backdrop-blur-md bg-card/90">

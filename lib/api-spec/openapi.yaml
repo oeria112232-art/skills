@@ -1,28 +1,37 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Educational & Career Development Platform API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
-    description: Health operations
+  - name: auth
+  - name: jobs
+  - name: applications
+  - name: workshops
+  - name: exams
+  - name: certificates
+  - name: tracks
+  - name: users
+  - name: leaderboard
+  - name: stats
+  - name: mockInterview
   - name: contracts
     description: Contract management and signing
   - name: dashboard
     description: Dashboard summaries
   - name: openai
     description: AI contract formatting
+
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -30,6 +39,1132 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  # ── Auth ──────────────────────────────────────────────────────────────
+  /auth/register:
+    post:
+      operationId: register
+      tags: [auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterInput"
+      responses:
+        "201":
+          description: Registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginInput"
+      responses:
+        "200":
+          description: Logged in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+
+  /auth/me:
+    get:
+      operationId: getMe
+      tags: [auth]
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  # ── Jobs ──────────────────────────────────────────────────────────────
+  /jobs:
+    get:
+      operationId: listJobs
+      tags: [jobs]
+      parameters:
+        - name: type
+          in: query
+          schema:
+            type: string
+        - name: level
+          in: query
+          schema:
+            type: string
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: companyId
+          in: query
+          schema:
+            type: integer
+        - name: remote
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of jobs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Job"
+    post:
+      operationId: createJob
+      tags: [jobs]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JobInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Job"
+
+  /jobs/stats:
+    get:
+      operationId: getJobStats
+      tags: [jobs]
+      responses:
+        "200":
+          description: Job stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JobStats"
+
+  /jobs/{id}:
+    get:
+      operationId: getJob
+      tags: [jobs]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Job detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Job"
+    patch:
+      operationId: updateJob
+      tags: [jobs]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JobUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Job"
+    delete:
+      operationId: deleteJob
+      tags: [jobs]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /jobs/{id}/screening-questions:
+    get:
+      operationId: getJobScreeningQuestions
+      tags: [jobs]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Screening quiz questions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ScreeningQuestion"
+    post:
+      operationId: addJobScreeningQuestion
+      tags: [jobs]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ScreeningQuestionInput"
+      responses:
+        "201":
+          description: Added
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScreeningQuestion"
+
+  # ── Applications ──────────────────────────────────────────────────────
+  /applications:
+    get:
+      operationId: listApplications
+      tags: [applications]
+      parameters:
+        - name: jobId
+          in: query
+          schema:
+            type: integer
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: userId
+          in: query
+          schema:
+            type: integer
+        - name: companyId
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of applications
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Application"
+    post:
+      operationId: createApplication
+      tags: [applications]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApplicationInput"
+      responses:
+        "201":
+          description: Applied
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Application"
+
+  /applications/{id}:
+    get:
+      operationId: getApplication
+      tags: [applications]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Application detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Application"
+    patch:
+      operationId: updateApplicationStatus
+      tags: [applications]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApplicationStatusUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Application"
+
+  /applications/{id}/screening:
+    post:
+      operationId: submitScreening
+      tags: [applications]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ScreeningSubmission"
+      responses:
+        "200":
+          description: Screening result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScreeningResult"
+
+  # ── Workshops ─────────────────────────────────────────────────────────
+  /workshops:
+    get:
+      operationId: listWorkshops
+      tags: [workshops]
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of workshops
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Workshop"
+    post:
+      operationId: createWorkshop
+      tags: [workshops]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WorkshopInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Workshop"
+
+  /workshops/{id}:
+    get:
+      operationId: getWorkshop
+      tags: [workshops]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Workshop detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Workshop"
+    patch:
+      operationId: updateWorkshop
+      tags: [workshops]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WorkshopUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Workshop"
+    delete:
+      operationId: deleteWorkshop
+      tags: [workshops]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /workshops/{id}/enroll:
+    post:
+      operationId: enrollWorkshop
+      tags: [workshops]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EnrollInput"
+      responses:
+        "201":
+          description: Enrolled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Enrollment"
+
+  /workshops/{id}/enrollments:
+    get:
+      operationId: listWorkshopEnrollments
+      tags: [workshops]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Enrollments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Enrollment"
+
+  # ── Exams ─────────────────────────────────────────────────────────────
+  /workshops/{id}/exam:
+    get:
+      operationId: getWorkshopExam
+      tags: [exams]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Exam questions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Exam"
+    post:
+      operationId: addExamQuestion
+      tags: [exams]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExamQuestionInput"
+      responses:
+        "201":
+          description: Added
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExamQuestion"
+
+  /workshops/{id}/exam/submit:
+    post:
+      operationId: submitExam
+      tags: [exams]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExamSubmission"
+      responses:
+        "200":
+          description: Exam result with optional certificate
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExamResult"
+
+  /workshops/{id}/template:
+    post:
+      operationId: uploadWorkshopTemplate
+      tags: [workshops]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WorkshopTemplateUpload"
+      responses:
+        "200":
+          description: Workshop with updated template details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Workshop"
+
+  /workshops/{id}/image:
+    post:
+      operationId: uploadWorkshopImage
+      tags: [workshops]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WorkshopImageUpload"
+      responses:
+        "200":
+          description: Workshop with updated cover image details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Workshop"
+
+  # ── Certificates ──────────────────────────────────────────────────────
+  /certificates:
+    get:
+      operationId: listCertificates
+      tags: [certificates]
+      responses:
+        "200":
+          description: My certificates
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Certificate"
+
+  /certificates/{id}:
+    get:
+      operationId: getCertificate
+      tags: [certificates]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Certificate detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Certificate"
+
+  /certificates/{id}/claim:
+    post:
+      operationId: claimCertificate
+      tags: [certificates]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Certificate claimed successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Certificate"
+
+  /certificates/verify/{code}:
+    get:
+      operationId: verifyCertificate
+      tags: [certificates]
+      parameters:
+        - name: code
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Verification details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  verified:
+                    type: boolean
+                  error:
+                    type: string
+                    nullable: true
+                  certificate:
+                    $ref: "#/components/schemas/Certificate"
+
+  # ── Learning Tracks ───────────────────────────────────────────────────
+  /tracks:
+    get:
+      operationId: listTracks
+      tags: [tracks]
+      responses:
+        "200":
+          description: List of learning tracks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Track"
+
+  /tracks/{slug}:
+    get:
+      operationId: getTrack
+      tags: [tracks]
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Track with modules
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TrackDetail"
+
+  /tracks/{slug}/progress:
+    get:
+      operationId: getTrackProgress
+      tags: [tracks]
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: User progress on this track
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TrackProgress"
+    post:
+      operationId: updateTrackProgress
+      tags: [tracks]
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProgressUpdate"
+      responses:
+        "200":
+          description: Updated progress
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TrackProgress"
+
+  # ── Users (Admin) ─────────────────────────────────────────────────────
+  /users:
+    get:
+      operationId: listUsers
+      tags: [users]
+      responses:
+        "200":
+          description: All users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+    post:
+      operationId: createUser
+      tags: [users]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterInput"
+      responses:
+        "201":
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  /users/{id}:
+    get:
+      operationId: getUser
+      tags: [users]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: User
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+    patch:
+      operationId: updateUser
+      tags: [users]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserUpdate"
+      responses:
+        "200":
+          description: Updated user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+    delete:
+      operationId: deleteUser
+      tags: [users]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: User deleted
+
+  /users/{id}/avatar:
+    post:
+      operationId: uploadUserAvatar
+      tags: [users]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserAvatarUpload"
+      responses:
+        "200":
+          description: User with updated avatar details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  # ── Leaderboard ───────────────────────────────────────────────────────
+  /leaderboard:
+    get:
+      operationId: getLeaderboard
+      tags: [leaderboard]
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Top users by points
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LeaderboardEntry"
+
+  # ── Platform Stats ────────────────────────────────────────────────────
+  /stats/platform:
+    get:
+      operationId: getPlatformStats
+      tags: [stats]
+      responses:
+        "200":
+          description: Platform-wide stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlatformStats"
+
+  /stats/admin:
+    get:
+      operationId: getAdminStats
+      tags: [stats]
+      responses:
+        "200":
+          description: Admin dashboard stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminStats"
+
+  # ── Mock Interview (AI) ───────────────────────────────────────────────
+  /mock-interview/message:
+    post:
+      operationId: sendMockInterviewMessage
+      tags: [mockInterview]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MockInterviewMessage"
+      responses:
+        "200":
+          description: AI response with feedback
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MockInterviewResponse"
+
+  /mock-interview/sessions:
+    get:
+      operationId: listMockInterviewSessions
+      tags: [mockInterview]
+      responses:
+        "200":
+          description: My interview sessions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MockInterviewSession"
+    post:
+      operationId: createMockInterviewSession
+      tags: [mockInterview]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MockInterviewSessionInput"
+      responses:
+        "201":
+          description: Session created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MockInterviewSession"
+
+  # ── Consultations ───────────────────────────────────────────────
+  /consultations:
+    get:
+      operationId: listConsultations
+      tags: [consultations]
+      responses:
+        "200":
+          description: List of consultations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Consultation"
+    post:
+      operationId: createConsultation
+      tags: [consultations]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateConsultationInput"
+      responses:
+        "201":
+          description: Consultation created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Consultation"
+
+  /consultations/{id}/reply:
+    post:
+      operationId: replyToConsultation
+      tags: [consultations]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReplyConsultationInput"
+      responses:
+        "200":
+          description: Reply added successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Consultation"
+
+  /consultations/{id}/close:
+    post:
+      operationId: closeConsultation
+      tags: [consultations]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Consultation closed successfully
+          content:
+            application/json:
+              schema:
+                 $ref: "#/components/schemas/Consultation"
+
+  # ── Points Wallet & Transfers ─────────────────────────────────────
+  /points/wallet:
+    get:
+      operationId: getWallet
+      tags: [points]
+      summary: Get user wallet details and transactions
+      responses:
+        "200":
+          description: Wallet details fetched successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WalletInfo"
+
+  /points/deposit-request:
+    post:
+      operationId: createDepositRequest
+      tags: [points]
+      summary: Submit a bank transfer deposit proof to admin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateDepositRequestInput"
+      responses:
+        "201":
+          description: Deposit request submitted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DepositRequest"
+
+  /points/transfer/verify:
+    post:
+      operationId: verifyTransfer
+      tags: [points]
+      summary: Verify recipient email and check balance before transfer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VerifyTransferInput"
+      responses:
+        "200":
+          description: Verification response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VerifyTransferOutput"
+
+  /points/transfer/confirm:
+    post:
+      operationId: confirmTransfer
+      tags: [points]
+      summary: Confirm and execute the points transfer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ConfirmTransferInput"
+      responses:
+        "200":
+          description: Transfer executed successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConfirmTransferOutput"
+
+  # ── Admin Deposit Requests ─────────────────────────────────────────
+  /admin/deposit-requests:
+    get:
+      operationId: listDepositRequests
+      tags: [points]
+      summary: List all deposit requests for admin approval
+      responses:
+        "200":
+          description: List of deposit requests
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DepositRequest"
+
+  /admin/deposit-requests/{id}/approve:
+    post:
+      operationId: approveDepositRequest
+      tags: [points]
+      summary: Approve a deposit request and credit points
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApproveDepositInput"
+      responses:
+        "200":
+          description: Request approved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DepositRequest"
+
+  /admin/deposit-requests/{id}/reject:
+    post:
+      operationId: rejectDepositRequest
+      tags: [points]
+      summary: Reject a deposit request
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RejectDepositInput"
+      responses:
+        "200":
+          description: Request rejected
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DepositRequest"
+
   /contracts:
     get:
       operationId: listContracts
@@ -168,6 +1303,7 @@ paths:
           description: Invalid contract text
         "401":
           description: Unauthorized
+
 components:
   parameters:
     ContractId:
@@ -179,11 +1315,1108 @@ components:
   schemas:
     HealthStatus:
       type: object
+      required: [status]
       properties:
         status:
           type: string
-      required:
-        - status
+
+    # ── Auth ─────────────────────────────────────
+    RegisterInput:
+      type: object
+      required: [name, email, password]
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+        password:
+          type: string
+        role:
+          type: string
+
+    LoginInput:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+
+    AuthResponse:
+      type: object
+      required: [token, user]
+      properties:
+        token:
+          type: string
+        user:
+          $ref: "#/components/schemas/User"
+
+    User:
+      type: object
+      required: [id, name, email, role, points, createdAt]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+        role:
+          type: string
+        allowedPages:
+          type: array
+          items:
+            type: string
+          nullable: true
+        points:
+          type: integer
+        streak:
+          type: integer
+        avatarUrl:
+          type: ["string", "null"]
+        cv:
+          type: object
+          additionalProperties: true
+          nullable: true
+        contactInfo:
+          type: object
+          additionalProperties: true
+          nullable: true
+        createdAt:
+          type: string
+
+    UserUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        role:
+          type: string
+        allowedPages:
+          type: array
+          items:
+            type: string
+          nullable: true
+        avatarUrl:
+          type: ["string", "null"]
+        cv:
+          type: object
+          additionalProperties: true
+          nullable: true
+        contactInfo:
+          type: object
+          additionalProperties: true
+          nullable: true
+
+    # ── Jobs ────────────────────────────────────────────────────────────
+    Job:
+      type: object
+      required: [id, title, company, description, type, level, isRemote, status, passScore, createdAt]
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        company:
+          type: string
+        companyId:
+          type: ["integer", "null"]
+        description:
+          type: string
+        type:
+          type: string
+        level:
+          type: string
+        location:
+          type: ["string", "null"]
+        isRemote:
+          type: boolean
+        salaryMin:
+          type: ["integer", "null"]
+        salaryMax:
+          type: ["integer", "null"]
+        status:
+          type: string
+        passScore:
+          type: integer
+        applicationCount:
+          type: integer
+        companyLogo:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    JobInput:
+      type: object
+      required: [title, company, description, type, level, isRemote, passScore]
+      properties:
+        title:
+          type: string
+        company:
+          type: string
+        companyId:
+          type: ["integer", "null"]
+        description:
+          type: string
+        type:
+          type: string
+        level:
+          type: string
+        location:
+          type: string
+        isRemote:
+          type: boolean
+        salaryMin:
+          type: ["integer", "null"]
+        salaryMax:
+          type: ["integer", "null"]
+        passScore:
+          type: integer
+
+    JobUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+        company:
+          type: string
+        companyId:
+          type: ["integer", "null"]
+        description:
+          type: string
+        type:
+          type: string
+        level:
+          type: string
+        location:
+          type: ["string", "null"]
+        isRemote:
+          type: boolean
+        salaryMin:
+          type: ["integer", "null"]
+        salaryMax:
+          type: ["integer", "null"]
+        status:
+          type: string
+        passScore:
+          type: integer
+
+    JobStats:
+      type: object
+      required: [totalJobs, openJobs, totalApplications, filledPositions]
+      properties:
+        totalJobs:
+          type: integer
+        openJobs:
+          type: integer
+        totalApplications:
+          type: integer
+        filledPositions:
+          type: integer
+
+    ScreeningQuestion:
+      type: object
+      required: [id, jobId, question, options, correctIndex, order]
+      properties:
+        id:
+          type: integer
+        jobId:
+          type: integer
+        question:
+          type: string
+        options:
+          type: array
+          items:
+            type: string
+        correctIndex:
+          type: integer
+        order:
+          type: integer
+
+    ScreeningQuestionInput:
+      type: object
+      required: [question, options, correctIndex]
+      properties:
+        question:
+          type: string
+        options:
+          type: array
+          items:
+            type: string
+        correctIndex:
+          type: integer
+        order:
+          type: integer
+
+    # ── Applications ──────────────────────────────
+    Application:
+      type: object
+      required: [id, jobId, applicantName, applicantEmail, status, createdAt]
+      properties:
+        id:
+          type: integer
+        jobId:
+          type: integer
+        jobTitle:
+          type: ["string", "null"]
+        applicantName:
+          type: string
+        applicantEmail:
+          type: string
+        resumeUrl:
+          type: ["string", "null"]
+        coverLetter:
+          type: ["string", "null"]
+        status:
+          type: string
+        screeningScore:
+          type: ["integer", "null"]
+        screeningPassed:
+          type: ["boolean", "null"]
+        userId:
+          type: ["integer", "null"]
+        cvSnapshot:
+          type: object
+          additionalProperties: true
+          nullable: true
+        contactInfoSnapshot:
+          type: object
+          additionalProperties: true
+          nullable: true
+        createdAt:
+          type: string
+
+    ApplicationInput:
+      type: object
+      required: [jobId, applicantName, applicantEmail]
+      properties:
+        jobId:
+          type: integer
+        applicantName:
+          type: string
+        applicantEmail:
+          type: string
+        resumeUrl:
+          type: ["string", "null"]
+        coverLetter:
+          type: ["string", "null"]
+        userId:
+          type: ["integer", "null"]
+
+    ApplicationStatusUpdate:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+
+    ScreeningSubmission:
+      type: object
+      required: [answers]
+      properties:
+        answers:
+          type: array
+          items:
+            type: integer
+
+    ScreeningResult:
+      type: object
+      required: [score, passed, total]
+      properties:
+        score:
+          type: integer
+        passed:
+          type: boolean
+        total:
+          type: integer
+        message:
+          type: string
+
+    # ── Workshops ─────────────────────────────────
+    Workshop:
+      type: object
+      required: [id, title, description, date, duration, instructor, status, capacity, enrolledCount, passScore, createdAt]
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+        date:
+          type: string
+        duration:
+          type: integer
+        instructor:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        imageUrl:
+          type: ["string", "null"]
+        status:
+          type: string
+        capacity:
+          type: integer
+        enrolledCount:
+          type: integer
+        passScore:
+          type: integer
+        timeLimitMinutes:
+          type: ["integer", "null"]
+        certSignTitle:
+          type: string
+        certSignName:
+          type: string
+        certEkey:
+          type: string
+        antiCheatEnabled:
+          type: integer
+        maxFocusWarnings:
+          type: integer
+        shuffleQuestions:
+          type: integer
+        hasExam:
+          type: integer
+        hasCertificate:
+          type: integer
+        createdAt:
+          type: string
+        certTemplateUrl:
+          type: ["string", "null"]
+        certTemplateType:
+          type: string
+        price:
+          type: integer
+          nullable: true
+
+    WorkshopInput:
+      type: object
+      required: [title, description, date, duration, instructor, capacity, passScore]
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        date:
+          type: string
+        duration:
+          type: integer
+        instructor:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        imageUrl:
+          type: ["string", "null"]
+        capacity:
+          type: integer
+        passScore:
+          type: integer
+        timeLimitMinutes:
+          type: ["integer", "null"]
+        certSignTitle:
+          type: string
+        certSignName:
+          type: string
+        certEkey:
+          type: string
+        antiCheatEnabled:
+          type: integer
+        maxFocusWarnings:
+          type: integer
+        shuffleQuestions:
+          type: integer
+        hasExam:
+          type: integer
+        hasCertificate:
+          type: integer
+        certTemplateUrl:
+          type: ["string", "null"]
+        certTemplateType:
+          type: string
+
+    WorkshopUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        date:
+          type: string
+        duration:
+          type: integer
+        instructor:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        imageUrl:
+          type: ["string", "null"]
+        status:
+          type: string
+        capacity:
+          type: integer
+        passScore:
+          type: integer
+        timeLimitMinutes:
+          type: ["integer", "null"]
+        certSignTitle:
+          type: string
+        certSignName:
+          type: string
+        certEkey:
+          type: string
+        antiCheatEnabled:
+          type: integer
+        maxFocusWarnings:
+          type: integer
+        shuffleQuestions:
+          type: integer
+        hasExam:
+          type: integer
+        hasCertificate:
+          type: integer
+        certTemplateUrl:
+          type: ["string", "null"]
+        certTemplateType:
+          type: string
+
+    WorkshopTemplateUpload:
+      type: object
+      required: [fileName, fileType, base64Data]
+      properties:
+        fileName:
+          type: string
+        fileType:
+          type: string
+        base64Data:
+          type: string
+
+    WorkshopImageUpload:
+      type: object
+      required: [fileName, fileType, base64Data]
+      properties:
+        fileName:
+          type: string
+        fileType:
+          type: string
+        base64Data:
+          type: string
+
+    UserAvatarUpload:
+      type: object
+      required: [fileName, fileType, base64Data]
+      properties:
+        fileName:
+          type: string
+        fileType:
+          type: string
+        base64Data:
+          type: string
+
+    EnrollInput:
+      type: object
+      properties:
+        userId:
+          type: integer
+        userName:
+          type: string
+        userEmail:
+          type: string
+
+    Enrollment:
+      type: object
+      required: [id, workshopId, userId, userName, userEmail, createdAt]
+      properties:
+        id:
+          type: integer
+        workshopId:
+          type: integer
+        userId:
+          type: integer
+        userName:
+          type: string
+        userEmail:
+          type: string
+        createdAt:
+          type: string
+
+    # ── Exams ─────────────────────────────────────
+    Exam:
+      type: object
+      required: [workshopId, workshopTitle, passScore, questions]
+      properties:
+        workshopId:
+          type: integer
+        workshopTitle:
+          type: string
+        passScore:
+          type: integer
+        timeLimitMinutes:
+          type: ["integer", "null"]
+        questions:
+          type: array
+          items:
+            $ref: "#/components/schemas/ExamQuestion"
+
+    ExamQuestion:
+      type: object
+      required: [id, workshopId, question, options, order]
+      properties:
+        id:
+          type: integer
+        workshopId:
+          type: integer
+        question:
+          type: string
+        options:
+          type: array
+          items:
+            type: string
+        order:
+          type: integer
+        points:
+          type: integer
+        type:
+          type: string
+
+    ExamQuestionInput:
+      type: object
+      required: [question, options, correctIndex]
+      properties:
+        question:
+          type: string
+        options:
+          type: array
+          items:
+            type: string
+        correctIndex:
+          type: integer
+        order:
+          type: integer
+        points:
+          type: integer
+        type:
+          type: string
+
+    ExamSubmission:
+      type: object
+      required: [userId, answers]
+      properties:
+        userId:
+          type: integer
+        answers:
+          type: array
+          items:
+            type: string
+        focusWarningsCount:
+          type: integer
+        antiCheatViolated:
+          type: boolean
+
+    ExamResult:
+      type: object
+      required: [score, passed, total, certificateIssued]
+      properties:
+        score:
+          type: integer
+        passed:
+          type: boolean
+        total:
+          type: integer
+        certificateIssued:
+          type: boolean
+        certificateId:
+          type: ["integer", "null"]
+        message:
+          type: string
+
+    # ── Certificates ──────────────────────────────
+    Certificate:
+      type: object
+      required: [id, userId, userName, issuedAt, score, certificateNumber, verificationCode, type, level, cost, status, isPaid]
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        userName:
+          type: string
+        workshopId:
+          type: integer
+          nullable: true
+        workshopTitle:
+          type: string
+          nullable: true
+        trackId:
+          type: integer
+          nullable: true
+        trackTitle:
+          type: string
+          nullable: true
+        type:
+          type: string
+          enum: [track, workshop, participation]
+        issuedAt:
+          type: string
+        score:
+          type: integer
+        certificateNumber:
+          type: string
+        verificationCode:
+          type: string
+        level:
+          type: integer
+        cost:
+          type: integer
+        status:
+          type: string
+          enum: [locked, issued]
+        signatureHash:
+          type: string
+          nullable: true
+        isPaid:
+          type: integer
+
+    # ── Learning Tracks ────────────────────────────
+    Track:
+      type: object
+      required: [id, slug, title, description, category, level, moduleCount, estimatedHours]
+      properties:
+        id:
+          type: integer
+        slug:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+        level:
+          type: string
+        iconUrl:
+          type: ["string", "null"]
+        moduleCount:
+          type: integer
+        estimatedHours:
+          type: integer
+        enrolledCount:
+          type: integer
+        instructorId:
+          type: ["integer", "null"]
+        instructorName:
+          type: ["string", "null"]
+        instructorAvatar:
+          type: ["string", "null"]
+        price:
+          type: integer
+          nullable: true
+
+    TrackDetail:
+      type: object
+      required: [id, slug, title, description, category, level, moduleCount, estimatedHours, modules]
+      properties:
+        id:
+          type: integer
+        slug:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+        level:
+          type: string
+        iconUrl:
+          type: ["string", "null"]
+        moduleCount:
+          type: integer
+        estimatedHours:
+          type: integer
+        enrolledCount:
+          type: integer
+        instructorId:
+          type: ["integer", "null"]
+        instructorName:
+          type: ["string", "null"]
+        instructorAvatar:
+          type: ["string", "null"]
+        price:
+          type: integer
+          nullable: true
+        modules:
+          type: array
+          items:
+            $ref: "#/components/schemas/TrackModule"
+
+    TrackModule:
+      type: object
+      required: [id, trackId, title, description, type, order]
+      properties:
+        id:
+          type: integer
+        trackId:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+        type:
+          type: string
+        content:
+          type: ["string", "null"]
+        order:
+          type: integer
+        estimatedMinutes:
+          type: integer
+
+    TrackProgress:
+      type: object
+      required: [userId, trackSlug, completedModules, totalModules, percentComplete, points, isEnrolled]
+      properties:
+        userId:
+          type: integer
+        trackSlug:
+          type: string
+        completedModules:
+          type: array
+          items:
+            type: integer
+        totalModules:
+          type: integer
+        percentComplete:
+          type: integer
+        points:
+          type: integer
+        isEnrolled:
+          type: boolean
+
+    ProgressUpdate:
+      type: object
+      required: [userId, moduleId, completed]
+      properties:
+        userId:
+          type: integer
+        moduleId:
+          type: integer
+        completed:
+          type: boolean
+
+    # ── Leaderboard ────────────────────────────────
+    LeaderboardEntry:
+      type: object
+      required: [rank, userId, name, points, streak, certificateCount, completedTracks]
+      properties:
+        rank:
+          type: integer
+        userId:
+          type: integer
+        name:
+          type: string
+        avatarUrl:
+          type: ["string", "null"]
+        points:
+          type: integer
+        streak:
+          type: integer
+        certificateCount:
+          type: integer
+        completedTracks:
+          type: integer
+
+    # ── Platform Stats ─────────────────────────────
+    PlatformStats:
+      type: object
+      required: [studentsTrained, certificatesIssued, jobsFilled, workshopsHeld, activeJobs]
+      properties:
+        studentsTrained:
+          type: integer
+        certificatesIssued:
+          type: integer
+        jobsFilled:
+          type: integer
+        workshopsHeld:
+          type: integer
+        activeJobs:
+          type: integer
+
+    AdminStats:
+      type: object
+      required: [totalUsers, totalJobs, openJobs, totalApplications, pendingApplications, totalWorkshops, upcomingWorkshops, totalCertificates, recentApplications]
+      properties:
+        totalUsers:
+          type: integer
+        totalJobs:
+          type: integer
+        openJobs:
+          type: integer
+        totalApplications:
+          type: integer
+        pendingApplications:
+          type: integer
+        totalWorkshops:
+          type: integer
+        upcomingWorkshops:
+          type: integer
+        totalCertificates:
+          type: integer
+        recentApplications:
+          type: array
+          items:
+            $ref: "#/components/schemas/Application"
+
+    # ── Mock Interview ─────────────────────────────
+    MockInterviewSession:
+      type: object
+      required: [id, userId, track, createdAt]
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        track:
+          type: string
+        title:
+          type: string
+        createdAt:
+          type: string
+
+    MockInterviewSessionInput:
+      type: object
+      required: [userId, track]
+      properties:
+        userId:
+          type: integer
+        track:
+          type: string
+        title:
+          type: string
+
+    MockInterviewMessage:
+      type: object
+      required: [sessionId, message, role]
+      properties:
+        sessionId:
+          type: integer
+        message:
+          type: string
+        role:
+          type: string
+
+    MockInterviewResponse:
+      type: object
+      required: [reply, feedback]
+      properties:
+        reply:
+          type: string
+        feedback:
+          type: string
+        score:
+          type: ["integer", "null"]
+
+    Consultation:
+      type: object
+      required: [id, userId, category, title, message, status, createdAt]
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        userName:
+          type: string
+        userEmail:
+          type: string
+        category:
+          type: string
+        title:
+          type: string
+        message:
+          type: string
+        status:
+          type: string
+        assignedTo:
+          type: integer
+          nullable: true
+        assignedName:
+          type: string
+        response:
+          type: string
+        repliedBy:
+          type: integer
+          nullable: true
+        repliedName:
+          type: string
+        repliedAt:
+          type: string
+        createdAt:
+          type: string
+
+    CreateConsultationInput:
+      type: object
+      required: [category, title, message]
+      properties:
+        category:
+          type: string
+        title:
+          type: string
+        message:
+          type: string
+        assignedTo:
+          type: integer
+          nullable: true
+
+    ReplyConsultationInput:
+      type: object
+      required: [response]
+      properties:
+        response:
+          type: string
+
+    # ── Points & Wallet Systems ───────────────────────
+    WalletInfo:
+      type: object
+      required: [points, deposits, transactions]
+      properties:
+        points:
+          type: integer
+        deposits:
+          type: array
+          items:
+            $ref: "#/components/schemas/DepositRequest"
+        transactions:
+          type: array
+          items:
+            $ref: "#/components/schemas/PointsTransaction"
+
+    DepositRequest:
+      type: object
+      required: [id, userId, userName, userEmail, pointsAmount, cashAmount, status, transferScreenshot, createdAt, updatedAt]
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        userName:
+          type: string
+        userEmail:
+          type: string
+        pointsAmount:
+          type: integer
+        cashAmount:
+          type: string
+        status:
+          type: string
+        transferScreenshot:
+          type: string
+        notes:
+          type: string
+        adminNotes:
+          type: string
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+
+    PointsTransaction:
+      type: object
+      required: [id, receiverId, receiverName, amount, type, createdAt]
+      properties:
+        id:
+          type: integer
+        senderId:
+          type: integer
+          nullable: true
+        senderName:
+          type: string
+        receiverId:
+          type: integer
+        receiverName:
+          type: string
+        amount:
+          type: integer
+        type:
+          type: string
+        notes:
+          type: string
+        createdAt:
+          type: string
+
+    CreateDepositRequestInput:
+      type: object
+      required: [pointsAmount, cashAmount, transferScreenshot]
+      properties:
+        pointsAmount:
+          type: integer
+        cashAmount:
+          type: string
+        transferScreenshot:
+          type: string
+        notes:
+          type: string
+
+    VerifyTransferInput:
+      type: object
+      required: [email, amount]
+      properties:
+        email:
+          type: string
+        amount:
+          type: integer
+
+    VerifyTransferOutput:
+      type: object
+      required: [verified, recipientName, recipientEmail, amount]
+      properties:
+        verified:
+          type: boolean
+        recipientName:
+          type: string
+        recipientEmail:
+          type: string
+        amount:
+          type: integer
+
+    ConfirmTransferInput:
+      type: object
+      required: [email, amount]
+      properties:
+        email:
+          type: string
+        amount:
+          type: integer
+
+    ConfirmTransferOutput:
+      type: object
+      required: [success, message, newBalance]
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        newBalance:
+          type: integer
+
+    ApproveDepositInput:
+      type: object
+      properties:
+        adminNotes:
+          type: string
+
+    RejectDepositInput:
+      type: object
+      properties:
+        adminNotes:
+          type: string
+
+    # ── Contracts (merged) ────────────────────────────────────────────────
     Contract:
       type: object
       required: [id, reference, title, clientName, clientEmail, scope, paymentTerms, expirationDate, status, createdAt, updatedAt, publicUrl]
@@ -195,6 +2428,7 @@ components:
         clientEmail: { type: string }
         scope: { type: string }
         paymentTerms: { type: string }
+        contractValue: { type: number }
         expirationDate: { type: string, format: date }
         status:
           type: string
@@ -217,6 +2451,7 @@ components:
         clientEmail: { type: string, minLength: 3 }
         scope: { type: string, minLength: 1 }
         paymentTerms: { type: string, minLength: 1 }
+        contractValue: { type: number, minimum: 0 }
         expirationDate: { type: string, format: date }
     ContractUpdate:
       type: object
@@ -224,6 +2459,13 @@ components:
         status:
           type: string
           enum: [draft, sent, viewed, signed, expired]
+        title: { type: string }
+        clientName: { type: string }
+        clientEmail: { type: string }
+        scope: { type: string }
+        paymentTerms: { type: string }
+        contractValue: { type: number }
+        expirationDate: { type: string, format: date }
     SignatureInput:
       type: object
       required: [signerName, signerTitle, signatureData, agreedToTerms]
@@ -234,11 +2476,12 @@ components:
         agreedToTerms: { type: boolean, const: true }
     DashboardSummary:
       type: object
-      required: [total, pending, signed, expiringSoon, totalValue]
+      required: [total, pending, signed, expired, expiringSoon, totalValue]
       properties:
         total: { type: number }
         pending: { type: number }
         signed: { type: number }
+        expired: { type: number }
         expiringSoon: { type: number }
         totalValue: { type: number }
     FormatContractInput:

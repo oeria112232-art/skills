@@ -25,5 +25,6 @@ export interface TrackDetail {
   instructorName?: string | null;
   /** @nullable */
   instructorAvatar?: string | null;
+  price?: number | null;
   modules: TrackModule[];
 }

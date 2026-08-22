@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { useUpdateUser, useListTracks, useGetTrackProgress, useListCertificates, useListApplications, useListJobs, useUploadUserAvatar } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "wouter";
-import { User, Mail, Phone, MapPin, Globe, Linkedin, Github, FileText, GraduationCap, Award, Briefcase, Plus, Clock, ExternalLink, Trash2, Eye, Loader2, Lock, Coins, LogOut } from "lucide-react";
+import { User, Mail, Phone, MapPin, Globe, Linkedin, Github, FileText, GraduationCap, Award, Briefcase, Plus, Clock, ExternalLink, Trash2, Eye, Loader2, Lock, Coins, LogOut, Download } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
@@ -113,6 +113,34 @@ export default function UserSettingsPage() {
         toast({ title: isAr ? "خطأ أثناء حذف السيرة الذاتية" : "Error deleting CV", variant: "destructive" });
       }
     });
+  };
+
+  const handleDownloadPDF = () => {
+    const runHtml2pdf = () => {
+      const element = document.getElementById("full-cv-content");
+      if (!element) return;
+      
+      const opt = {
+        margin:       0,
+        filename:     `${(user?.cv as any)?.fullName || "CV"}.pdf`,
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2, useCORS: true, letterRendering: true },
+        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      };
+      
+      (window as any).html2pdf().from(element).set(opt).save();
+    };
+
+    if ((window as any).html2pdf) {
+      runHtml2pdf();
+    } else {
+      const script = document.createElement("script");
+      script.src = "https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js";
+      script.onload = () => {
+        runHtml2pdf();
+      };
+      document.body.appendChild(script);
+    }
   };
 
   const { data: tracks } = useListTracks();
@@ -514,6 +542,7 @@ export default function UserSettingsPage() {
                     <Dialog open={cvDialogOpen} onOpenChange={setCvDialogOpen}>
                       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0">
                         <div 
+                          id="full-cv-content"
                           className="grid grid-cols-12 min-h-[600px] font-sans bg-white"
                           dir={(user.cv as any).language === "ar" ? "rtl" : "ltr"}
                         >
@@ -624,6 +653,15 @@ export default function UserSettingsPage() {
                                 </div>
                               </div>
                             )}
+
+                            <Button 
+                              onClick={handleDownloadPDF} 
+                              variant="outline" 
+                              className="w-full mt-6 bg-emerald-600 hover:bg-emerald-700 text-white border-none rounded-xl gap-2 text-xs font-bold py-2.5 shadow-md transition-all duration-300"
+                            >
+                              <Download className="w-4 h-4" />
+                              <span>{isAr ? "تحميل السيرة الذاتية PDF" : "Download CV PDF"}</span>
+                            </Button>
                           </div>
                         </div>
                       </DialogContent>

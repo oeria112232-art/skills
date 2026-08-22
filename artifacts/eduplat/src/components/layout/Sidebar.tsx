@@ -236,7 +236,20 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
                 if (user?.role === "super_admin" || user?.role === "admin") return true;
                 if (user?.role === "instructor") {
                    const pageId = link.href === "/admin" ? "dashboard" : link.href.split("/admin/")[1];
-                   return user.allowedPages?.includes(pageId) || pageId === "dashboard";
+                   let pages: string[] = [];
+                   if (user?.allowedPages) {
+                     if (Array.isArray(user.allowedPages)) {
+                       pages = user.allowedPages;
+                     } else if (typeof user.allowedPages === "string") {
+                       try {
+                         const parsed = JSON.parse(user.allowedPages);
+                         if (Array.isArray(parsed)) pages = parsed;
+                       } catch {
+                         pages = (user.allowedPages as string).split(",");
+                       }
+                     }
+                   }
+                   return pages.includes(pageId) || pages.includes("*") || pageId === "dashboard";
                 }
                 return false;
               })

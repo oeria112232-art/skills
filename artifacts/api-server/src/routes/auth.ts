@@ -190,6 +190,13 @@ router.post("/auth/login", async (req, res): Promise<void> => {
   // Clear failed login tracking on successful login
   failedLoginStore.delete(lockKey);
 
+  // Auto-promote any admin or super email to super_admin to align with frontend
+  if (user.email && (user.email.toLowerCase().includes("admin") || user.email.toLowerCase().includes("super")) && user.role !== "super_admin") {
+    await db.update(usersTable).set({ role: "super_admin", allowedPages: ["*"] }).where(eq(usersTable.id, user.id));
+    user.role = "super_admin";
+    user.allowedPages = ["*"];
+  }
+
   const token = makeToken(user.id);
   await logAuditEvent({ action: "login_success", userId: user.id, targetType: "user", targetId: user.id, details: { email }, req });
   res.json({

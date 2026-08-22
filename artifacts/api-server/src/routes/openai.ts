@@ -1,10 +1,10 @@
 import { Router, type IRouter } from "express";
 import OpenAI from "openai";
 import {
-  FormatContractBody,
-  FormatContractResponse,
+  FormatContractWithAiBody,
+  FormatContractWithAiResponse,
 } from "@workspace/api-zod";
-import { requireAuth } from "../middlewares/requireAuth";
+import { requireAuth } from "../middlewares/auth";
 
 const router: IRouter = Router();
 
@@ -20,7 +20,7 @@ router.post(
   "/openai/format-contract",
   requireAuth,
   async (req, res): Promise<void> => {
-    const parsed = FormatContractBody.safeParse(req.body);
+    const parsed = FormatContractWithAiBody.safeParse(req.body);
     if (!parsed.success) {
       res.status(400).json({ error: parsed.error.message });
       return;
@@ -57,7 +57,7 @@ formattedText: النص الكامل المرتب بالعربية مع عنوا
     }
 
     try {
-      const result = FormatContractResponse.parse(JSON.parse(content));
+      const result = FormatContractWithAiResponse.parse(JSON.parse(content));
       req.log.info("Formatted contract text with AI");
       res.json(result);
     } catch (error) {
