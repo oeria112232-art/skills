@@ -42,9 +42,13 @@ packages:
 
 
 allowBuilds:
+  esbuild: false
   protobufjs: true
   "@tailwindcss/oxide": true
   lightningcss: true
+
+neverBuiltDependencies:
+  - esbuild
 
 catalog:
   '@replit/vite-plugin-cartographer': ^0.5.21
