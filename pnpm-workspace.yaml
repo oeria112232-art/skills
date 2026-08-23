@@ -42,7 +42,6 @@ packages:
 
 
 allowBuilds:
-  esbuild: true
   protobufjs: true
   "@tailwindcss/oxide": true
   lightningcss: true
@@ -77,7 +76,6 @@ autoInstallPeers: false
 
 onlyBuiltDependencies:
   - '@swc/core'
-  - esbuild
   - msw
   - unrs-resolver
   - protobufjs
