@@ -40,11 +40,6 @@ packages:
   - lib/integrations/*
   - scripts
 
-onlyBuiltDependencies:
-  - esbuild
-  - protobufjs
-  - "@tailwindcss/oxide"
-  - lightningcss
 
 allowBuilds:
   esbuild: true
@@ -85,6 +80,9 @@ onlyBuiltDependencies:
   - esbuild
   - msw
   - unrs-resolver
+  - protobufjs
+  - "@tailwindcss/oxide"
+  - lightningcss
 
 overrides:
   # replit uses linux-x64 only, we can exclude all other platforms
